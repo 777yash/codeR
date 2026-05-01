@@ -40,3 +40,4 @@ jobs:
           NEXTAUTH_URL: 'https://example.com'
           NEXTAUTH_SECRET: 'ci-secret-not-real'
           NEXT_PUBLIC_APP_URL: 'https://example.com'
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
