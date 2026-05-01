@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  githubId  String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations added in later phases
+  // ownedRooms    Room[]
+  // roomMembers   RoomMember[]
+  // chatMessages  ChatMessage[]
+
+  @@map("users")
+}
+
+model Room {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // ownerId added in Phase 1 when User auth is wired
+  // owner       User     @relation(fields: [ownerId], references: [id])
+  // ownerId     String
+
+  @@map("rooms")
+}
