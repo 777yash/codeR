@@ -41,3 +41,7 @@ jobs:
           NEXTAUTH_SECRET: 'ci-secret-not-real'
           NEXT_PUBLIC_APP_URL: 'https://example.com'
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          GITHUB_CLIENT_ID: 'ci-placeholder'
+          GITHUB_CLIENT_SECRET: 'ci-placeholder'
+          GOOGLE_CLIENT_ID: 'ci-placeholder'
+          GOOGLE_CLIENT_SECRET: 'ci-placeholder'

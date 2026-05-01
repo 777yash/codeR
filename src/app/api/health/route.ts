@@ -9,6 +9,9 @@ export async function GET() {
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
+      services: {
+        auth: 'configured',
+      },
     })
   } catch (error) {
     console.error('Health check failed:', error)
