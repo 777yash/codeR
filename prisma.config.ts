@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { defineConfig, env } from 'prisma/config'
+import { defineConfig } from 'prisma/config'
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -8,6 +8,7 @@ export default defineConfig({
   },
   datasource: {
     // CLI + migrations use DIRECT_URL (bypasses pooler — required in Prisma 7)
-    url: env('DIRECT_URL'),
+    // Falls back to empty string for `prisma generate` in CI (no DB connection needed)
+    url: process.env['DIRECT_URL'] ?? '',
   },
 })
