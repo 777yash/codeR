@@ -12,6 +12,7 @@ import {
   Search,
   Bell,
   LogOut,
+  User,
 } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -75,15 +76,16 @@ export default async function DashboardPage() {
           <button className="text-[#888888] transition-colors hover:text-[#F0F0F0]">
             <Bell className="h-5 w-5" />
           </button>
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
+          <Link
+            href="/profile"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80"
             style={{
               backgroundColor: 'rgba(255,45,85,0.15)',
               color: '#FF2D55',
             }}
           >
             {initials}
-          </div>
+          </Link>
           <button className="flex h-8 items-center gap-1.5 rounded-md bg-[#FF2D55] px-3 text-xs font-semibold text-white transition-all hover:bg-[#FF2D55]/90">
             <Plus className="h-3.5 w-3.5" />
             New Room
@@ -138,6 +140,13 @@ export default async function DashboardPage() {
 
           {/* Sidebar footer */}
           <div className="space-y-0.5 border-t border-white/[0.06] p-3">
+            <Link
+              href="/profile"
+              className="flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm text-[#888888] transition-colors hover:bg-[#1A0A0D] hover:text-[#F0F0F0]"
+            >
+              <User className="h-4 w-4" />
+              Profile
+            </Link>
             <button className="flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm text-[#888888] transition-colors hover:bg-[#1A0A0D] hover:text-[#F0F0F0]">
               <Settings className="h-4 w-4" />
               Settings
