@@ -1,0 +1,139 @@
+'use client'
+
+import Link from 'next/link'
+import { MoreHorizontal, Users, Globe, Lock, Code } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import type {
+  Room,
+  User as PrismaUser,
+  RoomMember,
+} from '@/generated/prisma/client'
+
+type RoomWithRelations = Room & {
+  owner: Pick<PrismaUser, 'id' | 'name' | 'image'>
+  members: (RoomMember & {
+    user: Pick<PrismaUser, 'id' | 'name' | 'image'>
+  })[]
+  _count: { members: number }
+}
+
+interface RoomCardProps {
+  room: RoomWithRelations
+  onClick?: () => void
+}
+
+const languageColors: Record<string, string> = {
+  javascript: '#F7DF1E',
+  typescript: '#3178C6',
+  python: '#3776AB',
+  java: '#ED8B00',
+  cpp: '#00599C',
+  c: '#A8B9CC',
+  csharp: '#239120',
+  go: '#00ADD8',
+  rust: '#DEA584',
+  ruby: '#CC342D',
+  php: '#777BB4',
+  swift: '#FA7343',
+  kotlin: '#7F52FF',
+  scala: '#DC322F',
+  r: '#276DC3',
+  sql: '#E38C00',
+  bash: '#4EAA25',
+  lua: '#000080',
+  perl: '#39457E',
+  haskell: '#5D4F85',
+  elixir: '#6E4A7E',
+  clojure: '#5881D8',
+  dart: '#0175C2',
+  julia: '#9558B2',
+  matlab: '#0076A8',
+  vbnet: '#512BD4',
+  cobol: '#005ca5',
+  fortran: '#4D41B1',
+  assembly: '#6E4C13',
+}
+
+export function RoomCard({ room, onClick }: RoomCardProps) {
+  const memberCount = room._count?.members ?? room.members?.length ?? 0
+  const languageColor = languageColors[room.language] || '#888888'
+
+  return (
+    <div className="group relative flex h-48 flex-col justify-between rounded-md border border-white/10 bg-[#0D0D0D] p-4 transition-all hover:border-[#FF2D55]/30 hover:bg-[#1A0A0D]/50">
+      <div className="flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <span
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: languageColor }}
+            />
+            <h3 className="truncate text-sm font-medium text-[#F0F0F0]">
+              {room.name}
+            </h3>
+          </div>
+          {room.description && (
+            <p className="mb-2 line-clamp-2 text-xs text-[#888888]">
+              {room.description}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={onClick}
+          className="flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/5"
+        >
+          <MoreHorizontal className="h-4 w-4 text-[#888888]" />
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 text-xs text-[#888888]">
+            <Code className="h-3.5 w-3.5" />
+            <span>{room.language}</span>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-[#888888]">
+            {room.isPublic ? (
+              <Globe className="h-3.5 w-3.5" />
+            ) : (
+              <Lock className="h-3.5 w-3.5" />
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-[#888888]">
+          <Users className="h-3.5 w-3.5" />
+          <span>{memberCount}</span>
+        </div>
+      </div>
+
+      <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-3">
+        <div className="flex items-center gap-1.5">
+          {room.owner?.image ? (
+            <img
+              src={room.owner.image}
+              alt={room.owner.name || 'Owner'}
+              className="h-5 w-5 rounded-full"
+            />
+          ) : (
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF2D55]/20 text-[10px] font-medium text-[#FF2D55]">
+              {(room.owner?.name || 'U')[0].toUpperCase()}
+            </div>
+          )}
+          <span className="text-xs text-[#888888]">
+            {room.owner?.name || 'Unknown'}
+          </span>
+        </div>
+        <span className="text-xs text-[#555555]">
+          {formatDistanceToNow(new Date(room.updatedAt), { addSuffix: true })}
+        </span>
+      </div>
+
+      <Link
+        href={`/rooms/${room.id}`}
+        className="absolute inset-0 z-10"
+        prefetch={false}
+      >
+        <span className="sr-only">Open room {room.name}</span>
+      </Link>
+    </div>
+  )
+}

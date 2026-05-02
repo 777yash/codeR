@@ -1,0 +1,231 @@
+'use client'
+
+import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+
+const languages = [
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'python', label: 'Python' },
+  { value: 'java', label: 'Java' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'c', label: 'C' },
+  { value: 'csharp', label: 'C#' },
+  { value: 'go', label: 'Go' },
+  { value: 'rust', label: 'Rust' },
+  { value: 'ruby', label: 'Ruby' },
+  { value: 'php', label: 'PHP' },
+  { value: 'swift', label: 'Swift' },
+  { value: 'kotlin', label: 'Kotlin' },
+  { value: 'scala', label: 'Scala' },
+  { value: 'r', label: 'R' },
+  { value: 'sql', label: 'SQL' },
+  { value: 'bash', label: 'Bash' },
+  { value: 'lua', label: 'Lua' },
+  { value: 'perl', label: 'Perl' },
+  { value: 'haskell', label: 'Haskell' },
+  { value: 'elixir', label: 'Elixir' },
+  { value: 'clojure', label: 'Clojure' },
+  { value: 'dart', label: 'Dart' },
+  { value: 'julia', label: 'Julia' },
+  { value: 'matlab', label: 'MATLAB' },
+  { value: 'vbnet', label: 'VB.NET' },
+  { value: 'cobol', label: 'COBOL' },
+  { value: 'fortran', label: 'Fortran' },
+  { value: 'assembly', label: 'Assembly' },
+]
+
+interface CreateRoomDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (data: {
+    name: string
+    description?: string
+    language: string
+    isPublic: boolean
+  }) => Promise<void>
+}
+
+export function CreateRoomDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+}: CreateRoomDialogProps) {
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [language, setLanguage] = useState('javascript')
+  const [isPublic, setIsPublic] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<{ name?: string }>({})
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!name.trim()) {
+      setErrors({ name: 'Room name is required' })
+      return
+    }
+
+    setErrors({})
+    setIsSubmitting(true)
+
+    try {
+      await onSubmit({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        language,
+        isPublic,
+      })
+      setName('')
+      setDescription('')
+      setLanguage('javascript')
+      setIsPublic(false)
+      onOpenChange(false)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleClose = (open: boolean) => {
+    if (!open) {
+      setName('')
+      setDescription('')
+      setLanguage('javascript')
+      setIsPublic(false)
+      setErrors({})
+    }
+    onOpenChange(open)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogClose onClose={() => handleClose(false)} />
+        <DialogHeader>
+          <DialogTitle>Create New Room</DialogTitle>
+          <DialogDescription>
+            Set up a new room for collaborative coding
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label
+              htmlFor="name"
+              className="text-sm font-medium text-[#F0F0F0]"
+            >
+              Room Name
+            </label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value)
+                if (errors.name) setErrors({})
+              }}
+              placeholder="My Awesome Project"
+              className={errors.name ? 'border-[#FF2D55]' : ''}
+            />
+            {errors.name && (
+              <p className="text-xs text-[#FF2D55]">{errors.name}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="description"
+              className="text-sm font-medium text-[#F0F0F0]"
+            >
+              Description <span className="text-[#555555]">(optional)</span>
+            </label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="A brief description of what this room is for..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="language"
+              className="text-sm font-medium text-[#F0F0F0]"
+            >
+              Language
+            </label>
+            <Select
+              id="language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+            >
+              {languages.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isPublic}
+              onClick={() => setIsPublic(!isPublic)}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                isPublic ? 'bg-[#FF2D55]' : 'bg-[#555555]'
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                  isPublic ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+            <label
+              className="cursor-pointer text-sm text-[#888888]"
+              onClick={() => setIsPublic(!isPublic)}
+            >
+              {isPublic ? 'Public room' : 'Private room'}
+            </label>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleClose(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-[#FF2D55] hover:bg-[#FF2D55]/90 sm:w-auto"
+            >
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Create Room
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -22,10 +22,10 @@ model User {
   accounts Account[]
   sessions Session[]
 
-  // Phase 2 additions (commented until ready)
-  // ownedRooms   Room[]
-  // roomMembers  RoomMember[]
-  // chatMessages ChatMessage[]
+  // Phase 2 relations
+  ownedRooms  Room[]      @relation("RoomOwner")
+  roomMembers RoomMember[]
+  chatMessages ChatMessage[]
 
   @@map("users")
 }
@@ -72,13 +72,101 @@ model VerificationToken {
 
 // ─── App Tables ───────────────────────────────────────────────────
 
+enum Language {
+  javascript
+  typescript
+  python
+  java
+  cpp
+  c
+  csharp
+  go
+  rust
+  ruby
+  php
+  swift
+  kotlin
+  scala
+  r
+  sql
+  bash
+  lua
+  perl
+  haskell
+  elixir
+  clojure
+  dart
+  julia
+  matlab
+  vbnet
+  cobol
+  fortran
+  assembly
+}
+
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
 model Room {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  language    Language  @default(javascript)
+  isPublic    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  ownerId String
+  owner   User   @relation("RoomOwner", fields: [ownerId], references: [id])
+
+  members     RoomMember[]
+  shareLinks  ShareLink[]
+  chatMessages ChatMessage[]
 
   @@map("rooms")
+}
+
+model RoomMember {
+  id       String   @id @default(cuid())
+  role     Role     @default(VIEWER)
+  joinedAt DateTime @default(now())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("room_members")
+}
+
+model ShareLink {
+  id        String    @id @default(cuid())
+  token     String    @unique @default(cuid())
+  role      Role      @default(VIEWER)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("share_links")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
 }

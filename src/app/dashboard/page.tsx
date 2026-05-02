@@ -1,6 +1,7 @@
-import { auth, signOut } from '@/auth'
+import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { prisma } from '@/lib/prisma'
 import {
   LayoutDashboard,
   Users,
@@ -8,13 +9,13 @@ import {
   Star,
   Settings,
   HelpCircle,
-  Plus,
   Search,
   Bell,
   LogOut,
   User,
 } from 'lucide-react'
 import type { Metadata } from 'next'
+import { RoomList } from '@/components/rooms/room-list'
 
 export const metadata: Metadata = {
   title: 'Dashboard — codeR',
@@ -22,7 +23,27 @@ export const metadata: Metadata = {
 
 async function handleSignOut() {
   'use server'
+  const { signOut } = await import('@/auth')
   await signOut({ redirectTo: '/' })
+}
+
+async function getRooms(userId: string) {
+  const rooms = await prisma.room.findMany({
+    where: {
+      OR: [{ ownerId: userId }, { members: { some: { userId } } }],
+    },
+    include: {
+      owner: { select: { id: true, name: true, image: true } },
+      members: {
+        include: {
+          user: { select: { id: true, name: true, image: true } },
+        },
+      },
+      _count: { select: { members: true } },
+    },
+    orderBy: { updatedAt: 'desc' },
+  })
+  return rooms
 }
 
 export default async function DashboardPage() {
@@ -36,6 +57,8 @@ export default async function DashboardPage() {
     .join('')
     .toUpperCase()
     .slice(0, 2)
+
+  const rooms = await getRooms(user.id!)
 
   const sidebarNav = [
     { icon: LayoutDashboard, label: 'My Rooms', active: true },
@@ -52,11 +75,8 @@ export default async function DashboardPage() {
     { name: 'Rust', color: '#F97316' },
   ]
 
-  const filterTabs = ['All (0)', 'Active Now (0)', 'Recent', 'Shared']
-
   return (
     <div className="flex h-screen flex-col bg-black text-[#F0F0F0]">
-      {/* Top Nav */}
       <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-black px-4">
         <Link href="/dashboard" className="flex shrink-0 items-center gap-0.5">
           <span className="text-lg font-bold text-white">codeR</span>
@@ -86,16 +106,10 @@ export default async function DashboardPage() {
           >
             {initials}
           </Link>
-          <button className="flex h-8 items-center gap-1.5 rounded-md bg-[#FF2D55] px-3 text-xs font-semibold text-white transition-all hover:bg-[#FF2D55]/90">
-            <Plus className="h-3.5 w-3.5" />
-            New Room
-          </button>
         </div>
       </header>
 
-      {/* Body */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <aside className="flex w-[220px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0D0D0D]">
           <div className="flex-1 overflow-y-auto p-3">
             <p className="mb-2 px-2 text-[11px] font-medium tracking-wider text-[#555555] uppercase">
@@ -138,7 +152,6 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Sidebar footer */}
           <div className="space-y-0.5 border-t border-white/[0.06] p-3">
             <Link
               href="/profile"
@@ -167,7 +180,6 @@ export default async function DashboardPage() {
           </div>
         </aside>
 
-        {/* Main content */}
         <main className="flex-1 overflow-y-auto p-8">
           <div className="mb-1">
             <h1 className="text-3xl font-semibold text-[#F0F0F0]">My Rooms</h1>
@@ -176,38 +188,7 @@ export default async function DashboardPage() {
             Welcome back, {user.name ?? user.email}
           </p>
 
-          {/* Filter tabs */}
-          <div className="mb-6 flex border-b border-white/[0.06]">
-            {filterTabs.map((tab, i) => (
-              <button
-                key={tab}
-                className={`px-4 pb-3 text-sm transition-colors ${
-                  i === 0
-                    ? 'border-b-2 border-[#FF2D55] text-[#F0F0F0]'
-                    : 'text-[#888888] hover:text-[#F0F0F0]'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Room grid */}
-          <div className="grid grid-cols-3 gap-5">
-            {/* New Room card */}
-            <button className="group flex h-48 flex-col items-center justify-center rounded-md border border-dashed border-white/10 transition-all duration-150 hover:border-[rgba(255,45,85,0.30)] hover:bg-[rgba(255,45,85,0.08)]">
-              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 transition-colors group-hover:border-[rgba(255,45,85,0.30)]">
-                <Plus className="h-5 w-5 text-[#555555] transition-colors group-hover:text-[#FF2D55]" />
-              </div>
-              <span className="text-sm text-[#555555] transition-colors group-hover:text-[#888888]">
-                New Room
-              </span>
-            </button>
-          </div>
-
-          <p className="mt-8 text-center text-sm text-[#555555]">
-            No rooms yet — create your first room to start collaborating
-          </p>
+          <RoomList initialRooms={rooms} />
         </main>
       </div>
     </div>
