@@ -2,9 +2,13 @@ import { auth } from '@/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { ArrowLeft, Settings, Users, Code, Globe, Lock } from 'lucide-react'
+import { ArrowLeft, Settings, Play } from 'lucide-react'
 import { ShareButton } from '@/components/rooms/share-button'
 import type { Metadata } from 'next'
+import { EditorWrapper } from './editor-wrapper'
+import type { CollabMember } from '@/components/editor/collab-panel'
+import { LanguageIcon } from '@/components/editor/language-icon'
+import { LiveBadge } from '@/components/editor/live-badge'
 
 interface RoomPageProps {
   params: Promise<{ id: string }>
@@ -62,6 +66,45 @@ async function getRoomWithAccess(roomId: string, userId: string) {
   return { room, userRole: isOwner ? 'OWNER' : memberRole }
 }
 
+const LANG_LABEL: Record<string, string> = {
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  python: 'Python',
+  go: 'Go',
+  rust: 'Rust',
+  java: 'Java',
+  cpp: 'C++',
+  c: 'C',
+  csharp: 'C#',
+  ruby: 'Ruby',
+  php: 'PHP',
+  swift: 'Swift',
+  kotlin: 'Kotlin',
+  scala: 'Scala',
+  r: 'R',
+  sql: 'SQL',
+  bash: 'Bash',
+  lua: 'Lua',
+  perl: 'Perl',
+  haskell: 'Haskell',
+  elixir: 'Elixir',
+  clojure: 'Clojure',
+  dart: 'Dart',
+  julia: 'Julia',
+}
+
+function getInitials(name: string | null | undefined): string {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+const AVATAR_COLORS = ['#FF2D55', '#BF5AF2', '#FF9F0A', '#32D74B']
+
 export default async function RoomPage({ params }: RoomPageProps) {
   const session = await auth()
   if (!session?.user) redirect('/signin')
@@ -73,73 +116,131 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
   const { room, userRole } = result
 
+  // Build unified member list (owner first, then members)
+  const allMembers: CollabMember[] = [
+    {
+      id: room.owner.id,
+      name: room.owner.name,
+      image: room.owner.image,
+      role: 'OWNER',
+    },
+    ...room.members
+      .filter((m) => m.userId !== room.owner.id)
+      .map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+        image: m.user.image,
+        role: m.role as string,
+      })),
+  ]
+
+  // Avatar cluster — show up to 3, rest as "+N"
+  const visibleAvatars = allMembers.slice(0, 3)
+  const extraCount = Math.max(0, allMembers.length - 3)
+
   return (
     <div className="flex h-screen flex-col bg-black text-[#F0F0F0]">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-black px-4">
-        <div className="flex items-center gap-3">
+      {/* Top bar — 44px */}
+      <header className="flex h-11 shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-black px-3">
+        {/* Left: back + breadcrumb + lang badge */}
+        <div className="flex items-center gap-2">
           <Link
             href="/dashboard"
-            className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-white/5"
+            className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
+            title="Back to dashboard"
           >
-            <ArrowLeft className="h-4 w-4 text-[#888888]" />
+            <ArrowLeft className="h-3.5 w-3.5 text-[#555555]" />
           </Link>
-          <div className="flex items-center gap-2">
-            <span className="text-[#FF2D55]">▊</span>
-            <h1 className="text-lg font-semibold text-white">{room.name}</h1>
+
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-[#555555]">dashboard</span>
+            <span className="text-[#333]">›</span>
+            <span className="flex items-center gap-1 font-medium text-[#F0F0F0]">
+              <span className="text-[#FF2D55]">▊</span>
+              {room.name}
+            </span>
           </div>
-          <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-[#888888]">
-            {room.language}
-          </span>
+
+          <div className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5">
+            <LanguageIcon language={room.language} size={14} />
+            <span className="text-[11px] font-medium text-[#888888]">
+              {LANG_LABEL[room.language.toLowerCase()] ?? room.language}
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Center: live badge + avatar cluster */}
+        <div className="flex items-center gap-3">
+          {/* Live badge — client component, polls presence API */}
+          <LiveBadge roomId={id} />
+
+          {/* Avatar cluster */}
+          <div className="flex items-center">
+            {visibleAvatars.map((member, i) => {
+              const color = AVATAR_COLORS[i % AVATAR_COLORS.length]
+              return (
+                <div
+                  key={member.id}
+                  title={member.name ?? 'Unknown'}
+                  style={{
+                    backgroundColor: color + '28',
+                    color,
+                    marginLeft: i === 0 ? 0 : -6,
+                    zIndex: visibleAvatars.length - i,
+                  }}
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-black text-[10px] font-semibold"
+                >
+                  {getInitials(member.name)}
+                </div>
+              )
+            })}
+            {extraCount > 0 && (
+              <span
+                className="ml-1.5 text-[11px] text-[#555555]"
+                style={{ zIndex: 0 }}
+              >
+                +{extraCount}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Right: actions */}
+        <div className="flex items-center gap-1.5">
+          <ShareButton />
+
+          {userRole !== 'VIEWER' && (
+            <Link
+              href={`/rooms/${id}/run`}
+              className="flex h-7 items-center gap-1.5 rounded-md bg-[#32D74B] px-3 text-xs font-semibold text-black transition-colors hover:bg-[#32D74B]/90"
+            >
+              <Play className="h-3 w-3" />
+              Run
+            </Link>
+          )}
+
           {userRole === 'OWNER' && (
             <Link
               href={`/rooms/${id}/settings`}
-              className="flex h-8 items-center gap-1.5 rounded-md px-3 text-sm text-[#888888] transition-colors hover:bg-white/5 hover:text-[#F0F0F0]"
+              className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
+              title="Room settings"
             >
-              <Settings className="h-4 w-4" />
-              Settings
+              <Settings className="h-3.5 w-3.5 text-[#555555]" />
             </Link>
           )}
-          <ShareButton />
         </div>
       </header>
 
-      <div className="flex flex-1 items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-[#FF2D55]/10 p-4">
-              <Code className="h-8 w-8 text-[#FF2D55]" />
-            </div>
-          </div>
-          <h2 className="mb-2 text-xl font-semibold">Editor coming soon</h2>
-          <p className="mb-4 text-sm text-[#888888]">
-            The real-time collaborative editor will be available here in Phase
-            3.
-          </p>
-          <div className="flex items-center justify-center gap-4 text-xs text-[#555555]">
-            <span className="flex items-center gap-1">
-              {room.isPublic ? (
-                <Globe className="h-3 w-3" />
-              ) : (
-                <Lock className="h-3 w-3" />
-              )}
-              {room.isPublic ? 'Public room' : 'Private room'}
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {room._count.members} members
-            </span>
-          </div>
-
-          {room.description && (
-            <p className="mx-auto mt-4 max-w-md text-sm text-[#888888]">
-              {room.description}
-            </p>
-          )}
-        </div>
-      </div>
+      <EditorWrapper
+        roomId={id}
+        initialContent={room.content || ''}
+        initialLanguage={room.language}
+        readOnly={userRole === 'VIEWER'}
+        roomName={room.name}
+        members={allMembers}
+        currentUserId={session.user.id!}
+      />
     </div>
   )
 }

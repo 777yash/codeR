@@ -125,6 +125,7 @@ model Room {
   members     RoomMember[]
   shareLinks  ShareLink[]
   chatMessages ChatMessage[]
+  content     String?   @db.Text
 
   @@map("rooms")
 }

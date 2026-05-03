@@ -15,6 +15,38 @@ import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 
+const LANGUAGES = [
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'python', label: 'Python' },
+  { value: 'java', label: 'Java' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'c', label: 'C' },
+  { value: 'csharp', label: 'C#' },
+  { value: 'go', label: 'Go' },
+  { value: 'rust', label: 'Rust' },
+  { value: 'ruby', label: 'Ruby' },
+  { value: 'php', label: 'PHP' },
+  { value: 'swift', label: 'Swift' },
+  { value: 'kotlin', label: 'Kotlin' },
+  { value: 'scala', label: 'Scala' },
+  { value: 'r', label: 'R' },
+  { value: 'sql', label: 'SQL' },
+  { value: 'bash', label: 'Bash' },
+  { value: 'lua', label: 'Lua' },
+  { value: 'perl', label: 'Perl' },
+  { value: 'haskell', label: 'Haskell' },
+  { value: 'elixir', label: 'Elixir' },
+  { value: 'clojure', label: 'Clojure' },
+  { value: 'dart', label: 'Dart' },
+  { value: 'julia', label: 'Julia' },
+  { value: 'matlab', label: 'MATLAB' },
+  { value: 'vbnet', label: 'VB.NET' },
+  { value: 'cobol', label: 'COBOL' },
+  { value: 'fortran', label: 'Fortran' },
+  { value: 'assembly', label: 'Assembly' },
+]
+
 type RoomWithRelations = Room & {
   owner: Pick<PrismaUser, 'id' | 'name' | 'image' | 'email'>
   members: (RoomMember & {
@@ -251,13 +283,11 @@ export function RoomSettingsClient({
               onChange={(e) => setLanguage(e.target.value)}
               disabled={!isOwner && userRole !== 'EDITOR'}
             >
-              <option value="javascript">JavaScript</option>
-              <option value="typescript">TypeScript</option>
-              <option value="python">Python</option>
-              <option value="java">Java</option>
-              <option value="cpp">C++</option>
-              <option value="go">Go</option>
-              <option value="rust">Rust</option>
+              {LANGUAGES.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
             </Select>
           </div>
 
@@ -471,7 +501,7 @@ export function RoomSettingsClient({
             <Button
               variant="destructive"
               onClick={handleDeleteRoom}
-              className="bg-[#FF2D55] hover:bg-[#FF2D55]/90"
+              className="bg-[#FF2D55] text-white transition-all duration-300 hover:bg-black hover:shadow-[0_0_15px_rgba(255,45,85,0.8)]"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete Room
