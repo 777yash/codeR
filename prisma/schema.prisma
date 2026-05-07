@@ -125,7 +125,8 @@ model Room {
   members     RoomMember[]
   shareLinks  ShareLink[]
   chatMessages ChatMessage[]
-  content     String?   @db.Text
+  content         String?  @db.Text
+  contentSnapshot Bytes?
 
   @@map("rooms")
 }

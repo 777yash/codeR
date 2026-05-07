@@ -128,3 +128,32 @@
     @apply font-sans;
   }
 }
+
+/* y-monaco remote cursor decorations */
+.yRemoteSelection {
+  opacity: 0.3;
+}
+
+.yRemoteSelectionHead {
+  position: absolute;
+  border-left: 2px solid;
+  border-top: 2px solid;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: visible !important;
+}
+
+.yRemoteSelectionHead::after {
+  position: absolute;
+  top: -1.4em;
+  left: -2px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  color: #fff;
+  line-height: 1.4;
+  z-index: 100;
+}

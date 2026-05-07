@@ -234,12 +234,14 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
       <EditorWrapper
         roomId={id}
-        initialContent={room.content || ''}
         initialLanguage={room.language}
         readOnly={userRole === 'VIEWER'}
         roomName={room.name}
         members={allMembers}
         currentUserId={session.user.id!}
+        currentUserName={
+          session.user.name ?? session.user.email ?? session.user.id!
+        }
       />
     </div>
   )

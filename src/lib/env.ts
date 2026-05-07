@@ -17,6 +17,10 @@ const envSchema = z.object({
 
   // App
   NEXT_PUBLIC_APP_URL: z.string().url(),
+  NEXT_PUBLIC_COLLAB_WS_URL: z.string().default('ws://localhost:1234'),
+
+  // Collab server internal auth
+  NEXTJS_INTERNAL_SECRET: z.string().min(1),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),

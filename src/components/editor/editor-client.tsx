@@ -2,23 +2,25 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import Editor, { type OnMount } from '@monaco-editor/react'
-import { useDebouncedCallback } from 'use-debounce'
 import { useEditorStore } from '@/stores/editor-store'
 
 interface EditorClientProps {
   roomId: string
-  initialContent?: string
+  userId: string
+  userName?: string
   initialLanguage?: string
   readOnly?: boolean
 }
 
 export function EditorClient({
   roomId,
-  initialContent,
+  userId,
+  userName,
   initialLanguage,
   readOnly = false,
 }: EditorClientProps) {
-  const editorRef = useRef<Parameters<OnMount>[0] | null>(null)
+  const cleanupRef = useRef<(() => void) | null>(null)
+
   const {
     theme,
     language,
@@ -26,87 +28,100 @@ export function EditorClient({
     minimap,
     wordWrap,
     fontSize,
-    files,
-    activeFileId,
-    updateFileContent,
-    setIsSaving,
+    setLanguage,
     setLastSaved,
-    addFile,
-    setActiveFile,
   } = useEditorStore()
 
   useEffect(() => {
-    if (
-      initialContent !== undefined &&
-      files.length === 1 &&
-      files[0].id === 'default'
-    ) {
-      updateFileContent('default', initialContent)
-    }
-  }, [initialContent])
-
-  useEffect(() => {
-    if (initialLanguage && files.length === 1) {
-      useEditorStore.getState().setLanguage(initialLanguage)
-      useEditorStore
-        .getState()
-        .updateFileContent('default', initialContent || '')
-    }
-  }, [initialLanguage])
-
-  const saveContent = useDebouncedCallback(async (content: string) => {
-    setIsSaving(true)
-    try {
-      const response = await fetch(`/api/rooms/${roomId}/document`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-      })
-      if (response.ok) {
-        setLastSaved(new Date())
-      }
-    } catch (error) {
-      console.error('Failed to save:', error)
-    } finally {
-      setIsSaving(false)
-    }
-  }, 500)
+    if (initialLanguage) setLanguage(initialLanguage)
+  }, [initialLanguage, setLanguage])
 
   const handleEditorMount: OnMount = useCallback(
-    (editor) => {
-      editorRef.current = editor
+    async (editor) => {
+      // Dynamic imports — all run browser-only, after editor mount.
+      // Avoids static import of monaco-editor (y-monaco) breaking SSR/webpack.
+      const [Y, { WebsocketProvider }, { MonacoBinding }] = await Promise.all([
+        import('yjs'),
+        import('y-websocket'),
+        import('y-monaco'),
+      ])
 
-      editor.addCommand(
-        2048 | 49, // Cmd+S (Mac) / Ctrl+S (Windows)
-        () => {
-          const activeFile = files.find((f) => f.id === activeFileId)
-          if (activeFile) {
-            fetch(`/api/rooms/${roomId}/document`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ content: activeFile.content }),
-            }).then(() => setLastSaved(new Date()))
-          }
-        }
+      editor.addCommand(2048 | 49, () => setLastSaved(new Date()))
+
+      const wsUrl =
+        process.env.NEXT_PUBLIC_COLLAB_WS_URL ?? 'ws://localhost:1234'
+
+      const ydoc = new Y.Doc()
+      const provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
+        connect: true,
+      })
+      const ytext = ydoc.getText('content')
+      const binding = new MonacoBinding(
+        ytext,
+        editor.getModel()!,
+        new Set([editor]),
+        provider.awareness
       )
-    },
-    [activeFileId, files, roomId, setLastSaved]
-  )
 
-  const handleEditorChange = useCallback(
-    (value: string | undefined) => {
-      if (activeFileId && value !== undefined) {
-        updateFileContent(activeFileId, value)
-        saveContent(value)
+      const userColor = `#${Math.floor(Math.random() * 0xffffff)
+        .toString(16)
+        .padStart(6, '0')}`
+
+      provider.awareness.setLocalStateField('user', {
+        id: userId,
+        name: userName ?? userId,
+        color: userColor,
+      })
+
+      // Inject per-user CSS for remote cursor colors (y-monaco only adds class names, no CSS)
+      const styleEl = document.createElement('style')
+      styleEl.id = `y-monaco-cursors-${roomId}`
+      document.head.appendChild(styleEl)
+
+      const updateCursorStyles = () => {
+        const states = provider.awareness.getStates() as Map<
+          number,
+          { user?: { color?: string; name?: string } }
+        >
+        let css = ''
+        states.forEach((state, clientId) => {
+          if (clientId === ydoc.clientID) return
+          const color = state.user?.color ?? '#888888'
+          const name = (state.user?.name ?? 'Anonymous').replace(/"/g, '')
+          css += `.yRemoteSelection-${clientId}{background-color:${color}40}
+.yRemoteSelectionHead-${clientId}{border-color:${color};background-color:${color}}
+.yRemoteSelectionHead-${clientId}::after{content:"${name}";background-color:${color}}
+`
+        })
+        styleEl.textContent = css
+      }
+
+      provider.awareness.on('change', updateCursorStyles)
+      updateCursorStyles()
+
+      provider.on('status', ({ status }: { status: string }) => {
+        if (status === 'connected') setLastSaved(new Date())
+      })
+
+      cleanupRef.current = () => {
+        provider.awareness.off('change', updateCursorStyles)
+        styleEl.remove()
+        binding.destroy()
+        provider.destroy()
+        ydoc.destroy()
       }
     },
-    [activeFileId, updateFileContent, saveContent]
+    [roomId, userId, setLastSaved]
   )
 
-  const activeFile = files.find((f) => f.id === activeFileId)
+  useEffect(() => {
+    return () => {
+      cleanupRef.current?.()
+    }
+  }, [])
 
   const getMonacoLanguage = (lang: string): string => {
-    const languageMap: Record<string, string> = {
+    const map: Record<string, string> = {
       javascript: 'javascript',
       typescript: 'typescript',
       python: 'python',
@@ -137,16 +152,14 @@ export function EditorClient({
       fortran: 'fortran',
       assembly: 'asm',
     }
-    return languageMap[lang] || lang
+    return map[lang] ?? lang
   }
 
   return (
     <Editor
       height="100%"
-      language={getMonacoLanguage(activeFile?.language || language)}
-      value={activeFile?.content || ''}
+      language={getMonacoLanguage(language)}
       theme={theme}
-      onChange={handleEditorChange}
       onMount={handleEditorMount}
       options={{
         readOnly,
@@ -154,7 +167,7 @@ export function EditorClient({
         fontFamily: "'JetBrains Mono', monospace",
         lineNumbers: lineNumbers === 'off' ? 'off' : lineNumbers,
         minimap: { enabled: minimap },
-        wordWrap: wordWrap,
+        wordWrap,
         scrollBeyondLastLine: false,
         automaticLayout: true,
         tabSize: 2,

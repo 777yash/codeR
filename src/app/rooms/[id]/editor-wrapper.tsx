@@ -12,22 +12,22 @@ import { StatusBar } from '@/components/editor/status-bar'
 
 interface EditorWrapperProps {
   roomId: string
-  initialContent?: string
   initialLanguage?: string
   readOnly?: boolean
   roomName?: string
   members?: CollabMember[]
   currentUserId?: string
+  currentUserName?: string
 }
 
 export function EditorWrapper({
   roomId,
-  initialContent,
   initialLanguage,
   readOnly = false,
   roomName,
   members = [],
   currentUserId,
+  currentUserName,
 }: EditorWrapperProps) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -43,7 +43,8 @@ export function EditorWrapper({
           <div className="flex-1 overflow-hidden">
             <EditorClient
               roomId={roomId}
-              initialContent={initialContent}
+              userId={currentUserId ?? ''}
+              userName={currentUserName}
               initialLanguage={initialLanguage}
               readOnly={readOnly}
             />
