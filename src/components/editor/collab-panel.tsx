@@ -25,7 +25,11 @@ interface CollabPanelProps {
   currentUserId?: string
 }
 
-const CURSOR_COLORS = ['#FF2D55', '#BF5AF2', '#FF9F0A', '#32D74B']
+function colorFromUserId(id: string): string {
+  let hash = 0
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
+  return `hsl(${hash % 360}, 80%, 60%)`
+}
 
 const ROLE_STYLE: Record<string, string> = {
   OWNER: 'text-[#FF2D55] bg-[rgba(255,45,85,0.12)]',
@@ -141,8 +145,8 @@ export function CollabPanel({
               </p>
             )}
 
-            {onlineMembers.map((member, i) => {
-              const color = CURSOR_COLORS[i % CURSOR_COLORS.length]
+            {onlineMembers.map((member) => {
+              const color = colorFromUserId(member.id)
               const roleStyle = ROLE_STYLE[member.role] ?? ROLE_STYLE.VIEWER
               const roleLabel = ROLE_LABEL[member.role] ?? member.role
               const isMe = member.id === currentUserId

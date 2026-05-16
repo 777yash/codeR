@@ -3,6 +3,13 @@
 import { useCallback, useEffect, useRef } from 'react'
 import Editor, { type OnMount } from '@monaco-editor/react'
 import { useEditorStore } from '@/stores/editor-store'
+import { toast } from 'sonner'
+
+function colorFromUserId(id: string): string {
+  let hash = 0
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
+  return `hsl(${hash % 360}, 80%, 60%)`
+}
 
 interface EditorClientProps {
   roomId: string
@@ -63,22 +70,27 @@ export function EditorClient({
         provider.awareness
       )
 
-      const userColor = `#${Math.floor(Math.random() * 0xffffff)
-        .toString(16)
-        .padStart(6, '0')}`
-
       provider.awareness.setLocalStateField('user', {
         id: userId,
         name: userName ?? userId,
-        color: userColor,
+        color: colorFromUserId(userId),
       })
 
-      // Inject per-user CSS for remote cursor colors (y-monaco only adds class names, no CSS)
       const styleEl = document.createElement('style')
       styleEl.id = `y-monaco-cursors-${roomId}`
       document.head.appendChild(styleEl)
 
-      const updateCursorStyles = () => {
+      const nameCache = new Map<number, string>()
+      let initialized = false
+
+      const handleAwarenessChange = ({
+        added,
+        removed,
+      }: {
+        added: number[]
+        updated: number[]
+        removed: number[]
+      }) => {
         const states = provider.awareness.getStates() as Map<
           number,
           { user?: { color?: string; name?: string } }
@@ -88,23 +100,41 @@ export function EditorClient({
           if (clientId === ydoc.clientID) return
           const color = state.user?.color ?? '#888888'
           const name = (state.user?.name ?? 'Anonymous').replace(/"/g, '')
+          nameCache.set(clientId, name)
           css += `.yRemoteSelection-${clientId}{background-color:${color}40}
 .yRemoteSelectionHead-${clientId}{border-color:${color};background-color:${color}}
 .yRemoteSelectionHead-${clientId}::after{content:"${name}";background-color:${color}}
 `
         })
         styleEl.textContent = css
+
+        if (!initialized) {
+          initialized = true
+          return
+        }
+
+        added.forEach((clientId) => {
+          if (clientId === ydoc.clientID) return
+          const name = states.get(clientId)?.user?.name ?? 'Someone'
+          toast(`${name} joined`)
+        })
+        removed.forEach((clientId) => {
+          if (clientId === ydoc.clientID) return
+          const name = nameCache.get(clientId) ?? 'Someone'
+          nameCache.delete(clientId)
+          toast(`${name} left`)
+        })
       }
 
-      provider.awareness.on('change', updateCursorStyles)
-      updateCursorStyles()
+      provider.awareness.on('change', handleAwarenessChange)
+      handleAwarenessChange({ added: [], updated: [], removed: [] })
 
       provider.on('status', ({ status }: { status: string }) => {
         if (status === 'connected') setLastSaved(new Date())
       })
 
       cleanupRef.current = () => {
-        provider.awareness.off('change', updateCursorStyles)
+        provider.awareness.off('change', handleAwarenessChange)
         styleEl.remove()
         binding.destroy()
         provider.destroy()
