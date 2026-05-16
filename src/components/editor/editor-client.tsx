@@ -93,7 +93,10 @@ export function EditorClient({
       }) => {
         const states = provider.awareness.getStates() as Map<
           number,
-          { user?: { color?: string; name?: string } }
+          {
+            user?: { color?: string; name?: string }
+            cursor?: { anchor?: unknown; head?: unknown }
+          }
         >
         let css = ''
         states.forEach((state, clientId) => {
@@ -101,9 +104,22 @@ export function EditorClient({
           const color = state.user?.color ?? '#888888'
           const name = (state.user?.name ?? 'Anonymous').replace(/"/g, '')
           nameCache.set(clientId, name)
+          let labelTop = '-1.4em'
+          if (state.cursor?.anchor) {
+            const absPos = Y.createAbsolutePositionFromRelativePosition(
+              state.cursor.anchor as Parameters<
+                typeof Y.createAbsolutePositionFromRelativePosition
+              >[0],
+              ydoc
+            )
+            const lineNumber = absPos
+              ? (editor.getModel()?.getPositionAt(absPos.index).lineNumber ?? 3)
+              : 3
+            if (lineNumber <= 2) labelTop = '1.4em'
+          }
           css += `.yRemoteSelection-${clientId}{background-color:${color}40}
 .yRemoteSelectionHead-${clientId}{border-color:${color};background-color:${color}}
-.yRemoteSelectionHead-${clientId}::after{content:"${name}";background-color:${color}}
+.yRemoteSelectionHead-${clientId}::after{content:"${name}";background-color:${color};top:${labelTop}}
 `
         })
         styleEl.textContent = css
@@ -141,7 +157,7 @@ export function EditorClient({
         ydoc.destroy()
       }
     },
-    [roomId, userId, setLastSaved]
+    [roomId, userId, userName, setLastSaved]
   )
 
   useEffect(() => {

@@ -47,7 +47,7 @@ export function LiveBadge({ roomId }: { roomId: string }) {
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#32D74B]" />
       </span>
       <span className="text-[11px] font-medium text-[#32D74B]">
-        Live · {count} {count === 1 ? 'online' : 'online'}
+        Live · {count} {count === 1 ? 'user' : 'users'}
       </span>
     </div>
   )

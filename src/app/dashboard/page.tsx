@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import type { Metadata } from 'next'
 import { RoomList } from '@/components/rooms/room-list'
+import { CollabWarmup } from '@/components/collab-warmup'
 
 export const metadata: Metadata = {
   title: 'Dashboard — codeR',
@@ -77,6 +78,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex h-screen flex-col bg-black text-[#F0F0F0]">
+      <CollabWarmup />
       <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-black px-4">
         <Link href="/dashboard" className="flex shrink-0 items-center gap-0.5">
           <span className="text-lg font-bold text-white">codeR</span>
