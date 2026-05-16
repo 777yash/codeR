@@ -2,13 +2,15 @@ import { auth } from '@/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { ArrowLeft, Settings, Play } from 'lucide-react'
+import { ArrowLeft, Play } from 'lucide-react'
 import { ShareButton } from '@/components/rooms/share-button'
 import type { Metadata } from 'next'
 import { EditorWrapper } from './editor-wrapper'
 import type { CollabMember } from '@/components/editor/collab-panel'
 import { LanguageIcon } from '@/components/editor/language-icon'
 import { LiveBadge } from '@/components/editor/live-badge'
+import { SettingsDialog } from '@/components/editor/settings-dialog'
+import type { RoomWithRelations } from '@/app/rooms/[id]/settings/settings-client'
 
 interface RoomPageProps {
   params: Promise<{ id: string }>
@@ -221,13 +223,10 @@ export default async function RoomPage({ params }: RoomPageProps) {
           )}
 
           {userRole === 'OWNER' && (
-            <Link
-              href={`/rooms/${id}/settings`}
-              className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
-              title="Room settings"
-            >
-              <Settings className="h-3.5 w-3.5 text-[#555555]" />
-            </Link>
+            <SettingsDialog
+              room={room as unknown as RoomWithRelations}
+              userRole="OWNER"
+            />
           )}
         </div>
       </header>

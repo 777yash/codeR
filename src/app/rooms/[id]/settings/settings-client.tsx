@@ -47,7 +47,7 @@ const LANGUAGES = [
   { value: 'assembly', label: 'Assembly' },
 ]
 
-type RoomWithRelations = Room & {
+export type RoomWithRelations = Room & {
   owner: Pick<PrismaUser, 'id' | 'name' | 'image' | 'email'>
   members: (RoomMember & {
     user: Pick<PrismaUser, 'id' | 'name' | 'image' | 'email'>
