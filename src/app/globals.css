@@ -129,6 +129,139 @@
   }
 }
 
+/* codeR Design Tokens — Editorial Noir (dark, default) */
+:root {
+  --coder-bg-base: #000000;
+  --coder-bg-surface: #0d0d0d;
+  --coder-bg-card: #1a0a0d;
+  --coder-bg-card-hover: #2d1018;
+  --coder-bg-card-active: #3d1520;
+  --coder-accent: #ff2d55;
+  --coder-accent-glow: rgba(255, 45, 85, 0.15);
+  --coder-accent-dim: rgba(255, 45, 85, 0.08);
+  --coder-border: rgba(255, 255, 255, 0.06);
+  --coder-border-mid: rgba(255, 255, 255, 0.1);
+  --coder-border-accent: rgba(255, 45, 85, 0.3);
+  --coder-text-primary: #f0f0f0;
+  --coder-text-secondary: #888888;
+  --coder-text-tertiary: #555555;
+  --coder-text-accent: #ff2d55;
+  --coder-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --coder-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --coder-shadow-accent: 0 0 20px rgba(255, 45, 85, 0.2);
+  --coder-nav-bg: rgba(0, 0, 0, 0.8);
+}
+
+/* codeR Design Tokens — Digital Stationery (light) */
+html.light {
+  --coder-bg-base: #ffffff;
+  --coder-bg-surface: #f6f5f4;
+  --coder-bg-card: #eceae8;
+  --coder-bg-card-hover: #e0deda;
+  --coder-bg-card-active: #d4d0cc;
+  --coder-accent: #0075de;
+  --coder-accent-glow: rgba(0, 117, 222, 0.1);
+  --coder-accent-dim: rgba(0, 117, 222, 0.06);
+  --coder-border: rgba(0, 0, 0, 0.06);
+  --coder-border-mid: rgba(0, 0, 0, 0.1);
+  --coder-border-accent: rgba(0, 117, 222, 0.25);
+  --coder-text-primary: rgba(0, 0, 0, 0.95);
+  --coder-text-secondary: rgba(0, 0, 0, 0.45);
+  --coder-text-tertiary: rgba(0, 0, 0, 0.25);
+  --coder-text-accent: #0075de;
+  --coder-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --coder-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --coder-shadow-accent: 0 0 20px rgba(0, 117, 222, 0.15);
+  --coder-nav-bg: rgba(255, 255, 255, 0.85);
+}
+
+/* App-wide theme-aware utilities — use these instead of hardcoded dark hex values */
+.bg-app {
+  background-color: var(--coder-bg-base);
+}
+.bg-app-surface {
+  background-color: var(--coder-bg-surface);
+}
+.bg-app-card {
+  background-color: var(--coder-bg-card);
+}
+.bg-app-card-hover {
+  background-color: var(--coder-bg-card-hover);
+}
+.text-app {
+  color: var(--coder-text-primary);
+}
+.text-app-muted {
+  color: var(--coder-text-secondary);
+}
+.text-app-dim {
+  color: var(--coder-text-tertiary);
+}
+.border-app {
+  border-color: var(--coder-border);
+}
+.border-app-mid {
+  border-color: var(--coder-border-mid);
+}
+.text-app-accent {
+  color: var(--coder-accent);
+}
+.bg-app-accent {
+  background-color: var(--coder-accent);
+}
+.border-app-accent {
+  border-color: var(--coder-accent);
+}
+/* hover variants */
+.hover-app-card:hover {
+  background-color: var(--coder-bg-card);
+}
+.hover-app-card-lift:hover {
+  background-color: var(--coder-bg-card-hover);
+}
+.hover-app-text:hover {
+  color: var(--coder-text-primary);
+}
+.hover-app-row:hover {
+  background-color: var(--coder-bg-card);
+  color: var(--coder-text-primary);
+}
+
+/* Marketing page hover utilities — CSS-var-aware, usable in server components */
+.marketing-nav-link {
+  color: var(--coder-text-secondary);
+  transition: color 150ms ease;
+  text-decoration: none;
+}
+.marketing-nav-link:hover {
+  color: var(--coder-text-primary);
+}
+
+.marketing-feature-card {
+  border-color: var(--coder-border) !important;
+  background-color: var(--coder-bg-card) !important;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.marketing-feature-card:hover {
+  border-color: var(--coder-border-accent) !important;
+  background-color: var(--coder-bg-card-hover) !important;
+}
+
+.docs-sidebar-link {
+  color: var(--coder-text-secondary);
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+  text-decoration: none;
+  display: block;
+}
+.docs-sidebar-link:hover {
+  color: var(--coder-text-primary);
+  background-color: var(--coder-bg-card);
+}
+
 /* y-monaco remote cursor decorations */
 .yRemoteSelection {
   opacity: 0.3;

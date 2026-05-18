@@ -36,17 +36,17 @@ export function StatusBar() {
   const displayLang = LANG_DISPLAY[activeFile?.language ?? language] ?? language
 
   return (
-    <div className="flex h-6 shrink-0 items-center justify-between border-t border-white/[0.06] bg-[#0D0D0D] px-3">
-      <div className="flex items-center gap-3 text-[11px] text-[#555555]">
+    <div className="border-app bg-app-surface flex h-6 shrink-0 items-center justify-between border-t px-3">
+      <div className="text-app-dim flex items-center gap-3 text-[11px]">
         <span>{displayLang}</span>
-        <span className="text-white/10">|</span>
+        <span className="opacity-20">|</span>
         <span>UTF-8</span>
-        <span className="text-white/10">|</span>
+        <span className="opacity-20">|</span>
         <span>LF</span>
-        <span className="text-white/10">|</span>
+        <span className="opacity-20">|</span>
         <span>Spaces: 2</span>
       </div>
-      <div className="flex items-center gap-1.5 text-[11px] text-[#555555]">
+      <div className="text-app-dim flex items-center gap-1.5 text-[11px]">
         <div className="h-1.5 w-1.5 rounded-full bg-[#32D74B]" />
         <span>Connected</span>
       </div>

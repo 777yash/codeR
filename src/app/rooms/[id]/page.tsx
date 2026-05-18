@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { ArrowLeft, Play } from 'lucide-react'
 import { ShareButton } from '@/components/rooms/share-button'
+import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import type { Metadata } from 'next'
 import { EditorWrapper } from './editor-wrapper'
 import type { CollabMember } from '@/components/editor/collab-panel'
@@ -141,9 +142,9 @@ export default async function RoomPage({ params }: RoomPageProps) {
   const extraCount = Math.max(0, allMembers.length - 3)
 
   return (
-    <div className="flex h-screen flex-col bg-black text-[#F0F0F0]">
+    <div className="bg-app text-app flex h-screen flex-col">
       {/* Top bar — 44px */}
-      <header className="flex h-11 shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-black px-3">
+      <header className="border-app bg-app flex h-11 shrink-0 items-center justify-between gap-4 border-b px-3">
         {/* Left: back + breadcrumb + lang badge */}
         <div className="flex items-center gap-2">
           <Link
@@ -158,8 +159,8 @@ export default async function RoomPage({ params }: RoomPageProps) {
           <div className="flex items-center gap-1 text-xs">
             <span className="text-[#555555]">dashboard</span>
             <span className="text-[#333]">›</span>
-            <span className="flex items-center gap-1 font-medium text-[#F0F0F0]">
-              <span className="text-[#FF2D55]">▊</span>
+            <span className="text-app flex items-center gap-1 font-medium">
+              <span className="text-app-accent">▊</span>
               {room.name}
             </span>
           </div>
@@ -210,6 +211,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
         {/* Right: actions */}
         <div className="flex items-center gap-1.5">
+          <ThemeToggle />
           <ShareButton />
 
           {userRole !== 'VIEWER' && (

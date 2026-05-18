@@ -40,7 +40,7 @@ export function ProfileForm({ initialName, email }: ProfileFormProps) {
   return (
     <div className="space-y-5">
       <div>
-        <label className="mb-1.5 block text-xs font-medium tracking-wider text-[#555555] uppercase">
+        <label className="text-app-dim mb-1.5 block text-xs font-medium tracking-wider uppercase">
           Display Name
         </label>
         <div className="flex gap-2">
@@ -50,7 +50,7 @@ export function ProfileForm({ initialName, email }: ProfileFormProps) {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             placeholder="Your name"
-            className="h-9 flex-1 rounded-md border border-white/10 bg-[#111111] px-3 text-sm text-[#F0F0F0] transition-colors outline-none placeholder:text-[#555555] focus:border-[#FF2D55]/50 focus:ring-1 focus:ring-[#FF2D55]/20"
+            className="border-app-mid bg-app-card text-app placeholder:text-app-dim h-9 flex-1 rounded-md border px-3 text-sm transition-colors outline-none focus:border-[#FF2D55]/50 focus:ring-1 focus:ring-[#FF2D55]/20"
           />
           <button
             onClick={handleSave}
@@ -68,13 +68,13 @@ export function ProfileForm({ initialName, email }: ProfileFormProps) {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium tracking-wider text-[#555555] uppercase">
+        <label className="text-app-dim mb-1.5 block text-xs font-medium tracking-wider uppercase">
           Email
         </label>
-        <div className="flex h-9 items-center rounded-md border border-white/[0.06] bg-[#0D0D0D] px-3 text-sm text-[#555555]">
+        <div className="border-app bg-app-surface text-app-dim flex h-9 items-center rounded-md border px-3 text-sm">
           {email ?? '—'}
         </div>
-        <p className="mt-1 text-xs text-[#444444]">Email cannot be changed</p>
+        <p className="text-app-dim mt-1 text-xs">Email cannot be changed</p>
       </div>
     </div>
   )

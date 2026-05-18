@@ -76,25 +76,25 @@ export default async function RoomSettingsPage({ params }: SettingsPageProps) {
   const { room, userRole } = result
 
   return (
-    <div className="flex h-screen flex-col bg-black text-[#F0F0F0]">
-      <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-black px-4">
+    <div className="bg-app text-app flex h-screen flex-col">
+      <header className="border-app bg-app flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
         <div className="flex items-center gap-3">
           <Link
             href={`/rooms/${id}`}
             className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-white/5"
           >
-            <ArrowLeft className="h-4 w-4 text-[#888888]" />
+            <ArrowLeft className="text-app-muted h-4 w-4" />
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-[#FF2D55]">▊</span>
-            <h1 className="text-lg font-semibold text-white">{room.name}</h1>
+            <span className="text-app-accent">▊</span>
+            <h1 className="text-app text-lg font-semibold">{room.name}</h1>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <Link
             href={`/rooms/${id}`}
-            className="flex h-8 items-center gap-1.5 rounded-md px-3 text-sm text-[#888888] transition-colors hover:bg-white/5 hover:text-[#F0F0F0]"
+            className="text-app-muted hover:text-app flex h-8 items-center gap-1.5 rounded-md px-3 text-sm transition-colors hover:bg-white/5"
           >
             <Settings className="h-4 w-4" />
             Settings

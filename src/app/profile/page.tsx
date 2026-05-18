@@ -2,6 +2,7 @@ import { auth, signOut } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { AppLogo } from '@/components/app-logo'
 import {
   LayoutDashboard,
   Users,
@@ -13,6 +14,7 @@ import {
   User,
 } from 'lucide-react'
 import { ProfileForm } from '@/components/profile/profile-form'
+import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import type { Metadata } from 'next'
 import { format } from 'date-fns'
 
@@ -62,15 +64,13 @@ export default async function ProfilePage() {
   const hasPassword = !!user.password
 
   return (
-    <div className="flex h-screen flex-col bg-black text-[#F0F0F0]">
+    <div className="bg-app text-app flex h-screen flex-col">
       {/* Top Nav */}
-      <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-white/[0.06] bg-black px-4">
-        <Link href="/dashboard" className="flex shrink-0 items-center gap-0.5">
-          <span className="text-lg font-bold text-white">codeR</span>
-          <span className="text-[#FF2D55]">▊</span>
-        </Link>
+      <header className="border-app bg-app flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
+        <AppLogo size="md" href="/dashboard" />
 
         <div className="flex shrink-0 items-center gap-3">
+          <ThemeToggle />
           <div
             className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
             style={{
@@ -86,9 +86,9 @@ export default async function ProfilePage() {
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="flex w-[220px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0D0D0D]">
+        <aside className="border-app bg-app-surface flex w-[220px] shrink-0 flex-col border-r">
           <div className="flex-1 overflow-y-auto p-3">
-            <p className="mb-2 px-2 text-[11px] font-medium tracking-wider text-[#555555] uppercase">
+            <p className="text-app-dim mb-2 px-2 text-[11px] font-medium tracking-wider uppercase">
               Workspace
             </p>
             <nav className="space-y-0.5">
@@ -96,7 +96,7 @@ export default async function ProfilePage() {
                 <Link
                   key={label}
                   href={href}
-                  className="flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm text-[#888888] transition-colors hover:bg-[#1A0A0D] hover:text-[#F0F0F0]"
+                  className="text-app-muted hover-app-row flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm transition-colors"
                 >
                   <Icon className="h-4 w-4" />
                   {label}
@@ -106,26 +106,26 @@ export default async function ProfilePage() {
           </div>
 
           {/* Sidebar footer */}
-          <div className="space-y-0.5 border-t border-white/[0.06] p-3">
+          <div className="border-app space-y-0.5 border-t p-3">
             <Link
               href="/profile"
-              className="flex h-9 w-full items-center gap-2.5 rounded border-l-2 border-[#FF2D55] bg-[#2D1018] pl-[6px] text-sm text-[#F0F0F0]"
+              className="border-app-accent bg-app-card-hover text-app flex h-9 w-full items-center gap-2.5 rounded border-l-2 pl-[6px] text-sm"
             >
               <User className="h-4 w-4" />
               Profile
             </Link>
-            <button className="flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm text-[#888888] transition-colors hover:bg-[#1A0A0D] hover:text-[#F0F0F0]">
+            <button className="text-app-muted hover-app-row flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm transition-colors">
               <Settings className="h-4 w-4" />
               Settings
             </button>
-            <button className="flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm text-[#888888] transition-colors hover:bg-[#1A0A0D] hover:text-[#F0F0F0]">
+            <button className="text-app-muted hover-app-row flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm transition-colors">
               <HelpCircle className="h-4 w-4" />
               Help
             </button>
             <form action={handleSignOut}>
               <button
                 type="submit"
-                className="flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm text-[#888888] transition-colors hover:bg-[#1A0A0D] hover:text-[#FF2D55]"
+                className="text-app-muted hover:bg-app-card hover:text-app-accent flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm transition-colors"
               >
                 <LogOut className="h-4 w-4" />
                 Sign Out
@@ -136,16 +136,14 @@ export default async function ProfilePage() {
 
         {/* Main */}
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="mb-1 text-3xl font-semibold text-[#F0F0F0]">
-            Profile
-          </h1>
-          <p className="mb-8 text-sm text-[#888888]">
+          <h1 className="text-app mb-1 text-3xl font-semibold">Profile</h1>
+          <p className="text-app-muted mb-8 text-sm">
             Manage your account details
           </p>
 
           <div className="max-w-lg space-y-6">
             {/* Avatar + name card */}
-            <div className="rounded-md border border-white/[0.06] bg-[#0D0D0D] p-6">
+            <div className="border-app bg-app-surface rounded-md border p-6">
               <div className="mb-6 flex items-center gap-4">
                 <div
                   className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold"
@@ -157,10 +155,10 @@ export default async function ProfilePage() {
                   {initials}
                 </div>
                 <div>
-                  <p className="font-semibold text-[#F0F0F0]">
+                  <p className="text-app font-semibold">
                     {user.name ?? 'No name set'}
                   </p>
-                  <p className="text-sm text-[#555555]">{user.email}</p>
+                  <p className="text-app-dim text-sm">{user.email}</p>
                 </div>
               </div>
 
@@ -168,22 +166,20 @@ export default async function ProfilePage() {
             </div>
 
             {/* Account info */}
-            <div className="rounded-md border border-white/[0.06] bg-[#0D0D0D] p-6">
-              <h2 className="mb-4 text-sm font-semibold text-[#F0F0F0]">
-                Account
-              </h2>
+            <div className="border-app bg-app-surface rounded-md border p-6">
+              <h2 className="text-app mb-4 text-sm font-semibold">Account</h2>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#555555]">Member since</span>
-                  <span className="text-sm text-[#888888]">
+                  <span className="text-app-dim text-xs">Member since</span>
+                  <span className="text-app-muted text-sm">
                     {format(user.createdAt, 'MMM d, yyyy')}
                   </span>
                 </div>
-                <div className="h-px bg-white/[0.06]" />
+                <div className="border-app border-t" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#555555]">Password auth</span>
+                  <span className="text-app-dim text-xs">Password auth</span>
                   <span
-                    className={`text-xs font-medium ${hasPassword ? 'text-emerald-500' : 'text-[#555555]'}`}
+                    className={`text-xs font-medium ${hasPassword ? 'text-emerald-500' : 'text-app-dim'}`}
                   >
                     {hasPassword ? 'Enabled' : 'Not set'}
                   </span>
@@ -191,14 +187,14 @@ export default async function ProfilePage() {
 
                 {providers.length > 0 && (
                   <>
-                    <div className="h-px bg-white/[0.06]" />
+                    <div className="border-app border-t" />
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-[#555555]">
+                      <span className="text-app-dim text-xs">
                         Linked accounts
                       </span>
                       <div className="flex gap-2">
                         {providers.includes('github') && (
-                          <span className="flex items-center gap-1 rounded-full border border-white/10 px-2 py-0.5 text-xs text-[#888888]">
+                          <span className="border-app-mid text-app-muted flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
                             <svg
                               className="h-3 w-3"
                               viewBox="0 0 24 24"
@@ -210,7 +206,7 @@ export default async function ProfilePage() {
                           </span>
                         )}
                         {providers.includes('google') && (
-                          <span className="flex items-center gap-1 rounded-full border border-white/10 px-2 py-0.5 text-xs text-[#888888]">
+                          <span className="border-app-mid text-app-muted flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
                             <svg
                               className="h-3 w-3"
                               viewBox="0 0 24 24"

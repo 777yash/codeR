@@ -37,11 +37,52 @@ export function EditorClient({
     fontSize,
     setLanguage,
     setLastSaved,
+    renameFile,
+    files,
   } = useEditorStore()
 
+  const LANG_EXT: Record<string, string> = {
+    javascript: 'js',
+    typescript: 'ts',
+    python: 'py',
+    java: 'java',
+    cpp: 'cpp',
+    c: 'c',
+    csharp: 'cs',
+    go: 'go',
+    rust: 'rs',
+    ruby: 'rb',
+    php: 'php',
+    swift: 'swift',
+    kotlin: 'kt',
+    scala: 'scala',
+    r: 'r',
+    sql: 'sql',
+    bash: 'sh',
+    lua: 'lua',
+    perl: 'pl',
+    haskell: 'hs',
+    elixir: 'ex',
+    clojure: 'clj',
+    dart: 'dart',
+    julia: 'jl',
+    matlab: 'm',
+    vbnet: 'vb',
+    cobol: 'cob',
+    fortran: 'f90',
+    assembly: 'asm',
+  }
+
   useEffect(() => {
-    if (initialLanguage) setLanguage(initialLanguage)
-  }, [initialLanguage, setLanguage])
+    if (!initialLanguage) return
+    setLanguage(initialLanguage)
+    const defaultFile = files.find((f) => f.id === 'default')
+    if (defaultFile && defaultFile.name === 'main.js') {
+      const ext = LANG_EXT[initialLanguage] ?? 'txt'
+      renameFile('default', `main.${ext}`)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLanguage])
 
   const handleEditorMount: OnMount = useCallback(
     async (editor) => {
@@ -63,9 +104,15 @@ export function EditorClient({
         connect: true,
       })
       const ytext = ydoc.getText('content')
+      const model = editor.getModel()
+      if (!model) {
+        provider.destroy()
+        ydoc.destroy()
+        return
+      }
       const binding = new MonacoBinding(
         ytext,
-        editor.getModel()!,
+        model,
         new Set([editor]),
         provider.awareness
       )

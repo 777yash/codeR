@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { AuthSessionProvider } from '@/components/providers/session-provider'
 import { Toaster } from '@/components/ui/sonner'
@@ -29,8 +30,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('coder-theme')==='light')document.documentElement.classList.add('light')}catch(e){}`,
+          }}
+        />
         <AuthSessionProvider>
           {children}
           <Toaster />

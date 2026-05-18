@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { AppLogo } from '@/components/app-logo'
 import { Loader2 } from 'lucide-react'
 
 interface Props {
@@ -54,23 +55,18 @@ export function SignUpForm({ callbackUrl }: Props) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black px-4">
+    <div className="bg-app flex min-h-screen items-center justify-center px-4">
       <div
-        className="w-full max-w-[420px] rounded-[10px] border border-white/10 bg-[#1A0A0D] px-10 py-10"
-        style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}
+        className="border-app-mid bg-app-card w-full max-w-[420px] rounded-[10px] border px-10 py-10"
+        style={{ boxShadow: 'var(--coder-shadow-md)' }}
       >
         {/* Logo */}
-        <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-0.5">
-            <span className="text-xl font-bold text-white">codeR</span>
-            <span className="animate-pulse text-[#FF2D55]">▊</span>
-          </Link>
+        <div className="mb-8 flex justify-center">
+          <AppLogo size="lg" href="/" />
         </div>
 
-        <h1 className="text-2xl font-semibold text-[#F0F0F0]">
-          Create an account
-        </h1>
-        <p className="mt-1 mb-6 text-sm text-[#888888]">
+        <h1 className="text-app text-2xl font-semibold">Create an account</h1>
+        <p className="text-app-muted mt-1 mb-6 text-sm">
           Start collaborating in minutes
         </p>
 
@@ -79,7 +75,7 @@ export function SignUpForm({ callbackUrl }: Props) {
           <button
             type="button"
             onClick={() => signIn('github', { callbackUrl })}
-            className="flex h-11 w-full items-center justify-center gap-3 rounded-md border border-white/10 bg-[#0D0D0D] text-sm font-medium text-[#F0F0F0] transition-all duration-150 hover:border-white/20 hover:bg-[#1A1A1A]"
+            className="border-app-mid bg-app-surface text-app hover-app-card-lift flex h-11 w-full items-center justify-center gap-3 rounded-md border text-sm font-medium transition-all duration-150"
           >
             <GithubIcon />
             Continue with GitHub
@@ -87,7 +83,7 @@ export function SignUpForm({ callbackUrl }: Props) {
           <button
             type="button"
             onClick={() => signIn('google', { callbackUrl })}
-            className="flex h-11 w-full items-center justify-center gap-3 rounded-md border border-white/10 bg-[#0D0D0D] text-sm font-medium text-[#F0F0F0] transition-all duration-150 hover:border-white/20 hover:bg-[#1A1A1A]"
+            className="border-app-mid bg-app-surface text-app hover-app-card-lift flex h-11 w-full items-center justify-center gap-3 rounded-md border text-sm font-medium transition-all duration-150"
           >
             <GoogleIcon />
             Continue with Google
@@ -96,9 +92,9 @@ export function SignUpForm({ callbackUrl }: Props) {
 
         {/* Divider */}
         <div className="relative my-6 flex items-center">
-          <div className="h-px flex-1 bg-white/[0.06]" />
-          <span className="mx-4 text-xs text-[#555555]">or</span>
-          <div className="h-px flex-1 bg-white/[0.06]" />
+          <div className="border-app h-px flex-1 border-t" />
+          <span className="text-app-dim mx-4 text-xs">or</span>
+          <div className="border-app h-px flex-1 border-t" />
         </div>
 
         {/* Registration form */}
@@ -110,7 +106,7 @@ export function SignUpForm({ callbackUrl }: Props) {
           )}
 
           <div className="space-y-1.5">
-            <label htmlFor="name" className="block text-sm text-[#888888]">
+            <label htmlFor="name" className="text-app-muted block text-sm">
               Full name
             </label>
             <input
@@ -121,12 +117,12 @@ export function SignUpForm({ callbackUrl }: Props) {
               required
               minLength={2}
               placeholder="Alice Johnson"
-              className="h-11 w-full rounded-md border border-white/10 bg-[#0D0D0D] px-3 text-sm text-[#F0F0F0] transition-all duration-150 outline-none placeholder:text-[#555555] focus:border-[#FF2D55] focus:bg-[#1A0A0D]"
+              className="border-app-mid bg-app-surface text-app placeholder:text-app-dim focus:border-app-accent h-11 w-full rounded-md border px-3 text-sm transition-all duration-150 outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="email" className="block text-sm text-[#888888]">
+            <label htmlFor="email" className="text-app-muted block text-sm">
               Email address
             </label>
             <input
@@ -136,12 +132,12 @@ export function SignUpForm({ callbackUrl }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              className="h-11 w-full rounded-md border border-white/10 bg-[#0D0D0D] px-3 text-sm text-[#F0F0F0] transition-all duration-150 outline-none placeholder:text-[#555555] focus:border-[#FF2D55] focus:bg-[#1A0A0D]"
+              className="border-app-mid bg-app-surface text-app placeholder:text-app-dim focus:border-app-accent h-11 w-full rounded-md border px-3 text-sm transition-all duration-150 outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="password" className="block text-sm text-[#888888]">
+            <label htmlFor="password" className="text-app-muted block text-sm">
               Password
             </label>
             <input
@@ -152,14 +148,14 @@ export function SignUpForm({ callbackUrl }: Props) {
               required
               minLength={8}
               placeholder="Min. 8 characters"
-              className="h-11 w-full rounded-md border border-white/10 bg-[#0D0D0D] px-3 text-sm text-[#F0F0F0] transition-all duration-150 outline-none placeholder:text-[#555555] focus:border-[#FF2D55] focus:bg-[#1A0A0D]"
+              className="border-app-mid bg-app-surface text-app placeholder:text-app-dim focus:border-app-accent h-11 w-full rounded-md border px-3 text-sm transition-all duration-150 outline-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="flex h-11 w-full items-center justify-center rounded-md bg-[#FF2D55] text-sm font-semibold text-white transition-all duration-150 hover:bg-[#FF2D55]/90 disabled:opacity-60"
+            className="bg-app-accent flex h-11 w-full items-center justify-center rounded-md text-sm font-semibold text-white transition-all duration-150 hover:opacity-90 disabled:opacity-60"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -169,9 +165,9 @@ export function SignUpForm({ callbackUrl }: Props) {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-[#888888]">
+        <p className="text-app-muted mt-6 text-center text-sm">
           Already have an account?{' '}
-          <Link href="/signin" className="text-[#FF2D55] hover:underline">
+          <Link href="/signin" className="text-app-accent hover:underline">
             Sign in
           </Link>
         </p>

@@ -2,7 +2,7 @@
 
 import { useEditorStore } from '@/stores/editor-store'
 import { FileCode, Plus, FolderOpen } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 const EXT_TO_LANG: Record<string, string> = {
   js: 'javascript',
@@ -45,10 +45,45 @@ interface FileExplorerProps {
 }
 
 export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
-  const { files, activeFileId, setActiveFile, addFile, language } =
+  const { files, activeFileId, setActiveFile, addFile, renameFile, language } =
     useEditorStore()
   const [showInput, setShowInput] = useState(false)
   const [newName, setNewName] = useState('')
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [contextMenu, setContextMenu] = useState<{
+    fileId: string
+    x: number
+    y: number
+  } | null>(null)
+  const contextMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (
+        contextMenuRef.current &&
+        !contextMenuRef.current.contains(e.target as Node)
+      ) {
+        setContextMenu(null)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  function startRename(fileId: string, currentName: string) {
+    setContextMenu(null)
+    setRenamingId(fileId)
+    setRenameValue(currentName)
+  }
+
+  function commitRename() {
+    if (renamingId && renameValue.trim()) {
+      renameFile(renamingId, renameValue.trim())
+    }
+    setRenamingId(null)
+    setRenameValue('')
+  }
 
   function handleAdd() {
     const name = newName.trim()
@@ -65,16 +100,16 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
   }
 
   return (
-    <div className="flex w-[220px] shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-[#0D0D0D]">
+    <div className="border-app bg-app-surface flex w-[220px] shrink-0 flex-col overflow-hidden border-r">
       {/* Header */}
       <div className="flex h-9 items-center justify-between px-3">
-        <span className="text-[10px] font-semibold tracking-widest text-[#555555] uppercase">
+        <span className="text-app-dim text-[10px] font-semibold tracking-widest uppercase">
           {roomName}
         </span>
         <button
           onClick={() => setShowInput(true)}
           title="New file"
-          className="rounded p-0.5 text-[#555555] transition-colors hover:bg-white/5 hover:text-[#888888]"
+          className="text-app-dim hover:text-app-muted rounded p-0.5 transition-colors hover:bg-white/5"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -83,24 +118,75 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
       {/* File tree */}
       <div className="flex-1 overflow-y-auto px-1 pb-1">
         <div className="flex items-center gap-1.5 px-2 py-0.5">
-          <FolderOpen className="h-3.5 w-3.5 shrink-0 text-[#555555]" />
-          <span className="text-[11px] text-[#555555]">{roomName}/</span>
+          <FolderOpen className="text-app-dim h-3.5 w-3.5 shrink-0" />
+          <span className="text-app-dim text-[11px]">{roomName}/</span>
         </div>
 
         {files.map((file) => (
-          <button
+          <div
             key={file.id}
-            onClick={() => setActiveFile(file.id)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              setContextMenu({ fileId: file.id, x: e.clientX, y: e.clientY })
+            }}
             className={`group flex w-full items-center gap-1.5 rounded-sm py-[5px] text-xs transition-colors ${
               activeFileId === file.id
-                ? 'border-l-2 border-[#FF2D55] bg-[#2D1018] pr-2 pl-[6px] text-[#F0F0F0]'
-                : 'pr-2 pl-2 text-[#888888] hover:bg-[#1A0A0D] hover:text-[#F0F0F0]'
+                ? 'bg-app-card-hover text-app border-l-2 border-[#FF2D55] pr-2 pl-[6px]'
+                : 'text-app-muted hover-app-card hover:text-app pr-2 pl-2'
             }`}
           >
-            <FileCode className="h-3.5 w-3.5 shrink-0 opacity-70" />
-            <span className="truncate">{file.name}</span>
-          </button>
+            <button
+              onClick={() => setActiveFile(file.id)}
+              onDoubleClick={() => startRename(file.id, file.name)}
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5"
+            >
+              <FileCode className="h-3.5 w-3.5 shrink-0 opacity-70" />
+              {renamingId === file.id ? (
+                <input
+                  autoFocus
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitRename()
+                    if (e.key === 'Escape') {
+                      setRenamingId(null)
+                      setRenameValue('')
+                    }
+                  }}
+                  onBlur={commitRename}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-app text-app w-full rounded border border-[#FF2D55]/40 px-1 py-0 text-xs outline-none"
+                />
+              ) : (
+                <span className="truncate">{file.name}</span>
+              )}
+            </button>
+          </div>
         ))}
+
+        {/* Context menu */}
+        {contextMenu && (
+          <div
+            ref={contextMenuRef}
+            style={{
+              position: 'fixed',
+              top: contextMenu.y,
+              left: contextMenu.x,
+              zIndex: 200,
+            }}
+            className="border-app-mid bg-app-surface min-w-[140px] rounded-md border py-1 shadow-[0_4px_16px_rgba(0,0,0,0.4)]"
+          >
+            <button
+              onClick={() => {
+                const file = files.find((f) => f.id === contextMenu.fileId)
+                if (file) startRename(file.id, file.name)
+              }}
+              className="text-app hover-app-card flex w-full items-center px-3 py-1.5 text-xs"
+            >
+              Rename
+            </button>
+          </div>
+        )}
 
         {showInput && (
           <div className="px-2 py-1">
@@ -119,17 +205,17 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
                 if (!newName.trim()) setShowInput(false)
               }}
               placeholder="filename.js"
-              className="w-full rounded border border-[#FF2D55]/40 bg-black px-2 py-0.5 text-xs text-white outline-none placeholder:text-[#555555] focus:border-[#FF2D55]/70"
+              className="bg-app text-app placeholder:text-app-dim w-full rounded border border-[#FF2D55]/40 px-2 py-0.5 text-xs outline-none focus:border-[#FF2D55]/70"
             />
           </div>
         )}
       </div>
 
       {/* Add file footer */}
-      <div className="border-t border-white/[0.06] px-2 py-1.5">
+      <div className="border-app border-t px-2 py-1.5">
         <button
           onClick={() => setShowInput(true)}
-          className="flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-[11px] text-[#555555] transition-colors hover:text-[#888888]"
+          className="text-app-dim hover:text-app-muted flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-[11px] transition-colors"
         >
           <Plus className="h-3 w-3" />
           Add file

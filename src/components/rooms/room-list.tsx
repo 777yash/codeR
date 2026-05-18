@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -22,31 +22,31 @@ type RoomWithRelations = Room & {
 
 interface RoomListProps {
   initialRooms: RoomWithRelations[]
+  view?: string
 }
 
-export function RoomList({ initialRooms }: RoomListProps) {
+export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
   const router = useRouter()
   const [rooms, setRooms] = useState(initialRooms)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [searchQuery] = useState('')
-  const [activeFilter, setActiveFilter] = useState<'all' | 'owned' | 'shared'>(
-    'all'
-  )
-
-  const filteredRooms = rooms.filter((room) => {
-    const matchesSearch =
-      room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.description?.toLowerCase().includes(searchQuery.toLowerCase())
-
-    if (activeFilter === 'owned') {
-      return matchesSearch && room.members.some((m) => m.role === 'OWNER')
-    }
-    if (activeFilter === 'shared') {
-      return matchesSearch && room.members.some((m) => m.role !== 'OWNER')
-    }
-    return matchesSearch
+  const [starredIds, setStarredIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    const stored = localStorage.getItem('coder-starred-rooms')
+    return stored ? JSON.parse(stored) : []
   })
+
+  useEffect(() => {
+    const onStorage = () => {
+      const updated = localStorage.getItem('coder-starred-rooms')
+      setStarredIds(updated ? JSON.parse(updated) : [])
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  const filteredRooms =
+    view === 'starred' ? rooms.filter((r) => starredIds.includes(r.id)) : rooms
 
   const handleCreateRoom = useCallback(
     async (data: {
@@ -86,26 +86,6 @@ export function RoomList({ initialRooms }: RoomListProps) {
 
   return (
     <>
-      <div className="mb-6 flex border-b border-white/[0.06]">
-        {(['all', 'owned', 'shared'] as const).map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setActiveFilter(filter)}
-            className={`px-4 pb-3 text-sm transition-colors ${
-              activeFilter === filter
-                ? 'border-b-2 border-[#FF2D55] text-[#F0F0F0]'
-                : 'text-[#888888] hover:text-[#F0F0F0]'
-            }`}
-          >
-            {filter === 'all'
-              ? `All (${rooms.length})`
-              : filter === 'owned'
-                ? 'My Rooms'
-                : 'Shared'}
-          </button>
-        ))}
-      </div>
-
       <div className="grid grid-cols-3 gap-5">
         <button
           onClick={() => setIsCreateOpen(true)}
@@ -128,15 +108,19 @@ export function RoomList({ initialRooms }: RoomListProps) {
         ))}
       </div>
 
-      {filteredRooms.length === 0 && rooms.length > 0 && (
+      {view === 'starred' && filteredRooms.length === 0 && (
         <p className="mt-8 text-center text-sm text-[#555555]">
-          No rooms match your search
+          No starred rooms — hover a room card and click ☆ to star it
         </p>
       )}
 
-      {rooms.length === 0 && (
+      {view !== 'starred' && rooms.length === 0 && (
         <p className="mt-8 text-center text-sm text-[#555555]">
-          No rooms yet — create your first room to start collaborating
+          {view === 'shared'
+            ? 'No rooms shared with you yet'
+            : view === 'recent'
+              ? 'No recent rooms'
+              : 'No rooms yet — create your first room to start collaborating'}
         </p>
       )}
 

@@ -67,7 +67,7 @@ export function FileTabs() {
   }
 
   return (
-    <div className="flex h-9 shrink-0 items-stretch border-b border-white/[0.06] bg-[#0D0D0D]">
+    <div className="border-app bg-app-surface flex h-9 shrink-0 items-stretch border-b">
       {/* Tabs */}
       <div className="flex flex-1 items-stretch overflow-x-auto">
         {files.map((file) => {
@@ -76,10 +76,10 @@ export function FileTabs() {
             <div
               key={file.id}
               onClick={() => setActiveFile(file.id)}
-              className={`group relative flex max-w-[180px] min-w-[100px] cursor-pointer items-center gap-1.5 border-r border-white/[0.06] px-3 text-xs transition-colors ${
+              className={`group border-app relative flex max-w-[180px] min-w-[100px] cursor-pointer items-center gap-1.5 border-r px-3 text-xs transition-colors ${
                 isActive
-                  ? 'bg-black text-[#F0F0F0]'
-                  : 'bg-[#0D0D0D] text-[#555555] hover:bg-[#111] hover:text-[#888888]'
+                  ? 'bg-app text-app'
+                  : 'bg-app-surface text-app-dim hover-app-card hover:text-app-muted'
               }`}
             >
               {/* Active indicator: top border */}
@@ -94,7 +94,7 @@ export function FileTabs() {
                     e.stopPropagation()
                     removeFile(file.id)
                   }}
-                  className="ml-auto shrink-0 rounded p-px opacity-0 transition-opacity group-hover:opacity-100 hover:text-[#F0F0F0]"
+                  className="hover:text-app ml-auto shrink-0 rounded p-px opacity-0 transition-opacity group-hover:opacity-100"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -123,11 +123,11 @@ export function FileTabs() {
               if (!newFileName.trim()) setShowInput(false)
             }}
             placeholder="filename.js"
-            className="h-6 w-28 rounded border border-white/20 bg-black/70 px-2 text-xs text-white outline-none placeholder:text-[#555555] focus:border-[#FF2D55]/50"
+            className="border-app-mid bg-app text-app placeholder:text-app-dim h-6 w-28 rounded border px-2 text-xs outline-none focus:border-[#FF2D55]/50"
           />
           <button
             onClick={handleAdd}
-            className="h-6 rounded px-1.5 text-xs text-[#888888] hover:bg-white/10 hover:text-white"
+            className="text-app-muted hover:text-app h-6 rounded px-1.5 text-xs hover:bg-white/10"
           >
             Add
           </button>
@@ -136,7 +136,7 @@ export function FileTabs() {
         <button
           onClick={() => setShowInput(true)}
           title="New file"
-          className="flex h-full w-9 items-center justify-center text-[#555555] transition-colors hover:bg-white/5 hover:text-[#888888]"
+          className="text-app-dim hover:text-app-muted flex h-full w-9 items-center justify-center transition-colors hover:bg-white/5"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>

@@ -110,17 +110,17 @@ export function CollabPanel({
   ]
 
   return (
-    <div className="flex w-[280px] shrink-0 flex-col overflow-hidden border-l border-white/[0.06] bg-[#0D0D0D]">
+    <div className="border-app bg-app-surface flex w-[280px] shrink-0 flex-col overflow-hidden border-l">
       {/* Tab bar */}
-      <div className="flex h-10 shrink-0 items-stretch border-b border-white/[0.06]">
+      <div className="border-app flex h-10 shrink-0 items-stretch border-b">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex flex-1 items-center justify-center gap-1 text-xs font-medium capitalize transition-colors ${
               tab === t.id
-                ? 'border-b-2 border-[#FF2D55] text-[#F0F0F0]'
-                : 'text-[#555555] hover:text-[#888888]'
+                ? 'text-app border-b-2 border-[#FF2D55]'
+                : 'text-app-dim hover:text-app-muted'
             }`}
           >
             {t.icon}
@@ -135,12 +135,12 @@ export function CollabPanel({
       <div className="flex-1 overflow-y-auto">
         {tab === 'users' && (
           <>
-            <p className="px-4 pt-3 pb-1 text-[10px] font-semibold tracking-widest text-[#555555] uppercase">
+            <p className="text-app-dim px-4 pt-3 pb-1 text-[10px] font-semibold tracking-widest uppercase">
               Online · {onlineMembers.length}
             </p>
 
             {onlineMembers.length === 0 && (
-              <p className="px-4 py-3 text-xs text-[#555555]">
+              <p className="text-app-dim px-4 py-3 text-xs">
                 No one else online
               </p>
             )}
@@ -154,7 +154,7 @@ export function CollabPanel({
               return (
                 <div
                   key={member.id}
-                  className="flex items-center gap-3 rounded-sm px-4 py-2.5 transition-colors hover:bg-[#1A0A0D]"
+                  className="hover-app-card flex items-center gap-3 rounded-sm px-4 py-2.5 transition-colors"
                 >
                   <div
                     style={{ backgroundColor: color + '28', color }}
@@ -164,11 +164,11 @@ export function CollabPanel({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
-                      <span className="truncate text-sm font-medium text-[#F0F0F0]">
+                      <span className="text-app truncate text-sm font-medium">
                         {member.name ?? 'Unknown'}
                       </span>
                       {isMe && (
-                        <span className="shrink-0 text-[10px] text-[#555555]">
+                        <span className="text-app-dim shrink-0 text-[10px]">
                           (you)
                         </span>
                       )}
@@ -187,8 +187,8 @@ export function CollabPanel({
             {/* Offline members */}
             {offlineMembers.length > 0 && (
               <>
-                <div className="border-t border-white/[0.06] px-4 pt-3 pb-1">
-                  <p className="text-[10px] font-semibold tracking-widest text-[#333] uppercase">
+                <div className="border-app border-t px-4 pt-3 pb-1">
+                  <p className="text-app-dim text-[10px] font-semibold tracking-widest uppercase">
                     Offline · {offlineMembers.length}
                   </p>
                 </div>
@@ -201,16 +201,16 @@ export function CollabPanel({
                       key={member.id}
                       className="flex items-center gap-3 rounded-sm px-4 py-2.5 opacity-40"
                     >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-[11px] font-semibold text-[#555555]">
+                      <div className="text-app-dim flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-[11px] font-semibold">
                         {getInitials(member.name)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1">
-                          <span className="truncate text-sm font-medium text-[#555555]">
+                          <span className="text-app-dim truncate text-sm font-medium">
                             {member.name ?? 'Unknown'}
                           </span>
                           {isMe && (
-                            <span className="shrink-0 text-[10px] text-[#333]">
+                            <span className="text-app-dim shrink-0 text-[10px]">
                               (you)
                             </span>
                           )}
@@ -234,7 +234,7 @@ export function CollabPanel({
                 {!showInvite ? (
                   <button
                     onClick={() => setShowInvite(true)}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-md border border-white/[0.10] px-3 py-2 text-xs text-[#888888] transition-colors hover:border-[rgba(255,45,85,0.30)] hover:bg-[rgba(255,45,85,0.08)] hover:text-[#FF2D55]"
+                    className="border-app-mid text-app-muted flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs transition-colors hover:border-[rgba(255,45,85,0.30)] hover:bg-[rgba(255,45,85,0.08)] hover:text-[#FF2D55]"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
                     Invite to room
@@ -242,10 +242,10 @@ export function CollabPanel({
                 ) : (
                   <form
                     onSubmit={handleInvite}
-                    className="rounded-md border border-white/[0.10] bg-[#111] p-3"
+                    className="border-app-mid bg-app-surface rounded-md border p-3"
                   >
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-xs font-medium text-[#F0F0F0]">
+                      <span className="text-app text-xs font-medium">
                         Invite member
                       </span>
                       <button
@@ -255,7 +255,7 @@ export function CollabPanel({
                           setInviteError('')
                           setEmail('')
                         }}
-                        className="text-[#555555] hover:text-[#888888]"
+                        className="text-app-dim hover:text-app-muted"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -267,7 +267,7 @@ export function CollabPanel({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="user@example.com"
-                      className="mb-2 w-full rounded border border-white/[0.10] bg-black px-2 py-1.5 text-xs text-[#F0F0F0] outline-none placeholder:text-[#555555] focus:border-[#FF2D55]/50"
+                      className="border-app-mid bg-app text-app placeholder:text-app-dim mb-2 w-full rounded border px-2 py-1.5 text-xs outline-none focus:border-[#FF2D55]/50"
                     />
 
                     <div className="mb-2 flex gap-2">
@@ -278,8 +278,8 @@ export function CollabPanel({
                           onClick={() => setRole(r)}
                           className={`flex-1 rounded py-1 text-xs font-medium transition-colors ${
                             role === r
-                              ? 'bg-[#2D1018] text-[#FF2D55]'
-                              : 'text-[#555555] hover:text-[#888888]'
+                              ? 'bg-app-card-hover text-[#FF2D55]'
+                              : 'text-app-dim hover:text-app-muted'
                           }`}
                         >
                           {r.charAt(0) + r.slice(1).toLowerCase()}
@@ -310,15 +310,15 @@ export function CollabPanel({
 
         {tab === 'chat' && (
           <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
-            <MessageSquare className="h-8 w-8 text-[#2D1018]" />
-            <p className="text-xs text-[#555555]">Coming soon</p>
+            <MessageSquare className="text-app-card-hover h-8 w-8" />
+            <p className="text-app-dim text-xs">Coming soon</p>
           </div>
         )}
 
         {tab === 'history' && (
           <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
-            <History className="h-8 w-8 text-[#2D1018]" />
-            <p className="text-xs text-[#555555]">Coming soon</p>
+            <History className="text-app-card-hover h-8 w-8" />
+            <p className="text-app-dim text-xs">Coming soon</p>
           </div>
         )}
       </div>

@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { MoreHorizontal, Users, Globe, Lock, Code } from 'lucide-react'
+import Image from 'next/image'
+import { MoreHorizontal, Users, Globe, Lock, Code, Star } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useState } from 'react'
 import type {
   Room,
   User as PrismaUser,
@@ -57,9 +59,27 @@ const languageColors: Record<string, string> = {
 export function RoomCard({ room, onClick }: RoomCardProps) {
   const memberCount = room._count?.members ?? room.members?.length ?? 0
   const languageColor = languageColors[room.language] || '#888888'
+  const [starred, setStarred] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const stored = localStorage.getItem('coder-starred-rooms')
+    const ids: string[] = stored ? JSON.parse(stored) : []
+    return ids.includes(room.id)
+  })
+
+  function toggleStar(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const stored = localStorage.getItem('coder-starred-rooms')
+    const ids: string[] = stored ? JSON.parse(stored) : []
+    const next = starred
+      ? ids.filter((id) => id !== room.id)
+      : [...ids, room.id]
+    localStorage.setItem('coder-starred-rooms', JSON.stringify(next))
+    setStarred(!starred)
+  }
 
   return (
-    <div className="group relative flex h-48 flex-col justify-between rounded-md border border-white/10 bg-[#0D0D0D] p-4 transition-all hover:border-[#FF2D55]/30 hover:bg-[#1A0A0D]/50">
+    <div className="group border-app-mid bg-app-surface hover-app-card-lift relative flex h-48 flex-col justify-between rounded-md border p-4 transition-all hover:border-[#FF2D55]/30">
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
@@ -67,31 +87,44 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
               className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: languageColor }}
             />
-            <h3 className="truncate text-sm font-medium text-[#F0F0F0]">
+            <h3 className="text-app truncate text-sm font-medium">
               {room.name}
             </h3>
           </div>
           {room.description && (
-            <p className="mb-2 line-clamp-2 text-xs text-[#888888]">
+            <p className="text-app-muted mb-2 line-clamp-2 text-xs">
               {room.description}
             </p>
           )}
         </div>
-        <button
-          onClick={onClick}
-          className="flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/5"
-        >
-          <MoreHorizontal className="h-4 w-4 text-[#888888]" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleStar}
+            className="relative z-20 flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/5"
+            aria-label={starred ? 'Unstar room' : 'Star room'}
+          >
+            <Star
+              className="h-4 w-4 transition-colors"
+              style={{ color: starred ? '#FF9F0A' : '#555555' }}
+              fill={starred ? '#FF9F0A' : 'none'}
+            />
+          </button>
+          <button
+            onClick={onClick}
+            className="relative z-20 flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/5"
+          >
+            <MoreHorizontal className="h-4 w-4 text-[#888888]" />
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-xs text-[#888888]">
+          <div className="text-app-muted flex items-center gap-1 text-xs">
             <Code className="h-3.5 w-3.5" />
             <span>{room.language}</span>
           </div>
-          <div className="flex items-center gap-1 text-xs text-[#888888]">
+          <div className="text-app-muted flex items-center gap-1 text-xs">
             {room.isPublic ? (
               <Globe className="h-3.5 w-3.5" />
             ) : (
@@ -99,30 +132,32 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1 text-xs text-[#888888]">
+        <div className="text-app-muted flex items-center gap-1 text-xs">
           <Users className="h-3.5 w-3.5" />
           <span>{memberCount}</span>
         </div>
       </div>
 
-      <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-3">
+      <div className="border-app mt-auto flex items-center justify-between border-t pt-3">
         <div className="flex items-center gap-1.5">
           {room.owner?.image ? (
-            <img
+            <Image
               src={room.owner.image}
               alt={room.owner.name || 'Owner'}
-              className="h-5 w-5 rounded-full"
+              width={20}
+              height={20}
+              className="rounded-full"
             />
           ) : (
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF2D55]/20 text-[10px] font-medium text-[#FF2D55]">
               {(room.owner?.name || 'U')[0].toUpperCase()}
             </div>
           )}
-          <span className="text-xs text-[#888888]">
+          <span className="text-app-muted text-xs">
             {room.owner?.name || 'Unknown'}
           </span>
         </div>
-        <span className="text-xs text-[#555555]">
+        <span className="text-app-dim text-xs">
           {formatDistanceToNow(new Date(room.updatedAt), { addSuffix: true })}
         </span>
       </div>

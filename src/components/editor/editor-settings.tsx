@@ -23,12 +23,12 @@ export function EditorSettings({
   if (!open) return null
 
   return (
-    <div className="absolute top-10 right-2 z-50 w-64 rounded-md border border-white/10 bg-[#0D0D0D] p-3 shadow-lg">
+    <div className="border-app-mid bg-app-surface absolute top-10 right-2 z-50 w-64 rounded-md border p-3 shadow-lg">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-white">Editor Settings</h3>
+        <h3 className="text-app text-sm font-medium">Editor Settings</h3>
         <button
           onClick={onClose}
-          className="text-xs text-[#888888] hover:text-white"
+          className="text-app-muted hover:text-app text-xs"
         >
           ✕
         </button>
@@ -36,13 +36,13 @@ export function EditorSettings({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[#888888]">Line Numbers</span>
+          <span className="text-app-muted text-xs">Line Numbers</span>
           <select
             value={lineNumbers}
             onChange={(e) =>
               setLineNumbers(e.target.value as 'on' | 'off' | 'relative')
             }
-            className="h-6 rounded border border-white/10 bg-black/50 px-2 text-xs text-white"
+            className="border-app-mid bg-app text-app h-6 rounded border px-2 text-xs"
           >
             <option value="on">On</option>
             <option value="off">Off</option>
@@ -51,7 +51,7 @@ export function EditorSettings({
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[#888888]">Minimap</span>
+          <span className="text-app-muted text-xs">Minimap</span>
           <button
             onClick={() => setMinimap(!minimap)}
             className={`h-5 w-9 rounded-full transition-colors ${
@@ -67,7 +67,7 @@ export function EditorSettings({
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[#888888]">Word Wrap</span>
+          <span className="text-app-muted text-xs">Word Wrap</span>
           <button
             onClick={() => setWordWrap(wordWrap === 'on' ? 'off' : 'on')}
             className={`h-5 w-9 rounded-full transition-colors ${
@@ -84,8 +84,8 @@ export function EditorSettings({
 
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-[#888888]">Font Size</span>
-            <span className="text-xs text-white">{fontSize}px</span>
+            <span className="text-app-muted text-xs">Font Size</span>
+            <span className="text-app text-xs">{fontSize}px</span>
           </div>
           <input
             type="range"

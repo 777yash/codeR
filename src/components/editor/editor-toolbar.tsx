@@ -58,25 +58,25 @@ export function EditorToolbar() {
   const currentLang = LANGUAGES.find((l) => l.value === language)
 
   return (
-    <div className="relative flex h-10 shrink-0 items-center justify-between gap-2 border-b border-white/[0.06] bg-[#0D0D0D] px-3">
+    <div className="border-app bg-app-surface relative flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
       <div className="flex items-center gap-2">
         {/* Language pill */}
         <div ref={langRef} className="relative">
           <button
             onClick={() => setShowLang((v) => !v)}
-            className="flex h-7 items-center gap-1.5 rounded-md border border-white/[0.10] bg-[#1A0A0D] px-2.5 text-xs text-[#F0F0F0] transition-colors hover:border-white/20 hover:bg-[#2D1018]"
+            className="border-app-mid bg-app-card text-app hover:border-app-mid hover:bg-app-card-hover flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs transition-colors"
           >
             <LanguageIcon language={language} size={14} />
             <span className="font-medium">
               {currentLang?.label ?? language}
             </span>
             <ChevronDown
-              className={`h-3 w-3 text-[#555555] transition-transform ${showLang ? 'rotate-180' : ''}`}
+              className={`text-app-dim h-3 w-3 transition-transform ${showLang ? 'rotate-180' : ''}`}
             />
           </button>
 
           {showLang && (
-            <div className="absolute top-8 left-0 z-50 max-h-56 w-44 overflow-y-auto rounded-md border border-white/[0.10] bg-[#0D0D0D] py-1 shadow-[0_4px_16px_rgba(0,0,0,0.6)]">
+            <div className="border-app-mid bg-app-surface absolute top-8 left-0 z-50 max-h-56 w-44 overflow-y-auto rounded-md border py-1 shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.value}
@@ -86,8 +86,8 @@ export function EditorToolbar() {
                   }}
                   className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
                     lang.value === language
-                      ? 'bg-[#2D1018] text-[#FF2D55]'
-                      : 'text-[#888888] hover:bg-[#1A0A0D] hover:text-[#F0F0F0]'
+                      ? 'bg-app-card-hover text-[#FF2D55]'
+                      : 'text-app-muted hover-app-card hover:text-app'
                   }`}
                 >
                   <LanguageIcon language={lang.value} size={14} />
@@ -102,7 +102,7 @@ export function EditorToolbar() {
         <select
           value={theme}
           onChange={(e) => setTheme(e.target.value as 'vs-dark' | 'light')}
-          className="h-7 rounded-md border border-white/[0.10] bg-[#1A0A0D] px-2 text-xs text-[#F0F0F0] transition-colors outline-none hover:border-white/20 hover:bg-[#2D1018]"
+          className="border-app-mid bg-app-card text-app hover:bg-app-card-hover h-7 rounded-md border px-2 text-xs transition-colors outline-none"
         >
           <option value="vs-dark">VS Dark</option>
           <option value="light">Light</option>
@@ -112,12 +112,12 @@ export function EditorToolbar() {
       {/* Right side */}
       <div className="flex items-center gap-2">
         {isSaving ? (
-          <div className="flex items-center gap-1 text-xs text-[#555555]">
+          <div className="text-app-dim flex items-center gap-1 text-xs">
             <Save className="h-3 w-3 animate-pulse" />
             <span>Saving…</span>
           </div>
         ) : lastSaved ? (
-          <div className="flex items-center gap-1 text-xs text-[#555555]">
+          <div className="text-app-dim flex items-center gap-1 text-xs">
             <Check className="h-3 w-3 text-[#32D74B]" />
             <span>Saved</span>
           </div>
@@ -128,8 +128,8 @@ export function EditorToolbar() {
           title="Editor settings"
           className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
             showSettings
-              ? 'bg-white/10 text-[#F0F0F0]'
-              : 'text-[#555555] hover:bg-white/5 hover:text-[#888888]'
+              ? 'text-app bg-white/10'
+              : 'text-app-dim hover:text-app-muted hover:bg-white/5'
           }`}
         >
           <Settings className="h-3.5 w-3.5" />
