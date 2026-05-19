@@ -16,10 +16,15 @@ const deleteSchema = z.object({
 async function getRoom(roomId: string, userId: string) {
   const room = await prisma.room.findUnique({
     where: { id: roomId },
-    select: { ownerId: true },
+    select: {
+      ownerId: true,
+      members: { where: { userId }, select: { role: true } },
+    },
   })
   if (!room) return null
-  return { ownerId: room.ownerId, isOwner: room.ownerId === userId }
+  const isOwner = room.ownerId === userId
+  const memberRole = room.members[0]?.role ?? null
+  return { isOwner, canShare: isOwner || memberRole === 'EDITOR' }
 }
 
 export async function POST(
@@ -38,7 +43,7 @@ export async function POST(
     return NextResponse.json({ error: 'Room not found' }, { status: 404 })
   }
 
-  if (!room.isOwner) {
+  if (!room.canShare) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

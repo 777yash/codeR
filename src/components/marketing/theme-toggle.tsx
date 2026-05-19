@@ -1,24 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { Sun, Moon } from 'lucide-react'
 
 export function ThemeToggle() {
-  const [isLight, setIsLight] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('coder-theme') === 'light'
-  })
-
   function toggle() {
-    const next = !isLight
-    setIsLight(next)
-    if (next) {
-      document.documentElement.classList.add('light')
-      localStorage.setItem('coder-theme', 'light')
-    } else {
-      document.documentElement.classList.remove('light')
-      localStorage.setItem('coder-theme', 'dark')
-    }
+    const isLight = document.documentElement.classList.toggle('light')
+    localStorage.setItem('coder-theme', isLight ? 'light' : 'dark')
   }
 
   return (
@@ -31,7 +18,8 @@ export function ThemeToggle() {
         color: 'var(--coder-text-secondary)',
       }}
     >
-      {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+      <Sun className="hidden h-4 w-4 [.light_&]:block" />
+      <Moon className="block h-4 w-4 [.light_&]:hidden" />
     </button>
   )
 }

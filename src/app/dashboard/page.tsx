@@ -11,7 +11,6 @@ import {
   Settings,
   HelpCircle,
   Search,
-  Bell,
   LogOut,
   User,
 } from 'lucide-react'
@@ -19,6 +18,7 @@ import type { Metadata } from 'next'
 import { RoomList } from '@/components/rooms/room-list'
 import { CollabWarmup } from '@/components/collab-warmup'
 import { ThemeToggle } from '@/components/marketing/theme-toggle'
+import { InviteNotifications } from '@/components/notifications/invite-notifications'
 
 export const metadata: Metadata = {
   title: 'Dashboard — codeR',
@@ -105,7 +105,17 @@ export default async function DashboardPage({
     .toUpperCase()
     .slice(0, 2)
 
-  const rooms = await getRooms(user.id!, safeView)
+  const [rooms, initialInvitations] = await Promise.all([
+    getRooms(user.id!, safeView),
+    prisma.invitation.findMany({
+      where: { inviteeId: user.id! },
+      include: {
+        room: { select: { id: true, name: true, language: true } },
+        inviter: { select: { id: true, name: true, image: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ])
   const { title, subtitle } = viewMeta[safeView]
 
   const sidebarNav = [
@@ -134,9 +144,7 @@ export default async function DashboardPage({
 
         <div className="flex shrink-0 items-center gap-3">
           <ThemeToggle />
-          <button className="text-app-muted hover-app-text transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
+          <InviteNotifications initialInvitations={initialInvitations} />
           <Link
             href="/profile"
             className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80"

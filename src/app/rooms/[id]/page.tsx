@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { auth } from '@/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -17,22 +18,9 @@ interface RoomPageProps {
   params: Promise<{ id: string }>
 }
 
-export async function generateMetadata({
-  params,
-}: RoomPageProps): Promise<Metadata> {
-  const { id } = await params
-  const room = await prisma.room.findUnique({
+const fetchRoom = cache(async (id: string) => {
+  return prisma.room.findUnique({
     where: { id },
-    select: { name: true },
-  })
-  return {
-    title: room ? `${room.name} — codeR` : 'Room not found',
-  }
-}
-
-async function getRoomWithAccess(roomId: string, userId: string) {
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
     include: {
       owner: { select: { id: true, name: true, image: true, email: true } },
       members: {
@@ -56,7 +44,20 @@ async function getRoomWithAccess(roomId: string, userId: string) {
       _count: { select: { members: true } },
     },
   })
+})
 
+export async function generateMetadata({
+  params,
+}: RoomPageProps): Promise<Metadata> {
+  const { id } = await params
+  const room = await fetchRoom(id)
+  return {
+    title: room ? `${room.name} — codeR` : 'Room not found',
+  }
+}
+
+async function getRoomWithAccess(roomId: string, userId: string) {
+  const room = await fetchRoom(roomId)
   if (!room) return null
 
   const isOwner = room.ownerId === userId
@@ -212,7 +213,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
         {/* Right: actions */}
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
-          <ShareButton />
+          <ShareButton roomId={id} userRole={userRole ?? null} />
 
           {userRole !== 'VIEWER' && (
             <Link

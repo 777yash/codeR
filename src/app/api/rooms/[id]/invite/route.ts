@@ -63,23 +63,31 @@ export async function POST(
     )
   }
 
-  const existing = await prisma.roomMember.findUnique({
+  const existingMember = await prisma.roomMember.findUnique({
     where: { roomId_userId: { roomId: id, userId: target.id } },
   })
 
-  if (existing) {
+  if (existingMember) {
     return NextResponse.json(
       { error: 'User is already a member' },
       { status: 409 }
     )
   }
 
-  const member = await prisma.roomMember.create({
-    data: { roomId: id, userId: target.id, role: role as Role },
+  const invitation = await prisma.invitation.upsert({
+    where: { roomId_inviteeId: { roomId: id, inviteeId: target.id } },
+    create: {
+      roomId: id,
+      inviterId: session.user.id,
+      inviteeId: target.id,
+      role: role as Role,
+    },
+    update: { role: role as Role, inviterId: session.user.id },
     include: {
-      user: { select: { id: true, name: true, email: true, image: true } },
+      inviter: { select: { id: true, name: true, email: true, image: true } },
+      invitee: { select: { id: true, name: true, email: true, image: true } },
     },
   })
 
-  return NextResponse.json(member, { status: 201 })
+  return NextResponse.json(invitation, { status: 201 })
 }

@@ -27,6 +27,9 @@ model User {
   roomMembers RoomMember[]
   chatMessages ChatMessage[]
 
+  invitationsSent     Invitation[] @relation("InvitationsSent")
+  invitationsReceived Invitation[] @relation("InvitationsReceived")
+
   @@map("users")
 }
 
@@ -125,6 +128,7 @@ model Room {
   members     RoomMember[]
   shareLinks  ShareLink[]
   chatMessages ChatMessage[]
+  invitations Invitation[]
   content         String?  @db.Text
   contentSnapshot Bytes?
 
@@ -157,6 +161,24 @@ model ShareLink {
   room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@map("share_links")
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  role      Role     @default(EDITOR)
+  createdAt DateTime @default(now())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  inviterId String
+  inviter   User   @relation("InvitationsSent", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  inviteeId String
+  invitee   User   @relation("InvitationsReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, inviteeId])
+  @@map("invitations")
 }
 
 model ChatMessage {

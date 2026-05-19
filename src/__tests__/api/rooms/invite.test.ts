@@ -11,6 +11,7 @@ vi.mock('@/lib/prisma', () => ({
     room: { findUnique: vi.fn() },
     user: { findUnique: vi.fn() },
     roomMember: { findUnique: vi.fn(), create: vi.fn() },
+    invitation: { upsert: vi.fn() },
   },
 }))
 
@@ -134,7 +135,7 @@ describe('POST /api/rooms/[id]/invite', () => {
     expect(await res.json()).toMatchObject({ error: 'Cannot invite yourself' })
   })
 
-  it('returns 201 and member on success', async () => {
+  it('returns 201 and invitation on success', async () => {
     vi.mocked(prisma.room.findUnique).mockResolvedValue({
       ownerId: OWNER_ID,
     } as never)
@@ -145,13 +146,20 @@ describe('POST /api/rooms/[id]/invite', () => {
       image: null,
     } as never)
     vi.mocked(prisma.roomMember.findUnique).mockResolvedValue(null)
-    vi.mocked(prisma.roomMember.create).mockResolvedValue({
-      id: 'new_member_id',
+    vi.mocked(prisma.invitation.upsert).mockResolvedValue({
+      id: 'new_invitation_id',
       roomId: ROOM_ID,
-      userId: TARGET_ID,
+      inviterId: OWNER_ID,
+      inviteeId: TARGET_ID,
       role: 'EDITOR',
-      joinedAt: new Date(),
-      user: {
+      createdAt: new Date(),
+      inviter: {
+        id: OWNER_ID,
+        name: 'Owner',
+        email: 'owner@example.com',
+        image: null,
+      },
+      invitee: {
         id: TARGET_ID,
         name: 'Target',
         email: 'target@example.com',
@@ -165,6 +173,6 @@ describe('POST /api/rooms/[id]/invite', () => {
     )
     expect(res.status).toBe(201)
     const body = await res.json()
-    expect(body).toMatchObject({ role: 'EDITOR', userId: TARGET_ID })
+    expect(body).toMatchObject({ role: 'EDITOR', inviteeId: TARGET_ID })
   })
 })

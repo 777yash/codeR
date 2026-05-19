@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
-import { AuthSessionProvider } from '@/components/providers/session-provider'
 import { Toaster } from '@/components/ui/sonner'
 
 const inter = Inter({
@@ -40,10 +39,8 @@ export default function RootLayout({
             __html: `try{if(localStorage.getItem('coder-theme')==='light')document.documentElement.classList.add('light')}catch(e){}`,
           }}
         />
-        <AuthSessionProvider>
-          {children}
-          <Toaster />
-        </AuthSessionProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   )

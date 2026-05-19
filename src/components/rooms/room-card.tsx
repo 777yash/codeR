@@ -59,6 +59,7 @@ const languageColors: Record<string, string> = {
 export function RoomCard({ room, onClick }: RoomCardProps) {
   const memberCount = room._count?.members ?? room.members?.length ?? 0
   const languageColor = languageColors[room.language] || '#888888'
+  const [avatarError, setAvatarError] = useState(false)
   const [starred, setStarred] = useState(() => {
     if (typeof window === 'undefined') return false
     const stored = localStorage.getItem('coder-starred-rooms')
@@ -140,13 +141,14 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
 
       <div className="border-app mt-auto flex items-center justify-between border-t pt-3">
         <div className="flex items-center gap-1.5">
-          {room.owner?.image ? (
+          {room.owner?.image && !avatarError ? (
             <Image
               src={room.owner.image}
               alt={room.owner.name || 'Owner'}
               width={20}
               height={20}
               className="rounded-full"
+              onError={() => setAvatarError(true)}
             />
           ) : (
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF2D55]/20 text-[10px] font-medium text-[#FF2D55]">
