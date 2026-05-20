@@ -144,7 +144,12 @@ export default async function DashboardPage({
 
         <div className="flex shrink-0 items-center gap-3">
           <ThemeToggle />
-          <InviteNotifications initialInvitations={initialInvitations} />
+          <InviteNotifications
+            initialInvitations={initialInvitations.map((inv) => ({
+              ...inv,
+              createdAt: inv.createdAt.toISOString(),
+            }))}
+          />
           <Link
             href="/profile"
             className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-opacity hover:opacity-80"
