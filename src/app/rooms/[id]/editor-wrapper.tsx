@@ -1,5 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { FileTabs } from '@/components/editor/file-tabs'
 import { EditorToolbar } from '@/components/editor/editor-toolbar'
 import { EditorClient } from '@/components/editor/editor-client'
@@ -29,6 +32,25 @@ export function EditorWrapper({
   currentUserId,
   currentUserName,
 }: EditorWrapperProps) {
+  const router = useRouter()
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await fetch(`/api/rooms/${roomId}`)
+        if (res.status === 403 || res.status === 404) {
+          toast.error("You've been removed from this room")
+          router.push('/dashboard')
+        }
+      } catch {
+        // network error — ignore, retry next interval
+      }
+    }
+
+    const interval = setInterval(check, 10_000)
+    return () => clearInterval(interval)
+  }, [roomId, router])
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <EditorToolbar />

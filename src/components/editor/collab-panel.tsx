@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   UserPlus,
   MessageSquare,
@@ -68,8 +68,14 @@ export function CollabPanel({
   const [inviteError, setInviteError] = useState('')
 
   const onlineIds = usePresence(roomId)
-  const onlineMembers = members.filter((m) => onlineIds.includes(m.id))
-  const offlineMembers = members.filter((m) => !onlineIds.includes(m.id))
+  const onlineMembers = useMemo(
+    () => members.filter((m) => onlineIds.includes(m.id)),
+    [members, onlineIds]
+  )
+  const offlineMembers = useMemo(
+    () => members.filter((m) => !onlineIds.includes(m.id)),
+    [members, onlineIds]
+  )
 
   const myRole = members.find((m) => m.id === currentUserId)?.role
   const canInvite = myRole === 'OWNER'

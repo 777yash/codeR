@@ -61,10 +61,13 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
   const languageColor = languageColors[room.language] || '#888888'
   const [avatarError, setAvatarError] = useState(false)
   const [starred, setStarred] = useState(() => {
-    if (typeof window === 'undefined') return false
-    const stored = localStorage.getItem('coder-starred-rooms')
-    const ids: string[] = stored ? JSON.parse(stored) : []
-    return ids.includes(room.id)
+    try {
+      const stored = localStorage.getItem('coder-starred-rooms')
+      const ids: string[] = stored ? (JSON.parse(stored) as string[]) : []
+      return ids.includes(room.id)
+    } catch {
+      return false
+    }
   })
 
   function toggleStar(e: React.MouseEvent) {

@@ -55,14 +55,9 @@ async function getRooms(userId: string, view: string) {
         take: 10,
       })
     case 'starred':
-      return prisma.room.findMany({
-        where: { OR: [{ ownerId: userId }, { members: { some: { userId } } }] },
-        include,
-        orderBy,
-      })
     default:
       return prisma.room.findMany({
-        where: { ownerId: userId },
+        where: { OR: [{ ownerId: userId }, { members: { some: { userId } } }] },
         include,
         orderBy,
       })
@@ -70,7 +65,10 @@ async function getRooms(userId: string, view: string) {
 }
 
 const viewMeta: Record<string, { title: string; subtitle: string }> = {
-  'my-rooms': { title: 'My Rooms', subtitle: 'Rooms you own' },
+  'my-rooms': {
+    title: 'My Rooms',
+    subtitle: 'Rooms you own or collaborate in',
+  },
   shared: { title: 'Shared With Me', subtitle: 'Rooms others invited you to' },
   recent: { title: 'Recent', subtitle: 'Last 10 rooms you accessed' },
   starred: { title: 'Starred', subtitle: 'Rooms you starred' },

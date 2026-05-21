@@ -149,7 +149,9 @@ export default async function RoomPage({ params }: RoomPageProps) {
         {/* Left: back + breadcrumb + lang badge */}
         <div className="flex items-center gap-2">
           <Link
-            href="/dashboard"
+            href={
+              userRole === 'OWNER' ? '/dashboard' : '/dashboard?view=shared'
+            }
             className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
             title="Back to dashboard"
           >

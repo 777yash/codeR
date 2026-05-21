@@ -19,6 +19,70 @@ interface EditorClientProps {
   readOnly?: boolean
 }
 
+const LANG_EXT: Record<string, string> = {
+  javascript: 'js',
+  typescript: 'ts',
+  python: 'py',
+  java: 'java',
+  cpp: 'cpp',
+  c: 'c',
+  csharp: 'cs',
+  go: 'go',
+  rust: 'rs',
+  ruby: 'rb',
+  php: 'php',
+  swift: 'swift',
+  kotlin: 'kt',
+  scala: 'scala',
+  r: 'r',
+  sql: 'sql',
+  bash: 'sh',
+  lua: 'lua',
+  perl: 'pl',
+  haskell: 'hs',
+  elixir: 'ex',
+  clojure: 'clj',
+  dart: 'dart',
+  julia: 'jl',
+  matlab: 'm',
+  vbnet: 'vb',
+  cobol: 'cob',
+  fortran: 'f90',
+  assembly: 'asm',
+}
+
+const MONACO_LANG_MAP: Record<string, string> = {
+  javascript: 'javascript',
+  typescript: 'typescript',
+  python: 'python',
+  java: 'java',
+  cpp: 'cpp',
+  c: 'c',
+  csharp: 'csharp',
+  go: 'go',
+  rust: 'rust',
+  ruby: 'ruby',
+  php: 'php',
+  swift: 'swift',
+  kotlin: 'kotlin',
+  scala: 'scala',
+  r: 'r',
+  sql: 'sql',
+  bash: 'shell',
+  lua: 'lua',
+  perl: 'perl',
+  haskell: 'haskell',
+  elixir: 'elixir',
+  clojure: 'clojure',
+  dart: 'dart',
+  julia: 'julia',
+  matlab: 'matlab',
+  vbnet: 'vb',
+  cobol: 'cobol',
+  fortran: 'fortran',
+  assembly: 'asm',
+}
+
 export function EditorClient({
   roomId,
   userId,
@@ -40,38 +104,6 @@ export function EditorClient({
     renameFile,
     files,
   } = useEditorStore()
-
-  const LANG_EXT: Record<string, string> = {
-    javascript: 'js',
-    typescript: 'ts',
-    python: 'py',
-    java: 'java',
-    cpp: 'cpp',
-    c: 'c',
-    csharp: 'cs',
-    go: 'go',
-    rust: 'rs',
-    ruby: 'rb',
-    php: 'php',
-    swift: 'swift',
-    kotlin: 'kt',
-    scala: 'scala',
-    r: 'r',
-    sql: 'sql',
-    bash: 'sh',
-    lua: 'lua',
-    perl: 'pl',
-    haskell: 'hs',
-    elixir: 'ex',
-    clojure: 'clj',
-    dart: 'dart',
-    julia: 'jl',
-    matlab: 'm',
-    vbnet: 'vb',
-    cobol: 'cob',
-    fortran: 'f90',
-    assembly: 'asm',
-  }
 
   useEffect(() => {
     if (!initialLanguage) return
@@ -213,45 +245,10 @@ export function EditorClient({
     }
   }, [])
 
-  const getMonacoLanguage = (lang: string): string => {
-    const map: Record<string, string> = {
-      javascript: 'javascript',
-      typescript: 'typescript',
-      python: 'python',
-      java: 'java',
-      cpp: 'cpp',
-      c: 'c',
-      csharp: 'csharp',
-      go: 'go',
-      rust: 'rust',
-      ruby: 'ruby',
-      php: 'php',
-      swift: 'swift',
-      kotlin: 'kotlin',
-      scala: 'scala',
-      r: 'r',
-      sql: 'sql',
-      bash: 'shell',
-      lua: 'lua',
-      perl: 'perl',
-      haskell: 'haskell',
-      elixir: 'elixir',
-      clojure: 'clojure',
-      dart: 'dart',
-      julia: 'julia',
-      matlab: 'matlab',
-      vbnet: 'vb',
-      cobol: 'cobol',
-      fortran: 'fortran',
-      assembly: 'asm',
-    }
-    return map[lang] ?? lang
-  }
-
   return (
     <Editor
       height="100%"
-      language={getMonacoLanguage(language)}
+      language={MONACO_LANG_MAP[language] ?? language}
       theme={theme}
       onMount={handleEditorMount}
       options={{

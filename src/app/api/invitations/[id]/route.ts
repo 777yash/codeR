@@ -29,8 +29,8 @@ export async function PATCH(
   }
 
   if (parsed.data.action === 'accept') {
-    await prisma.$transaction(async (tx) => {
-      await tx.roomMember.upsert({
+    await prisma.$transaction([
+      prisma.roomMember.upsert({
         where: {
           roomId_userId: {
             roomId: invitation.roomId,
@@ -43,9 +43,9 @@ export async function PATCH(
           role: invitation.role as Role,
         },
         update: { role: invitation.role as Role },
-      })
-      await tx.invitation.delete({ where: { id } })
-    })
+      }),
+      prisma.invitation.delete({ where: { id } }),
+    ])
     return NextResponse.json({ success: true, roomId: invitation.roomId })
   }
 

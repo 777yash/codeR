@@ -10,19 +10,18 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withSentryConfig(nextConfig, {
+const sentryWebpackOptions = {
   org: 'yash-96',
   project: 'code-r',
   silent: !process.env.CI,
   widenClientFileUpload: !!process.env.CI,
-
-  // Prevent Sentry from wrapping middleware — avoids RSC payload fetch interference
   autoInstrumentMiddleware: false,
-
   webpack: {
     automaticVercelMonitors: true,
-    treeshake: {
-      removeDebugLogging: true,
-    },
+    treeshake: { removeDebugLogging: true },
   },
-})
+}
+
+export default process.env.NODE_ENV === 'production'
+  ? withSentryConfig(nextConfig, sentryWebpackOptions)
+  : nextConfig

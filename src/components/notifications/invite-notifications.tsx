@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import { Bell, Check, X, Loader2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { respondToInvitation } from '@/app/actions/invitations'
 
 interface Invitation {
   id: string
@@ -20,29 +20,29 @@ interface InviteNotificationsProps {
 export function InviteNotifications({
   initialInvitations,
 }: InviteNotificationsProps) {
-  const router = useRouter()
   const [invitations, setInvitations] =
     useState<Invitation[]>(initialInvitations)
   const [open, setOpen] = useState(false)
   const [acting, setActing] = useState<string | null>(null)
+  const [, startTransition] = useTransition()
   const panelRef = useRef<HTMLDivElement>(null)
 
-  const fetchInvitations = useCallback(async () => {
-    try {
-      const res = await fetch('/api/invitations')
-      if (res.ok) {
-        const data = await res.json()
-        setInvitations(data)
-      }
-    } catch {
-      // silently ignore, retry on next interval
-    }
-  }, [])
-
   useEffect(() => {
-    const interval = setInterval(fetchInvitations, 30_000)
+    async function load() {
+      try {
+        const res = await fetch('/api/invitations')
+        if (res.ok) {
+          const data = (await res.json()) as Invitation[]
+          setInvitations(data)
+        }
+      } catch {
+        // silently ignore, retry on next interval
+      }
+    }
+    void load()
+    const interval = setInterval(load, 10_000)
     return () => clearInterval(interval)
-  }, [fetchInvitations])
+  }, [])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -54,29 +54,24 @@ export function InviteNotifications({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
-  async function handleAction(id: string, action: 'accept' | 'decline') {
+  function handleAction(id: string, action: 'accept' | 'decline') {
     setActing(id)
-    try {
-      const res = await fetch(`/api/invitations/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      })
-      if (!res.ok) throw new Error()
-      const data = (await res.json()) as { roomId?: string }
-      setInvitations((prev) => prev.filter((inv) => inv.id !== id))
-      if (action === 'accept') {
-        toast.success('Invite accepted — room added to Shared With Me')
-        router.push(data.roomId ? '/dashboard?view=shared' : '/dashboard')
-        router.refresh()
-      } else {
-        toast.success('Invite declined')
+    startTransition(async () => {
+      try {
+        await respondToInvitation(id, action)
+        if (action === 'decline') {
+          setInvitations((prev) => prev.filter((inv) => inv.id !== id))
+          toast.success('Invite declined')
+        }
+      } catch (e) {
+        // redirect() throws NEXT_REDIRECT — re-throw so Next.js can navigate
+        const digest = (e as { digest?: string })?.digest ?? ''
+        if (digest.startsWith('NEXT_REDIRECT')) throw e
+        toast.error('Failed to respond to invite')
+      } finally {
+        setActing(null)
       }
-    } catch {
-      toast.error('Failed to respond to invite')
-    } finally {
-      setActing(null)
-    }
+    })
   }
 
   return (

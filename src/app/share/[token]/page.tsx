@@ -1,7 +1,9 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 
 interface SharePageProps {
@@ -137,25 +139,6 @@ export default async function SharePage({ params }: SharePageProps) {
     },
   })
 
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black p-4">
-      <div className="w-full max-w-md space-y-4 rounded-lg border border-white/10 bg-[#0D0D0D] p-8 text-center">
-        <div className="mb-4 flex justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#FF2D55]" />
-        </div>
-        <h1 className="text-2xl font-semibold">Joining room...</h1>
-        <p className="text-[#888888]">
-          You&apos;ve been added to <strong>{shareLink.room.name}</strong> as a{' '}
-          {shareLink.role.toLowerCase()}.
-        </p>
-        <Link
-          href={`/rooms/${shareLink.roomId}`}
-          className="inline-flex items-center gap-2 rounded-md bg-[#FF2D55] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#FF2D55]/90"
-        >
-          Open Room
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
-    </div>
-  )
+  revalidatePath('/dashboard')
+  redirect(`/rooms/${shareLink.roomId}`)
 }

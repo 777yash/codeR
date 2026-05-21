@@ -39,15 +39,7 @@ export async function GET(
   }
 
   const { id } = await params
-  const role = await getUserRoomRole(id, session.user.id)
-
-  if (!role) {
-    const room = await prisma.room.findUnique({ where: { id } })
-    if (!room || !room.isPublic) {
-      return NextResponse.json({ error: 'Room not found' }, { status: 404 })
-    }
-    return NextResponse.json({ ...room, role: 'PUBLIC' })
-  }
+  const userId = session.user.id
 
   const room = await prisma.room.findUnique({
     where: { id },
@@ -77,7 +69,26 @@ export async function GET(
     return NextResponse.json({ error: 'Room not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ ...room, userRole: role })
+  if (room.ownerId === userId) {
+    return NextResponse.json({ ...room, userRole: 'OWNER' })
+  }
+
+  const member = room.members.find((m) => m.userId === userId)
+  if (member) {
+    return NextResponse.json({ ...room, userRole: member.role })
+  }
+
+  if (room.isPublic) {
+    const {
+      members: _members,
+      shareLinks: _shareLinks,
+      owner: _owner,
+      ...publicRoom
+    } = room
+    return NextResponse.json({ ...publicRoom, role: 'PUBLIC' })
+  }
+
+  return NextResponse.json({ error: 'Room not found' }, { status: 404 })
 }
 
 export async function PATCH(
