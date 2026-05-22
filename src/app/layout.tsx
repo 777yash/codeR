@@ -31,7 +31,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="flex min-h-full flex-col">
+      <head>
         <Script
           id="theme-init"
           strategy="beforeInteractive"
@@ -39,6 +39,8 @@ export default function RootLayout({
             __html: `try{if(localStorage.getItem('coder-theme')==='light')document.documentElement.classList.add('light')}catch(e){}`,
           }}
         />
+      </head>
+      <body className="flex min-h-full flex-col">
         {children}
         <Toaster />
       </body>

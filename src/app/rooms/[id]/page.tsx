@@ -3,7 +3,7 @@ import { auth } from '@/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { ArrowLeft, Play } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { ShareButton } from '@/components/rooms/share-button'
 import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import type { Metadata } from 'next'
@@ -12,6 +12,7 @@ import type { CollabMember } from '@/components/editor/collab-panel'
 import { LanguageIcon } from '@/components/editor/language-icon'
 import { LiveBadge } from '@/components/editor/live-badge'
 import { SettingsDialog } from '@/components/editor/settings-dialog'
+import { RunButton } from '@/components/editor/run-button'
 import type { RoomWithRelations } from '@/app/rooms/[id]/settings/settings-client'
 
 interface RoomPageProps {
@@ -217,15 +218,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
           <ThemeToggle />
           <ShareButton roomId={id} userRole={userRole ?? null} />
 
-          {userRole !== 'VIEWER' && (
-            <Link
-              href={`/rooms/${id}/run`}
-              className="flex h-7 items-center gap-1.5 rounded-md bg-[#32D74B] px-3 text-xs font-semibold text-black transition-colors hover:bg-[#32D74B]/90"
-            >
-              <Play className="h-3 w-3" />
-              Run
-            </Link>
-          )}
+          {userRole !== 'VIEWER' && <RunButton />}
 
           {userRole === 'OWNER' && (
             <SettingsDialog

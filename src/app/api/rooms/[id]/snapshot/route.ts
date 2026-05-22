@@ -47,7 +47,8 @@ export async function PUT(
   const { id } = await params
   const buf = await req.arrayBuffer()
 
-  await prisma.room.update({
+  // updateMany silently no-ops if room was deleted — avoids P2025 throw
+  await prisma.room.updateMany({
     where: { id },
     data: { contentSnapshot: Buffer.from(buf) },
   })

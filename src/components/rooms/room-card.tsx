@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { MoreHorizontal, Users, Globe, Lock, Code, Star } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import type {
   Room,
   User as PrismaUser,
@@ -60,15 +60,22 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
   const memberCount = room._count?.members ?? room.members?.length ?? 0
   const languageColor = languageColors[room.language] || '#888888'
   const [avatarError, setAvatarError] = useState(false)
-  const [starred, setStarred] = useState(() => {
-    try {
-      const stored = localStorage.getItem('coder-starred-rooms')
-      const ids: string[] = stored ? (JSON.parse(stored) as string[]) : []
-      return ids.includes(room.id)
-    } catch {
-      return false
-    }
-  })
+  const starred = useSyncExternalStore(
+    (cb) => {
+      window.addEventListener('storage', cb)
+      return () => window.removeEventListener('storage', cb)
+    },
+    () => {
+      try {
+        const stored = localStorage.getItem('coder-starred-rooms')
+        const ids = stored ? (JSON.parse(stored) as string[]) : []
+        return ids.includes(room.id)
+      } catch {
+        return false
+      }
+    },
+    () => false // server snapshot — matches initial client render, no hydration mismatch
+  )
 
   function toggleStar(e: React.MouseEvent) {
     e.preventDefault()
@@ -79,7 +86,10 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
       ? ids.filter((id) => id !== room.id)
       : [...ids, room.id]
     localStorage.setItem('coder-starred-rooms', JSON.stringify(next))
-    setStarred(!starred)
+    // storage event only fires in other tabs — dispatch manually for same-tab reactivity
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'coder-starred-rooms' })
+    )
   }
 
   return (

@@ -30,19 +30,18 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
   const [rooms, setRooms] = useState(initialRooms)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [starredIds, setStarredIds] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return []
-    const stored = localStorage.getItem('coder-starred-rooms')
-    return stored ? JSON.parse(stored) : []
-  })
+  // Two-pass: start with [] so SSR and initial client render match,
+  // then sync localStorage on mount and on cross-tab storage events.
+  const [starredIds, setStarredIds] = useState<string[]>([])
 
   useEffect(() => {
-    const onStorage = () => {
-      const updated = localStorage.getItem('coder-starred-rooms')
-      setStarredIds(updated ? JSON.parse(updated) : [])
+    const read = () => {
+      const stored = localStorage.getItem('coder-starred-rooms')
+      setStarredIds(stored ? (JSON.parse(stored) as string[]) : [])
     }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
+    read()
+    window.addEventListener('storage', read)
+    return () => window.removeEventListener('storage', read)
   }, [])
 
   const filteredRooms =

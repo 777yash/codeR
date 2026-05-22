@@ -134,6 +134,8 @@ export function EditorClient({
       const ydoc = new Y.Doc()
       const provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
         connect: true,
+        resyncInterval: 10_000,
+        maxBackoffTime: 60_000,
       })
       const ytext = ydoc.getText('content')
       const model = editor.getModel()
