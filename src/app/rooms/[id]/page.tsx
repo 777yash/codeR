@@ -12,7 +12,7 @@ import type { CollabMember } from '@/components/editor/collab-panel'
 import { LanguageIcon } from '@/components/editor/language-icon'
 import { LiveBadge } from '@/components/editor/live-badge'
 import { SettingsDialog } from '@/components/editor/settings-dialog'
-import { RunButton } from '@/components/editor/run-button'
+import { ExecutionPanel } from '@/components/editor/execution-panel'
 import type { RoomWithRelations } from '@/app/rooms/[id]/settings/settings-client'
 
 interface RoomPageProps {
@@ -218,7 +218,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
           <ThemeToggle />
           <ShareButton roomId={id} userRole={userRole ?? null} />
 
-          {userRole !== 'VIEWER' && <RunButton />}
+          {userRole !== 'VIEWER' && <ExecutionPanel roomId={id} />}
 
           {userRole === 'OWNER' && (
             <SettingsDialog

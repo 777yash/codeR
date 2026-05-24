@@ -30,6 +30,8 @@ model User {
   invitationsSent     Invitation[] @relation("InvitationsSent")
   invitationsReceived Invitation[] @relation("InvitationsReceived")
 
+  executionLogs ExecutionLog[]
+
   @@map("users")
 }
 
@@ -129,6 +131,7 @@ model Room {
   shareLinks  ShareLink[]
   chatMessages ChatMessage[]
   invitations Invitation[]
+  executionLogs ExecutionLog[]
   content         String?  @db.Text
   contentSnapshot Bytes?
 
@@ -193,4 +196,25 @@ model ChatMessage {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
+}
+
+model ExecutionLog {
+  id          String   @id @default(cuid())
+  language    String
+  stdin       String?  @db.Text
+  stdout      String?  @db.Text
+  stderr      String?  @db.Text
+  exitCode    Int?
+  execStatus  String   // "success" | "error" | "timeout" | "compilation_error"
+  durationMs  Int
+  createdAt   DateTime @default(now())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  submittedById String
+  submittedBy   User   @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@map("execution_logs")
 }

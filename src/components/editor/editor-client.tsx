@@ -83,6 +83,42 @@ const MONACO_LANG_MAP: Record<string, string> = {
   assembly: 'asm',
 }
 
+let _editor: { getModel(): { getValue(): string } | null } | null = null
+
+export function getEditorContent(): string {
+  return _editor?.getModel()?.getValue() ?? ''
+}
+
+interface YMap {
+  set(key: string, value: string): void
+  get(key: string): string | undefined
+  observe(fn: () => void): void
+  unobserve(fn: () => void): void
+}
+
+interface YDoc {
+  getMap(name: string): YMap
+}
+
+let _ydoc: YDoc | null = null
+
+export function broadcastExecutionResult(result: unknown): void {
+  _ydoc?.getMap('execution-results').set('latest', JSON.stringify(result))
+}
+
+export function subscribeToExecutionResults(
+  callback: (result: unknown) => void
+): () => void {
+  if (!_ydoc) return () => {}
+  const map = _ydoc.getMap('execution-results')
+  const observer = () => {
+    const raw = map.get('latest')
+    if (raw) callback(JSON.parse(raw) as unknown)
+  }
+  map.observe(observer)
+  return () => map.unobserve(observer)
+}
+
 export function EditorClient({
   roomId,
   userId,
@@ -118,6 +154,7 @@ export function EditorClient({
 
   const handleEditorMount: OnMount = useCallback(
     async (editor) => {
+      _editor = editor
       // Dynamic imports — all run browser-only, after editor mount.
       // Avoids static import of monaco-editor (y-monaco) breaking SSR/webpack.
       const [Y, { WebsocketProvider }, { MonacoBinding }] = await Promise.all([
@@ -132,6 +169,7 @@ export function EditorClient({
         process.env.NEXT_PUBLIC_COLLAB_WS_URL ?? 'ws://localhost:1234'
 
       const ydoc = new Y.Doc()
+      _ydoc = ydoc
       const provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
         connect: true,
         resyncInterval: 10_000,
@@ -231,6 +269,8 @@ export function EditorClient({
       })
 
       cleanupRef.current = () => {
+        _editor = null
+        _ydoc = null
         provider.awareness.off('change', handleAwarenessChange)
         styleEl.remove()
         binding.destroy()
