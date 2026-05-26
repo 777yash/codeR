@@ -9,6 +9,10 @@ import {
   Sparkles,
   Clock,
   MessageSquare,
+  Globe,
+  Bot,
+  AtSign,
+  Wrench,
 } from 'lucide-react'
 
 const phases = [
@@ -95,24 +99,61 @@ const phases = [
   {
     number: '06',
     title: 'Code Execution',
-    status: 'upcoming',
-    date: 'Coming soon',
+    status: 'shipped',
+    date: 'May 2026',
     icon: <Terminal className="h-5 w-5" />,
     accentColor: '#32D74B',
     features: [
-      { name: 'Run code in isolated sandboxes (Judge0)', done: false },
-      { name: '60+ languages supported', done: false },
-      { name: 'Async execution queue (BullMQ)', done: false },
+      { name: 'Run code via OneCompiler (28 languages)', done: true },
       {
         name: 'Shared output panel — all collaborators see results',
-        done: false,
+        done: true,
       },
-      { name: 'Rate limiting (10 runs/user/minute)', done: false },
-      { name: 'Execution history log', done: false },
+      { name: 'Rate limiting (10 runs/user/minute)', done: true },
+      { name: 'Stdin support for interactive programs', done: true },
+      { name: 'Execution history log (ExecutionLog table)', done: true },
+      {
+        name: 'Status badges (running / success / error / timeout)',
+        done: true,
+      },
     ],
   },
   {
     number: '07',
+    title: 'Version History',
+    status: 'upcoming',
+    date: 'Coming soon',
+    icon: <Clock className="h-5 w-5" />,
+    accentColor: '#FF9F0A',
+    features: [
+      { name: 'Auto-snapshots every 30s via collab-server', done: false },
+      { name: 'Named versions (user-triggered, any time)', done: false },
+      { name: 'Visual diff viewer (Monaco DiffEditor)', done: false },
+      {
+        name: 'One-click restore — live clients update instantly',
+        done: false,
+      },
+      { name: 'Per-user attribution on every snapshot', done: false },
+      { name: 'Version history sidebar panel', done: false },
+    ],
+  },
+  {
+    number: '08',
+    title: 'Chat',
+    status: 'planned',
+    date: 'Planned',
+    icon: <MessageSquare className="h-5 w-5" />,
+    accentColor: '#06B6D4',
+    features: [
+      { name: 'In-session room chat', done: false },
+      { name: 'Code snippet sharing in chat', done: false },
+      { name: 'Message persistence (chat_messages table)', done: false },
+      { name: 'Unread count badge', done: false },
+      { name: '@mention support', done: false },
+    ],
+  },
+  {
+    number: '09',
     title: 'AI Completions',
     status: 'planned',
     date: 'Planned',
@@ -123,35 +164,73 @@ const phases = [
       { name: 'Tab to accept, Escape to dismiss', done: false },
       { name: 'Context-aware completions', done: false },
       { name: 'Multi-line ghost text', done: false },
+      { name: 'Per-user on/off toggle', done: false },
     ],
   },
   {
-    number: '08',
-    title: 'Version History',
+    number: '10',
+    title: 'Polish & Security',
     status: 'planned',
     date: 'Planned',
-    icon: <Clock className="h-5 w-5" />,
-    accentColor: '#FF9F0A',
+    icon: <Wrench className="h-5 w-5" />,
+    accentColor: '#888888',
     features: [
-      { name: 'Timeline of all document changes', done: false },
-      { name: 'Per-user attribution', done: false },
-      { name: 'Restore to any previous version', done: false },
-      { name: 'Diff viewer', done: false },
-    ],
-  },
-  {
-    number: '09',
-    title: 'Chat & Stretch Goals',
-    status: 'planned',
-    date: 'Planned',
-    icon: <MessageSquare className="h-5 w-5" />,
-    accentColor: '#06B6D4',
-    features: [
-      { name: 'In-session room chat', done: false },
-      { name: 'Code snippet sharing in chat', done: false },
-      { name: 'Export to GitHub Gist', done: false },
+      { name: 'Full security audit (CSP, CSRF, JWT rotation)', done: false },
+      { name: 'Monaco lazy loading + CRDT compression', done: false },
+      { name: 'PostHog analytics', done: false },
       { name: 'Mobile-responsive layout', done: false },
-      { name: 'Vim / Emacs keybinding modes', done: false },
+      { name: 'Export to GitHub Gist', done: false },
+    ],
+  },
+  {
+    number: '11',
+    title: 'WebContainers + Live Preview',
+    status: 'planned',
+    date: 'Planned',
+    icon: <Globe className="h-5 w-5" />,
+    accentColor: '#0EA5E9',
+    features: [
+      { name: 'In-browser Node.js runtime (zero server infra)', done: false },
+      { name: 'Virtual terminal via xterm.js', done: false },
+      { name: 'Live preview iframe with hot-reload', done: false },
+      { name: 'Auto npm install from package.json', done: false },
+      { name: 'WebContainer + Monaco VFS bidirectional sync', done: false },
+    ],
+  },
+  {
+    number: '12',
+    title: 'AI Project Scaffolding',
+    status: 'planned',
+    date: 'Planned',
+    icon: <Bot className="h-5 w-5" />,
+    accentColor: '#A855F7',
+    features: [
+      {
+        name: 'Prompt → full runnable project in seconds (Gemini)',
+        done: false,
+      },
+      {
+        name: 'AI generates file tree, code, install & start commands',
+        done: false,
+      },
+      { name: 'Multi-file AI editing with diff preview', done: false },
+      { name: 'Context-aware edits across all open files', done: false },
+      { name: 'Accept / reject per-file before applying', done: false },
+    ],
+  },
+  {
+    number: '13',
+    title: '@ai Chat Commands',
+    status: 'planned',
+    date: 'Planned',
+    icon: <AtSign className="h-5 w-5" />,
+    accentColor: '#F59E0B',
+    features: [
+      { name: '@ai trigger visible to all room collaborators', done: false },
+      { name: 'Fix, explain, refactor, scaffold commands', done: false },
+      { name: 'AI-proposed edits applied with one click', done: false },
+      { name: 'Rate limited per room (Redis counter)', done: false },
+      { name: 'Owner can enable/disable @ai per room', done: false },
     ],
   },
 ]
@@ -458,7 +537,7 @@ export default function FeaturesPage() {
             marginBottom: '8px',
           }}
         >
-          Start building with Phase 1–5 today
+          Start building with Phase 1–6 today
         </h2>
         <p
           style={{
@@ -467,8 +546,8 @@ export default function FeaturesPage() {
             marginBottom: '24px',
           }}
         >
-          Full CRDT collaboration, presence, and Monaco Editor — available now,
-          free.
+          CRDT collaboration, live code execution, presence, and Monaco Editor —
+          available now, free.
         </p>
         <a
           href="/signup"

@@ -1,9 +1,47 @@
 const releases = [
   {
+    phase: '06',
+    title: 'Code Execution Sandbox',
+    date: 'May 24, 2026',
+    status: 'latest',
+    accentColor: '#32D74B',
+    summary:
+      'Run code in 28 languages via OneCompiler. All collaborators see output simultaneously via Yjs map broadcast.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'POST /api/execute → OneCompiler RapidAPI → result broadcast via ydoc.getMap("execution-results")',
+          'ExecutionPanel bottom drawer: stdin textarea, stdout/stderr color-coded, status badge',
+          'Status badges: idle / running / success / error / timeout / offline',
+          'Stdin support for interactive programs (60s Vercel maxDuration, 55s AbortController)',
+          'In-memory rate limiting: 10 runs/user/minute (Map-based sliding window)',
+          'ExecutionLog Prisma model — persists every execution (language, stdin, stdout, exit_code, duration_ms)',
+          '28 languages supported: key mappings javascript→nodejs, sql→sqlite, matlab→octave, vbnet→vb',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'Java execution: file renamed to Main.java, public class forced to Main',
+          'Graceful offline state when ONECOMPILER_RAPIDAPI_KEY missing — shows actionable message',
+          'HTTP 502 from /api/execute maps to "offline" badge (not "error")',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'ONECOMPILER_RAPIDAPI_KEY env var added to .env.example',
+          'Zero new infrastructure — result delivery reuses existing Yjs WebSocket connection',
+        ],
+      },
+    ],
+  },
+  {
     phase: '05',
     title: 'Presence & Awareness',
     date: 'May 17, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#FF2D55',
     summary:
       'Colored remote cursors, join/leave toasts, and a live collaborator sidebar.',
@@ -478,7 +516,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 06 — Code Execution
+          Phase 07 — Version History
         </h3>
         <p
           style={{
@@ -488,8 +526,8 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Run code in isolated Judge0 sandboxes. All collaborators see the
-          output simultaneously via BullMQ + Redis pub/sub.
+          Auto-snapshots every 30s, named versions, visual diff viewer, and
+          one-click restore via collab-server.
         </p>
         <a
           href="/features#phase-06"
