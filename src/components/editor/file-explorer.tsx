@@ -1,7 +1,12 @@
 'use client'
 
 import { useEditorStore } from '@/stores/editor-store'
-import { FileCode, Plus, FolderOpen } from 'lucide-react'
+import {
+  addSharedFile,
+  removeSharedFile,
+  renameSharedFile,
+} from '@/components/editor/editor-client'
+import { FileCode, Plus, FolderOpen, Trash2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
 const EXT_TO_LANG: Record<string, string> = {
@@ -45,8 +50,15 @@ interface FileExplorerProps {
 }
 
 export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
-  const { files, activeFileId, setActiveFile, addFile, renameFile, language } =
-    useEditorStore()
+  const {
+    files,
+    activeFileId,
+    setActiveFile,
+    addFile,
+    renameFile,
+    removeFile,
+    language,
+  } = useEditorStore()
   const [showInput, setShowInput] = useState(false)
   const [newName, setNewName] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -79,6 +91,7 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
 
   function commitRename() {
     if (renamingId && renameValue.trim()) {
+      renameSharedFile(renamingId, renameValue.trim())
       renameFile(renamingId, renameValue.trim())
     }
     setRenamingId(null)
@@ -89,14 +102,24 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
     const name = newName.trim()
     if (!name) return
     const ext = name.includes('.') ? name.split('.').pop()! : 'js'
-    addFile({
+    const file = {
       id: crypto.randomUUID(),
       name,
       content: '',
       language: extToLang(ext) || language,
-    })
+    }
+    addSharedFile(file)
+    addFile(file)
+    setActiveFile(file.id)
     setNewName('')
     setShowInput(false)
+  }
+
+  function handleDelete(fileId: string) {
+    setContextMenu(null)
+    if (files.length <= 1) return
+    removeSharedFile(fileId)
+    removeFile(fileId)
   }
 
   return (
@@ -185,6 +208,15 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
             >
               Rename
             </button>
+            {files.length > 1 && (
+              <button
+                onClick={() => handleDelete(contextMenu.fileId)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </button>
+            )}
           </div>
         )}
 

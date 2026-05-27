@@ -61,7 +61,7 @@ const phases = [
       { name: 'Dynamic language selector', done: true },
       { name: 'VS Code keyboard shortcuts', done: true },
       { name: 'Line numbers and minimap', done: true },
-      { name: 'Multi-file workspace', done: false },
+      { name: 'Multi-file workspace', done: true },
     ],
   },
   {

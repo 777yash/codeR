@@ -205,6 +205,7 @@ const navItems = [
   { href: '#getting-started', label: 'Getting Started' },
   { href: '#rooms', label: 'Rooms' },
   { href: '#editor', label: 'Editor' },
+  { href: '#multi-file', label: 'Multi-File Workspace' },
   { href: '#collaboration', label: 'Collaboration' },
   { href: '#sharing', label: 'Sharing' },
   { href: '#keyboard-shortcuts', label: 'Keyboard Shortcuts' },
@@ -537,6 +538,58 @@ export default function DocsPage() {
             Yjs CRDT sync is browser-only — server-side rendering (SSR) is
             intentionally skipped for the editor component. The editor appears
             after hydration.
+          </Callout>
+        </section>
+
+        {/* Multi-File Workspace */}
+        <section style={{ marginBottom: '48px' }}>
+          <Heading2 id="multi-file">Multi-File Workspace</Heading2>
+          <Prose>
+            Each room supports multiple files. Create, rename, and delete files
+            from the file explorer (left sidebar) or the tab bar. The file list
+            is synced across all collaborators in real-time — adding a file in
+            one browser immediately appears for everyone in the room.
+          </Prose>
+
+          <Heading3>Creating files</Heading3>
+          <Prose>
+            Click the <InlineCode>+</InlineCode> button in the file explorer
+            header or tab bar and type a filename. Include an extension (e.g.{' '}
+            <InlineCode>utils.ts</InlineCode>) to auto-detect the language.
+          </Prose>
+
+          <Heading3>Renaming files</Heading3>
+          <Prose>
+            Double-click a filename in the file explorer, or right-click and
+            choose{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Rename
+            </strong>
+            . Press <InlineCode>Enter</InlineCode> to confirm or{' '}
+            <InlineCode>Escape</InlineCode> to cancel.
+          </Prose>
+
+          <Heading3>Deleting files</Heading3>
+          <Prose>
+            Right-click a file in the explorer and choose{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Delete
+            </strong>
+            . The last remaining file cannot be deleted.
+          </Prose>
+
+          <Heading3>Per-file content sync</Heading3>
+          <Prose>
+            Each file has its own independent CRDT document (
+            <InlineCode>Y.Text</InlineCode>). All collaborators can edit
+            different files simultaneously. Switching tabs swaps the Monaco
+            model and binds to that file&apos;s Yjs text — undo/redo history is
+            per-file.
+          </Prose>
+
+          <Callout type="info">
+            Running code executes the currently active file. Make sure the
+            correct file is in focus before clicking Run.
           </Callout>
         </section>
 

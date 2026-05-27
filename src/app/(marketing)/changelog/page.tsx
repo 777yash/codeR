@@ -1,9 +1,41 @@
 const releases = [
   {
+    phase: '03.5',
+    title: 'Multi-File Workspace',
+    date: 'May 27, 2026',
+    status: 'latest',
+    accentColor: '#FF9F0A',
+    summary:
+      'Full multi-file workspace — create, rename, and delete files per room. Each file has its own Yjs text; file list syncs across all collaborators in real-time.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Per-file Monaco models — switching tabs swaps the editor model, per-file undo/redo preserved',
+          'File list synced via ydoc.getMap("file-list") — add/rename/delete propagates to all collaborators',
+          'Per-file content at ydoc.getText("file:<id>") — each file has its own CRDT text',
+          'Double-click filename in explorer to rename inline',
+          'Right-click context menu in file explorer: Rename + Delete (protected: cannot delete last file)',
+          'New file button in both file explorer and tab bar — auto-detects language from extension',
+          'Legacy migration: rooms with single-file content (getText("content")) auto-migrated to getText("file:default") on first load',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'File list seeded from store when Yjs doc is empty (new rooms); Yjs is truth for existing rooms',
+          'Monaco models lazily created on first file activation, refreshed from ytext on re-activation',
+          'setFiles() action added to editor-store for Yjs observer to sync UI',
+          'Zustand store subscription (subscribe) used to trigger model switch on activeFileId change',
+        ],
+      },
+    ],
+  },
+  {
     phase: '06',
     title: 'Code Execution Sandbox',
     date: 'May 24, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#32D74B',
     summary:
       'Run code in 28 languages via OneCompiler. All collaborators see output simultaneously via Yjs map broadcast.',

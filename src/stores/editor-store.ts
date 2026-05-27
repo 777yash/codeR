@@ -37,6 +37,7 @@ interface EditorState {
   updateFileContent: (id: string, content: string) => void
   setActiveFile: (id: string) => void
   renameFile: (id: string, name: string) => void
+  setFiles: (files: EditorFile[]) => void
 
   isSaving: boolean
   setIsSaving: (isSaving: boolean) => void
@@ -105,6 +106,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => ({
       files: state.files.map((f) => (f.id === id ? { ...f, name } : f)),
     })),
+  setFiles: (files) => set({ files }),
 
   isSaving: false,
   setIsSaving: (isSaving) => set({ isSaving }),

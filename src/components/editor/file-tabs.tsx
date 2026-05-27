@@ -1,6 +1,10 @@
 'use client'
 
 import { useEditorStore, type EditorFile } from '@/stores/editor-store'
+import {
+  addSharedFile,
+  removeSharedFile,
+} from '@/components/editor/editor-client'
 import { X, Plus, FileCode } from 'lucide-react'
 import { useState } from 'react'
 
@@ -45,7 +49,7 @@ function extToLang(ext: string | undefined, fallback: string): string {
 }
 
 export function FileTabs() {
-  const { files, activeFileId, setActiveFile, removeFile, addFile, language } =
+  const { files, activeFileId, setActiveFile, addFile, removeFile, language } =
     useEditorStore()
   const [showInput, setShowInput] = useState(false)
   const [newFileName, setNewFileName] = useState('')
@@ -60,10 +64,17 @@ export function FileTabs() {
       content: '',
       language: extToLang(ext, language),
     }
+    addSharedFile(file)
     addFile(file)
     setActiveFile(file.id)
     setNewFileName('')
     setShowInput(false)
+  }
+
+  function handleClose(e: React.MouseEvent, fileId: string) {
+    e.stopPropagation()
+    removeSharedFile(fileId)
+    removeFile(fileId)
   }
 
   return (
@@ -90,10 +101,7 @@ export function FileTabs() {
               <span className="truncate">{file.name}</span>
               {files.length > 1 && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    removeFile(file.id)
-                  }}
+                  onClick={(e) => handleClose(e, file.id)}
                   className="hover:text-app ml-auto shrink-0 rounded p-px opacity-0 transition-opacity group-hover:opacity-100"
                 >
                   <X className="h-3 w-3" />

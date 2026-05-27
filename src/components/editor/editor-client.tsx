@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import Editor, { type OnMount } from '@monaco-editor/react'
-import { useEditorStore } from '@/stores/editor-store'
+import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import { toast } from 'sonner'
 
 function colorFromUserId(id: string): string {
@@ -83,24 +83,49 @@ const MONACO_LANG_MAP: Record<string, string> = {
   assembly: 'asm',
 }
 
-let _editor: { getModel(): { getValue(): string } | null } | null = null
-
-export function getEditorContent(): string {
-  return _editor?.getModel()?.getValue() ?? ''
+interface FileMetadata {
+  id: string
+  name: string
+  language: string
+  order: number
 }
 
 interface YMap {
   set(key: string, value: string): void
   get(key: string): string | undefined
+  delete(key: string): void
+  forEach(fn: (val: string, key: string) => void): void
   observe(fn: () => void): void
   unobserve(fn: () => void): void
+  readonly size: number
+}
+
+interface YText {
+  insert(index: number, content: string): void
+  toString(): string
+  readonly length: number
 }
 
 interface YDoc {
+  clientID: number
   getMap(name: string): YMap
+  getText(name: string): YText
+  transact(fn: () => void): void
+  destroy(): void
 }
 
+// Module-level refs — only one EditorClient exists per page
+let _editor: {
+  getModel(): { getValue(): string } | null
+  setModel(model: unknown): void
+  addCommand(keybinding: number, handler: () => void): unknown
+} | null = null
+
 let _ydoc: YDoc | null = null
+
+export function getEditorContent(): string {
+  return _editor?.getModel()?.getValue() ?? ''
+}
 
 export function broadcastExecutionResult(result: unknown): void {
   _ydoc?.getMap('execution-results').set('latest', JSON.stringify(result))
@@ -119,6 +144,41 @@ export function subscribeToExecutionResults(
   return () => map.unobserve(observer)
 }
 
+export function addSharedFile(file: EditorFile): void {
+  if (!_ydoc) return
+  const fileList = _ydoc.getMap('file-list')
+  let maxOrder = -1
+  fileList.forEach((val) => {
+    try {
+      const m = JSON.parse(val) as FileMetadata
+      if ((m.order ?? 0) > maxOrder) maxOrder = m.order ?? 0
+    } catch {}
+  })
+  fileList.set(
+    file.id,
+    JSON.stringify({
+      id: file.id,
+      name: file.name,
+      language: file.language,
+      order: maxOrder + 1,
+    })
+  )
+}
+
+export function removeSharedFile(id: string): void {
+  if (!_ydoc) return
+  _ydoc.getMap('file-list').delete(id)
+}
+
+export function renameSharedFile(id: string, name: string): void {
+  if (!_ydoc) return
+  const fileList = _ydoc.getMap('file-list')
+  const raw = fileList.get(id)
+  if (!raw) return
+  const meta = JSON.parse(raw) as FileMetadata
+  fileList.set(id, JSON.stringify({ ...meta, name }))
+}
+
 export function EditorClient({
   roomId,
   userId,
@@ -127,6 +187,20 @@ export function EditorClient({
   readOnly = false,
 }: EditorClientProps) {
   const cleanupRef = useRef<(() => void) | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const editorRef = useRef<any>(null)
+  const ydocRef = useRef<YDoc | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const providerRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const monacoApiRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const MonacoBindingClassRef = useRef<any>(null)
+  // Maps fileId → ITextModel
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const modelsRef = useRef<Map<string, any>>(new Map())
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeBindingRef = useRef<any>(null)
 
   const {
     theme,
@@ -141,6 +215,83 @@ export function EditorClient({
     files,
   } = useEditorStore()
 
+  // Activate a file: switch Monaco model + create new MonacoBinding
+  const activateFile = useCallback((fileId: string) => {
+    const editor = editorRef.current
+    const ydoc = ydocRef.current
+    const provider = providerRef.current
+    const monacoApi = monacoApiRef.current
+    const MonacoBindingClass = MonacoBindingClassRef.current
+    if (!editor || !ydoc || !monacoApi || !MonacoBindingClass) return
+
+    const prevBinding = activeBindingRef.current
+    activeBindingRef.current = null
+    prevBinding?.destroy()
+
+    const { files: currentFiles } = useEditorStore.getState()
+    const file = currentFiles.find((f) => f.id === fileId)
+    if (!file) return
+
+    const ytext = ydoc.getText(`file:${fileId}`)
+
+    let model = modelsRef.current.get(fileId)
+    if (!model) {
+      model = monacoApi.editor.createModel(
+        ytext.toString(),
+        MONACO_LANG_MAP[file.language] ?? file.language,
+        monacoApi.Uri.parse(`inmemory://coder/${fileId}`)
+      )
+      modelsRef.current.set(fileId, model)
+    } else {
+      // Sync model with latest ytext content (may have changed while inactive)
+      const latest = ytext.toString()
+      if (model.getValue() !== latest) {
+        model.setValue(latest)
+      }
+    }
+
+    editor.setModel(model)
+
+    activeBindingRef.current = new MonacoBindingClass(
+      ytext,
+      model,
+      new Set([editor]),
+      provider?.awareness
+    )
+  }, [])
+
+  // Switch Monaco model whenever activeFileId changes in the store
+  useEffect(() => {
+    return useEditorStore.subscribe((state, prev) => {
+      if (state.activeFileId !== prev.activeFileId && state.activeFileId) {
+        activateFile(state.activeFileId)
+      }
+    })
+  }, [activateFile])
+
+  // Update Monaco model language + Yjs file-list when toolbar language changes
+  useEffect(() => {
+    const { activeFileId } = useEditorStore.getState()
+    if (!activeFileId || !monacoApiRef.current || !ydocRef.current) return
+    const model = modelsRef.current.get(activeFileId)
+    if (!model) return
+
+    monacoApiRef.current.editor.setModelLanguage(
+      model,
+      MONACO_LANG_MAP[language] ?? language
+    )
+
+    const fileList = ydocRef.current.getMap('file-list')
+    const raw = fileList.get(activeFileId)
+    if (raw) {
+      const meta = JSON.parse(raw) as FileMetadata
+      if (meta.language !== language) {
+        fileList.set(activeFileId, JSON.stringify({ ...meta, language }))
+      }
+    }
+  }, [language])
+
+  // Rename default file to match initial language on first load
   useEffect(() => {
     if (!initialLanguage) return
     setLanguage(initialLanguage)
@@ -153,15 +304,18 @@ export function EditorClient({
   }, [initialLanguage])
 
   const handleEditorMount: OnMount = useCallback(
-    async (editor) => {
-      _editor = editor
-      // Dynamic imports — all run browser-only, after editor mount.
-      // Avoids static import of monaco-editor (y-monaco) breaking SSR/webpack.
+    async (editor, monaco) => {
+      editorRef.current = editor
+      monacoApiRef.current = monaco
+      _editor = editor as typeof _editor
+
       const [Y, { WebsocketProvider }, { MonacoBinding }] = await Promise.all([
         import('yjs'),
         import('y-websocket'),
         import('y-monaco'),
       ])
+
+      MonacoBindingClassRef.current = MonacoBinding
 
       editor.addCommand(2048 | 49, () => setLastSaved(new Date()))
 
@@ -170,24 +324,14 @@ export function EditorClient({
 
       const ydoc = new Y.Doc()
       _ydoc = ydoc
+      ydocRef.current = ydoc
+
       const provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
         connect: true,
         resyncInterval: 10_000,
         maxBackoffTime: 60_000,
       })
-      const ytext = ydoc.getText('content')
-      const model = editor.getModel()
-      if (!model) {
-        provider.destroy()
-        ydoc.destroy()
-        return
-      }
-      const binding = new MonacoBinding(
-        ytext,
-        model,
-        new Set([editor]),
-        provider.awareness
-      )
+      providerRef.current = provider
 
       provider.awareness.setLocalStateField('user', {
         id: userId,
@@ -268,17 +412,155 @@ export function EditorClient({
         if (status === 'connected') setLastSaved(new Date())
       })
 
+      // Initialize file list after Yjs doc syncs with server
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(provider as any).once('sync', (synced: boolean) => {
+        if (!synced) return
+
+        const fileList = ydoc.getMap('file-list') as unknown as YMap
+
+        const parseEntries = (): FileMetadata[] => {
+          const entries: FileMetadata[] = []
+          fileList.forEach((val) => {
+            try {
+              entries.push(JSON.parse(val) as FileMetadata)
+            } catch {}
+          })
+          return entries.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        }
+
+        if (fileList.size === 0) {
+          // New room or pre-multi-file room: seed file-list from store
+          const { files: storeFiles } = useEditorStore.getState()
+          ydoc.transact(() => {
+            storeFiles.forEach((file, i) => {
+              fileList.set(
+                file.id,
+                JSON.stringify({
+                  id: file.id,
+                  name: file.name,
+                  language: file.language,
+                  order: i,
+                })
+              )
+            })
+          })
+          // Migrate legacy single-file content (getText('content') → getText('file:default'))
+          const legacyText = ydoc.getText('content').toString()
+          if (legacyText && storeFiles.length > 0) {
+            const defaultYtext = ydoc.getText(`file:${storeFiles[0].id}`)
+            if (defaultYtext.length === 0) {
+              defaultYtext.insert(0, legacyText)
+            }
+          }
+        } else {
+          // Existing room: sync file-list to store
+          const entries = parseEntries()
+          const {
+            setFiles: sf,
+            setActiveFile: saf,
+            activeFileId: currentActive,
+          } = useEditorStore.getState()
+          sf(
+            entries.map((m) => ({
+              id: m.id,
+              name: m.name,
+              language: m.language,
+              content: '',
+            }))
+          )
+          // Activate a valid file
+          const validId =
+            entries.find((e) => e.id === currentActive)?.id ?? entries[0]?.id
+          if (validId) saf(validId)
+        }
+
+        // Observer for live file-list changes (local + remote)
+        const handleFileListChange = () => {
+          const rawEntries = parseEntries()
+          // Deduplicate by ID — Yjs map + concurrent addFile calls can produce duplicates
+          const entries = Array.from(
+            new Map(rawEntries.map((e) => [e.id, e])).values()
+          )
+          const {
+            files: prevFiles,
+            activeFileId: currentActiveId,
+            setFiles: sf,
+            setActiveFile: saf,
+            setLanguage: sl,
+            language: currentLang,
+          } = useEditorStore.getState()
+
+          // Dispose models for removed files
+          const newIds = new Set(entries.map((e) => e.id))
+          prevFiles.forEach((f) => {
+            if (!newIds.has(f.id)) {
+              const model = modelsRef.current.get(f.id)
+              if (model) {
+                try {
+                  model.dispose()
+                } catch {}
+                modelsRef.current.delete(f.id)
+              }
+            }
+          })
+
+          sf(
+            entries.map((m) => ({
+              id: m.id,
+              name: m.name,
+              language: m.language,
+              content: '',
+            }))
+          )
+
+          // If active file was removed, switch to another
+          if (currentActiveId && !newIds.has(currentActiveId)) {
+            const first = entries[0]
+            if (first) saf(first.id)
+          }
+
+          // Sync language if remote user changed active file's language
+          if (currentActiveId) {
+            const entry = entries.find((e) => e.id === currentActiveId)
+            if (entry && entry.language !== currentLang) {
+              sl(entry.language)
+            }
+          }
+        }
+
+        fileList.observe(handleFileListChange)
+
+        // Activate the current file now that everything is ready
+        const { activeFileId: initialActiveId } = useEditorStore.getState()
+        if (initialActiveId) activateFile(initialActiveId)
+      })
+
       cleanupRef.current = () => {
         _editor = null
         _ydoc = null
+        ydocRef.current = null
+        providerRef.current = null
+        editorRef.current = null
+        monacoApiRef.current = null
+        MonacoBindingClassRef.current = null
+        const prevBinding = activeBindingRef.current
+        activeBindingRef.current = null
+        prevBinding?.destroy()
+        modelsRef.current.forEach((model) => {
+          try {
+            model.dispose()
+          } catch {}
+        })
+        modelsRef.current.clear()
         provider.awareness.off('change', handleAwarenessChange)
         styleEl.remove()
-        binding.destroy()
         provider.destroy()
         ydoc.destroy()
       }
     },
-    [roomId, userId, userName, setLastSaved]
+    // activateFile is stable (useCallback with [])
+    [roomId, userId, userName, setLastSaved, activateFile]
   )
 
   useEffect(() => {
