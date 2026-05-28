@@ -77,7 +77,7 @@ const phases = [
       { name: 'Persistent snapshots (survive server restarts)', done: true },
       { name: 'Offline editing with auto-reconnect', done: true },
       { name: 'Multi-user simultaneous editing', done: true },
-      { name: 'Horizontal scaling via Redis pub/sub', done: false },
+      { name: 'Horizontal scaling via Redis pub/sub', done: true },
     ],
   },
   {

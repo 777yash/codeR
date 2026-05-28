@@ -1,9 +1,33 @@
 const releases = [
   {
+    phase: '04.1',
+    title: 'Horizontal Scaling via Redis Pub/Sub',
+    date: 'May 28, 2026',
+    status: 'latest',
+    accentColor: '#FF2D55',
+    summary:
+      'collab-server now scales horizontally. Yjs updates on one instance are broadcast to all instances via Redis pub/sub — multiple Render replicas share the same real-time document state.',
+    changes: [
+      {
+        type: 'infra',
+        items: [
+          'redis-pubsub.ts — initRedis() + wireDocPubSub(docName, doc) bridge',
+          'Separate pub + sub ioredis clients per process (subscriber mode restriction)',
+          'Per-process INSTANCE_ID prevents self-echo: published messages carry origin ID, instances skip their own',
+          'applyingRemote boolean per doc blocks re-publish when applying incoming Redis update (loop guard)',
+          'Central dispatcher: single sub.on("message") listener routes by channel — no per-doc listener leak',
+          'wireDocPubSub wired into setContentInitializor — every doc gets pub/sub on creation',
+          'Graceful degradation: UPSTASH_REDIS_URL absent → single-instance mode, no behaviour change',
+          'UPSTASH_REDIS_URL added to .env.example (rediss:// native protocol URL from Upstash Console)',
+        ],
+      },
+    ],
+  },
+  {
     phase: '03.5',
     title: 'Multi-File Workspace',
     date: 'May 27, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#FF9F0A',
     summary:
       'Full multi-file workspace — create, rename, and delete files per room. Each file has its own Yjs text; file list syncs across all collaborators in real-time.',
