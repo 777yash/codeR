@@ -51,7 +51,7 @@ interface FileExplorerProps {
 
 export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
   const {
-    files,
+    files: rawFiles,
     activeFileId,
     setActiveFile,
     addFile,
@@ -59,6 +59,7 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
     removeFile,
     language,
   } = useEditorStore()
+  const files = Array.from(new Map(rawFiles.map((f) => [f.id, f])).values())
   const [showInput, setShowInput] = useState(false)
   const [newName, setNewName] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)

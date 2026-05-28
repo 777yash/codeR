@@ -30,7 +30,8 @@ model User {
   invitationsSent     Invitation[] @relation("InvitationsSent")
   invitationsReceived Invitation[] @relation("InvitationsReceived")
 
-  executionLogs ExecutionLog[]
+  executionLogs     ExecutionLog[]
+  documentSnapshots DocumentSnapshot[]
 
   @@map("users")
 }
@@ -131,7 +132,8 @@ model Room {
   shareLinks  ShareLink[]
   chatMessages ChatMessage[]
   invitations Invitation[]
-  executionLogs ExecutionLog[]
+  executionLogs     ExecutionLog[]
+  documentSnapshots DocumentSnapshot[]
   content         String?  @db.Text
   contentSnapshot Bytes?
 
@@ -217,4 +219,20 @@ model ExecutionLog {
 
   @@index([roomId, createdAt])
   @@map("execution_logs")
+}
+
+model DocumentSnapshot {
+  id        String   @id @default(cuid())
+  label     String?
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([roomId, createdAt])
+  @@map("document_snapshots")
 }

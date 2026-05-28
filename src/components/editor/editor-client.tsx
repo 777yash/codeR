@@ -123,8 +123,28 @@ let _editor: {
 
 let _ydoc: YDoc | null = null
 
+// Module-level registry — subscriptions registered before ydoc is ready still work
+const executionResultSubscribers = new Set<(result: unknown) => void>()
+
+// Guard against double-destroy on MonacoBinding (yjs throws if handler already removed)
+const _destroyedBindings = new WeakSet<object>()
+function safeDestroyBinding(binding: unknown): void {
+  if (!binding || _destroyedBindings.has(binding as object)) return
+  _destroyedBindings.add(binding as object)
+  ;(binding as { destroy(): void }).destroy()
+}
+
 export function getEditorContent(): string {
   return _editor?.getModel()?.getValue() ?? ''
+}
+
+export function getAllFilesContent(): { name: string; content: string }[] {
+  const { files } = useEditorStore.getState()
+  if (!_ydoc) return files.map((f) => ({ name: f.name, content: f.content }))
+  return files.map((file) => ({
+    name: file.name,
+    content: _ydoc!.getText(`file:${file.id}`).toString(),
+  }))
 }
 
 export function broadcastExecutionResult(result: unknown): void {
@@ -134,14 +154,8 @@ export function broadcastExecutionResult(result: unknown): void {
 export function subscribeToExecutionResults(
   callback: (result: unknown) => void
 ): () => void {
-  if (!_ydoc) return () => {}
-  const map = _ydoc.getMap('execution-results')
-  const observer = () => {
-    const raw = map.get('latest')
-    if (raw) callback(JSON.parse(raw) as unknown)
-  }
-  map.observe(observer)
-  return () => map.unobserve(observer)
+  executionResultSubscribers.add(callback)
+  return () => executionResultSubscribers.delete(callback)
 }
 
 export function addSharedFile(file: EditorFile): void {
@@ -187,6 +201,8 @@ export function EditorClient({
   readOnly = false,
 }: EditorClientProps) {
   const cleanupRef = useRef<(() => void) | null>(null)
+  // true = no active binding / already destroyed; prevents double-destroy
+  const bindingDestroyedRef = useRef(true)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null)
   const ydocRef = useRef<YDoc | null>(null)
@@ -226,7 +242,10 @@ export function EditorClient({
 
     const prevBinding = activeBindingRef.current
     activeBindingRef.current = null
-    prevBinding?.destroy()
+    if (prevBinding && !bindingDestroyedRef.current) {
+      bindingDestroyedRef.current = true
+      safeDestroyBinding(prevBinding)
+    }
 
     const { files: currentFiles } = useEditorStore.getState()
     const file = currentFiles.find((f) => f.id === fileId)
@@ -258,6 +277,7 @@ export function EditorClient({
       new Set([editor]),
       provider?.awareness
     )
+    bindingDestroyedRef.current = false
   }, [])
 
   // Switch Monaco model whenever activeFileId changes in the store
@@ -325,6 +345,16 @@ export function EditorClient({
       const ydoc = new Y.Doc()
       _ydoc = ydoc
       ydocRef.current = ydoc
+
+      const execResultsMap = ydoc.getMap<string>('execution-results')
+      const execResultsObserver = () => {
+        const raw = execResultsMap.get('latest')
+        if (raw) {
+          const result = JSON.parse(raw) as unknown
+          executionResultSubscribers.forEach((cb) => cb(result))
+        }
+      }
+      execResultsMap.observe(execResultsObserver)
 
       const provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
         connect: true,
@@ -498,7 +528,7 @@ export function EditorClient({
               const model = modelsRef.current.get(f.id)
               if (model) {
                 try {
-                  model.dispose()
+                  if (!model.isDisposed()) model.dispose()
                 } catch {}
                 modelsRef.current.delete(f.id)
               }
@@ -537,6 +567,8 @@ export function EditorClient({
       })
 
       cleanupRef.current = () => {
+        const editorInstance = _editor
+        const fullEditor = editorRef.current
         _editor = null
         _ydoc = null
         ydocRef.current = null
@@ -546,17 +578,33 @@ export function EditorClient({
         MonacoBindingClassRef.current = null
         const prevBinding = activeBindingRef.current
         activeBindingRef.current = null
-        prevBinding?.destroy()
+        // 1. destroy yjs binding (guarded — double-destroy throws yjs warning)
+        if (prevBinding && !bindingDestroyedRef.current) {
+          bindingDestroyedRef.current = true
+          safeDestroyBinding(prevBinding)
+        }
+        // 2. dismiss hover/suggest widgets before detaching model
+        try {
+          fullEditor?.trigger('source', 'hideSuggestWidget', undefined)
+        } catch {}
+        // 3. detach model from all editor widgets before dispose
+        editorInstance?.setModel(null)
+        // 4. dispose each model only after detached
         modelsRef.current.forEach((model) => {
           try {
-            model.dispose()
+            if (!model.isDisposed()) model.dispose()
           } catch {}
         })
         modelsRef.current.clear()
+        execResultsMap.unobserve(execResultsObserver)
         provider.awareness.off('change', handleAwarenessChange)
         styleEl.remove()
         provider.destroy()
         ydoc.destroy()
+        // 5. dispose Monaco editor last — cancels pending async timers (InstantiationService)
+        try {
+          fullEditor?.dispose()
+        } catch {}
       }
     },
     // activateFile is stable (useCallback with [])

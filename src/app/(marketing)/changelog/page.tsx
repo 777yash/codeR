@@ -1,9 +1,79 @@
 const releases = [
   {
+    phase: '07',
+    title: 'Version History',
+    date: 'May 29, 2026',
+    status: 'latest',
+    accentColor: '#FF9F0A',
+    summary:
+      'Persistent document snapshots with visual diff comparison. Auto-saves every 60 seconds via collab-server; users can save named versions at any time. History panel with tabbed Named / Auto-saves views and drag-to-resize.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Auto-snapshots every 60s — collab-server writes DocumentSnapshot rows via POST /api/rooms/[id]/snapshots/auto (capped at 50 per room)',
+          'Named versions — bookmark icon in room header opens SaveVersionDialog; OWNER/EDITOR can label and save current state at any time',
+          'Version history panel — History icon button, slide-in from right, drag-to-resize (min 380px, max 92vw)',
+          'Tabbed list: Named tab (BookmarkCheck icon) + Auto-saves tab (Clock icon) with per-tab empty states',
+          'Monaco DiffEditor — click any snapshot to compare it against current editor content (original=snapshot, modified=current)',
+          'Per-user attribution: named snapshots record createdById; auto-saves store null (no user context)',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'DocumentSnapshot Prisma model — id, label?, data Bytes, roomId, createdById? (nullable), createdAt. Index on [roomId, createdAt]',
+          'saveAutoSnapshot() in collab-server/src/snapshot.ts — POSTs Y.Doc state bytes to /api/rooms/[id]/snapshots/auto with internal secret',
+          'GET /api/rooms/[id]/snapshots — list (any member, limit 50); POST — named save (OWNER/EDITOR)',
+          'GET /api/rooms/[id]/snapshots/[snapshotId] — decodes Yjs bytes server-side: reads file-list map for multi-file rooms, falls back to getText("content") for legacy',
+          'Yjs decode type fix: Prisma Bytes = Uint8Array<ArrayBuffer>, yjs expects Uint8Array<ArrayBufferLike> — cast via `as unknown as Uint8Array`',
+          'Snapshot interval changed from 30s to 60s in collab-server',
+        ],
+      },
+    ],
+  },
+  {
+    phase: '06.1',
+    title: 'Execution Bug Fixes',
+    date: 'May 29, 2026',
+    status: 'shipped',
+    accentColor: '#32D74B',
+    summary:
+      'Multi-file execution, terminal toggle for all users, cross-tab result sync, and Monaco lifecycle stability fixes.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Multi-file execution — getAllFilesContent() reads all Yjs texts; all workspace files sent to OneCompiler files[] (fixes C/C++ "undefined reference to main" across file tabs)',
+          'Terminal toggle button — Terminal icon visible to all roles (VIEWER/EDITOR/OWNER); panel open state in Zustand store',
+          'canRun prop — VIEWERs see output panel and results but Run button hidden; stdin disabled',
+          'Viewer placeholder text: "Waiting for collaborator to run code…"',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'Execution result sync across collaborators — subscribeToExecutionResults() now uses module-level Set (registered before ydoc is ready); observer wired in handleEditorMount after _ydoc = ydoc',
+          'MonacoBinding double-destroy — WeakSet (_destroyedBindings) + bindingDestroyedRef (useRef) guard; safeDestroyBinding() wrapper used in activateFile and cleanup',
+          'TextModel disposed before DiffEditorWidget — editor.trigger("hideSuggestWidget") → editor.setModel(null) → model.dispose() → editor.dispose() in correct order',
+          'InstantiationService disposed — fullEditor.dispose() called last after all models disposed',
+          'Duplicate React keys in FileExplorer/FileTabs — defensive Array.from(new Map(...).values()) dedup at render time',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'execute/route.ts schema: code: string → files: { name, content }[] (min 1, max 20 files)',
+          'executionPanelOpen + setExecutionPanelOpen added to editor-store; ExecutionPanel reads from store',
+        ],
+      },
+    ],
+  },
+  {
     phase: '04.1',
     title: 'Horizontal Scaling via Redis Pub/Sub',
     date: 'May 28, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#FF2D55',
     summary:
       'collab-server now scales horizontally. Yjs updates on one instance are broadcast to all instances via Redis pub/sub — multiple Render replicas share the same real-time document state.',
@@ -145,7 +215,7 @@ const releases = [
           'y-monaco binding — Monaco editor wired to Yjs text type',
           'collab-server deployed on Render with y-websocket v2 server utilities',
           'Snapshot persistence: `bindState` loads from DB on first join, `writeState` saves on last leave',
-          'Periodic 30s snapshot saves via `setContentInitializor` interval',
+          'Periodic snapshot saves via `setContentInitializor` interval (60s since Phase 07)',
         ],
       },
       {
@@ -572,7 +642,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 07 — Version History
+          Phase 08 — Chat
         </h3>
         <p
           style={{
@@ -582,8 +652,8 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Auto-snapshots every 30s, named versions, visual diff viewer, and
-          one-click restore via collab-server.
+          In-session room chat with message persistence, code snippet sharing,
+          and unread count badges.
         </p>
         <a
           href="/features#phase-06"

@@ -44,6 +44,9 @@ interface EditorState {
 
   lastSaved: Date | null
   setLastSaved: (date: Date) => void
+
+  executionPanelOpen: boolean
+  setExecutionPanelOpen: (open: boolean) => void
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -113,4 +116,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   lastSaved: null,
   setLastSaved: (date) => set({ lastSaved: date }),
+
+  executionPanelOpen: false,
+  setExecutionPanelOpen: (open) => set({ executionPanelOpen: open }),
 }))

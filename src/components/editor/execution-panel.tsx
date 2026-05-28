@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Play, ChevronDown } from 'lucide-react'
+import { Play, ChevronDown, Terminal } from 'lucide-react'
 import { useEditorStore } from '@/stores/editor-store'
 import {
-  getEditorContent,
+  getAllFilesContent,
   broadcastExecutionResult,
   subscribeToExecutionResults,
 } from '@/components/editor/editor-client'
@@ -16,12 +16,13 @@ interface ExecutionResult {
   stderr: string
   exitCode: number | null
   signal?: string | null
-  execStatus: string | null // TO=timeout, RE=runtime error, SG=signal, OL=output limit
+  execStatus: string | null
   durationMs: number
 }
 
 interface ExecutionPanelProps {
   roomId: string
+  canRun?: boolean
 }
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -42,16 +43,18 @@ const STATUS_COLOR: Record<Status, string> = {
   offline: '#555555',
 }
 
-export function ExecutionPanel({ roomId }: ExecutionPanelProps) {
-  const [open, setOpen] = useState(false)
+export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
+  const {
+    executionPanelOpen: open,
+    setExecutionPanelOpen: setOpen,
+    language,
+  } = useEditorStore()
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<ExecutionResult | null>(null)
   const [stdin, setStdin] = useState('')
-  const { language } = useEditorStore()
 
-  // Receive execution results broadcast by other collaborators
   useEffect(() => {
-    const unsub = subscribeToExecutionResults((raw) => {
+    return subscribeToExecutionResults((raw) => {
       const data = raw as ExecutionResult & { _fromPeer?: boolean }
       if (!data._fromPeer) return
       const timedOut =
@@ -64,11 +67,10 @@ export function ExecutionPanel({ roomId }: ExecutionPanelProps) {
       setResult(data)
       setOpen(true)
     })
-    return unsub
-  }, [])
+  }, [setOpen])
 
   async function handleRun() {
-    const code = getEditorContent()
+    const files = getAllFilesContent()
     setOpen(true)
     setStatus('running')
     setResult(null)
@@ -77,7 +79,7 @@ export function ExecutionPanel({ roomId }: ExecutionPanelProps) {
       const res = await fetch('/api/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, language, code, stdin }),
+        body: JSON.stringify({ roomId, language, files, stdin }),
       })
 
       if (res.status === 429) {
@@ -96,13 +98,13 @@ export function ExecutionPanel({ roomId }: ExecutionPanelProps) {
 
       if (!res.ok) {
         const { error } = (await res.json()) as { error: string }
-        const status =
+        const s =
           res.status === 408
             ? 'timeout'
             : res.status === 502
               ? 'offline'
               : 'error'
-        setStatus(status)
+        setStatus(s)
         setResult({
           stdout: '',
           stderr: error ?? 'Execution failed',
@@ -141,23 +143,37 @@ export function ExecutionPanel({ roomId }: ExecutionPanelProps) {
 
   return (
     <>
-      {/* Run button — renders at call site in top bar */}
+      {/* Terminal toggle — visible to all users */}
       <button
-        onClick={handleRun}
-        disabled={running}
-        className="flex h-7 items-center gap-1.5 rounded-md bg-[#32D74B] px-3 text-xs font-semibold text-black transition-colors hover:bg-[#32D74B]/90 disabled:cursor-not-allowed disabled:opacity-50"
+        onClick={() => setOpen(!open)}
+        title={open ? 'Hide output' : 'Show output'}
+        className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
+          open
+            ? 'bg-white/10 text-[#F0F0F0]'
+            : 'text-[#555555] hover:bg-white/5 hover:text-[#888888]'
+        }`}
       >
-        <Play className="h-3 w-3" />
-        {running ? 'Running…' : 'Run'}
+        <Terminal className="h-3.5 w-3.5" />
       </button>
 
-      {/* Bottom drawer — fixed, full width, above status bar */}
+      {/* Run button — OWNER/EDITOR only */}
+      {canRun && (
+        <button
+          onClick={handleRun}
+          disabled={running}
+          className="flex h-7 items-center gap-1.5 rounded-md bg-[#32D74B] px-3 text-xs font-semibold text-black transition-colors hover:bg-[#32D74B]/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Play className="h-3 w-3" />
+          {running ? 'Running…' : 'Run'}
+        </button>
+      )}
+
+      {/* Bottom drawer */}
       {open && (
         <div
           className="fixed right-0 bottom-0 left-0 z-40 flex flex-col border-t border-white/[0.08] bg-[#111111]"
           style={{ height: 280 }}
         >
-          {/* Drawer header */}
           <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/[0.08] px-4">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-[#888888]">
@@ -180,25 +196,26 @@ export function ExecutionPanel({ roomId }: ExecutionPanelProps) {
             </div>
 
             <div className="flex items-center gap-1">
-              <button
-                onClick={handleRun}
-                disabled={running}
-                className="flex h-6 items-center gap-1 rounded bg-[#32D74B] px-2 text-[10px] font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Play className="h-2.5 w-2.5" />
-                Run
-              </button>
+              {canRun && (
+                <button
+                  onClick={handleRun}
+                  disabled={running}
+                  className="flex h-6 items-center gap-1 rounded bg-[#32D74B] px-2 text-[10px] font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Play className="h-2.5 w-2.5" />
+                  Run
+                </button>
+              )}
               <button
                 onClick={() => setOpen(false)}
                 className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5"
-                title="Close output panel"
+                title="Minimize output"
               >
                 <ChevronDown className="h-3.5 w-3.5 text-[#555555]" />
               </button>
             </div>
           </div>
 
-          {/* stdin input */}
           <div className="shrink-0 border-b border-white/[0.08]">
             <div className="flex items-center gap-2 px-4 py-1">
               <span className="text-[10px] font-semibold tracking-wide text-[#444444] uppercase">
@@ -208,14 +225,13 @@ export function ExecutionPanel({ roomId }: ExecutionPanelProps) {
             <textarea
               value={stdin}
               onChange={(e) => setStdin(e.target.value)}
-              disabled={running}
+              disabled={running || !canRun}
               placeholder="Program input (one value per line)…"
               className="w-full resize-none bg-transparent px-4 pb-2 font-mono text-xs text-[#aaaaaa] placeholder-[#333333] outline-none disabled:opacity-40"
               rows={2}
             />
           </div>
 
-          {/* Output content */}
           <div className="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed">
             {running && (
               <span className="animate-pulse text-[#555555]">Running…</span>
@@ -227,7 +243,11 @@ export function ExecutionPanel({ roomId }: ExecutionPanelProps) {
               </span>
             )}
             {!running && status !== 'offline' && !result && (
-              <span className="text-[#444444]">Press Run to execute code.</span>
+              <span className="text-[#444444]">
+                {canRun
+                  ? 'Press Run to execute code.'
+                  : 'Waiting for collaborator to run code…'}
+              </span>
             )}
             {!running && result && (
               <>

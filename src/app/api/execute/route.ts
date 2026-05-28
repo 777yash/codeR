@@ -92,7 +92,15 @@ async function getUserRoomRole(
 const executeSchema = z.object({
   roomId: z.string().min(1),
   language: z.string().min(1),
-  code: z.string().max(MAX_CODE_LENGTH),
+  files: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        content: z.string().max(MAX_CODE_LENGTH),
+      })
+    )
+    .min(1)
+    .max(20),
   stdin: z.string().max(10_000).optional(),
 })
 
@@ -109,7 +117,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
   }
 
-  const { roomId, language, code, stdin = '' } = parsed.data
+  const { roomId, language, files: inputFiles, stdin = '' } = parsed.data
 
   const langConfig = LANG_MAP[language]
   if (!langConfig) {
@@ -156,7 +164,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         language: langConfig.language,
         stdin,
-        files: [{ name: langConfig.filename, content: code }],
+        files: inputFiles.map((f) => ({ name: f.name, content: f.content })),
       }),
       signal: abort.signal,
     })

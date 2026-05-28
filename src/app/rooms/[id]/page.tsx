@@ -13,6 +13,8 @@ import { LanguageIcon } from '@/components/editor/language-icon'
 import { LiveBadge } from '@/components/editor/live-badge'
 import { SettingsDialog } from '@/components/editor/settings-dialog'
 import { ExecutionPanel } from '@/components/editor/execution-panel'
+import { SaveVersionDialog } from '@/components/editor/save-version-dialog'
+import { VersionHistoryPanel } from '@/components/editor/version-history-panel'
 import type { RoomWithRelations } from '@/app/rooms/[id]/settings/settings-client'
 
 interface RoomPageProps {
@@ -218,7 +220,12 @@ export default async function RoomPage({ params }: RoomPageProps) {
           <ThemeToggle />
           <ShareButton roomId={id} userRole={userRole ?? null} />
 
-          {userRole !== 'VIEWER' && <ExecutionPanel roomId={id} />}
+          {userRole !== 'VIEWER' && <SaveVersionDialog roomId={id} />}
+          {userRole !== 'VIEWER' && (
+            <VersionHistoryPanel roomId={id} roomLanguage={room.language} />
+          )}
+
+          <ExecutionPanel roomId={id} canRun={userRole !== 'VIEWER'} />
 
           {userRole === 'OWNER' && (
             <SettingsDialog

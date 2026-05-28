@@ -49,8 +49,15 @@ function extToLang(ext: string | undefined, fallback: string): string {
 }
 
 export function FileTabs() {
-  const { files, activeFileId, setActiveFile, addFile, removeFile, language } =
-    useEditorStore()
+  const {
+    files: rawFiles,
+    activeFileId,
+    setActiveFile,
+    addFile,
+    removeFile,
+    language,
+  } = useEditorStore()
+  const files = Array.from(new Map(rawFiles.map((f) => [f.id, f])).values())
   const [showInput, setShowInput] = useState(false)
   const [newFileName, setNewFileName] = useState('')
 
