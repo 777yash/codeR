@@ -122,6 +122,12 @@ let _editor: {
 } | null = null
 
 let _ydoc: YDoc | null = null
+let _encodeStateAsUpdate: ((doc: unknown) => Uint8Array) | null = null
+
+export function getYjsStateBytes(): Uint8Array | null {
+  if (!_ydoc || !_encodeStateAsUpdate) return null
+  return _encodeStateAsUpdate(_ydoc)
+}
 
 // Module-level registry — subscriptions registered before ydoc is ready still work
 const executionResultSubscribers = new Set<(result: unknown) => void>()
@@ -335,6 +341,9 @@ export function EditorClient({
         import('y-monaco'),
       ])
 
+      _encodeStateAsUpdate = Y.encodeStateAsUpdate as (
+        doc: unknown
+      ) => Uint8Array
       MonacoBindingClassRef.current = MonacoBinding
 
       editor.addCommand(2048 | 49, () => setLastSaved(new Date()))

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   History,
   X,
@@ -8,8 +8,10 @@ import {
   Loader2,
   BookmarkCheck,
   Clock,
+  Trash2,
 } from 'lucide-react'
 import { DiffEditor } from '@monaco-editor/react'
+import type { editor } from 'monaco-editor'
 import { formatDistanceToNow } from 'date-fns'
 import { getEditorContent } from './editor-client'
 
@@ -48,9 +50,27 @@ export function VersionHistoryPanel({
   const [activeTab, setActiveTab] = useState<Tab>('named')
   const [panelWidth, setPanelWidth] = useState(DEFAULT_WIDTH)
 
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  async function deleteSnapshot(e: React.MouseEvent, snapshotId: string) {
+    e.stopPropagation()
+    setDeletingId(snapshotId)
+    try {
+      const res = await fetch(`/api/rooms/${roomId}/snapshots/${snapshotId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setSnapshots((prev) => prev.filter((s) => s.id !== snapshotId))
+      }
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const isResizing = useRef(false)
   const resizeStartX = useRef(0)
   const resizeStartWidth = useRef(0)
+  const diffEditorRef = useRef<editor.IStandaloneDiffEditor | null>(null)
 
   const fetchList = useCallback(async () => {
     setListLoading(true)
@@ -72,6 +92,15 @@ export function VersionHistoryPanel({
       setDiffLoading(false)
     }
   }
+
+  // Trigger layout refresh when DiffEditor transitions from hidden to visible
+  useEffect(() => {
+    if (selected && !diffLoading && diffEditorRef.current) {
+      requestAnimationFrame(() => {
+        diffEditorRef.current?.layout()
+      })
+    }
+  }, [selected, diffLoading])
 
   function startResize(e: React.MouseEvent) {
     e.preventDefault()
@@ -105,6 +134,8 @@ export function VersionHistoryPanel({
   const autoSaves = snapshots.filter((s) => s.label === null)
   const visible = activeTab === 'named' ? named : autoSaves
 
+  const showDiff = !!selected && !diffLoading
+
   return (
     <>
       <button
@@ -123,7 +154,10 @@ export function VersionHistoryPanel({
         <div className="fixed inset-0 z-50 flex items-start justify-end">
           <div
             className="absolute inset-0 bg-black/60"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              diffEditorRef.current?.setModel(null)
+              setOpen(false)
+            }}
           />
 
           <div
@@ -162,7 +196,10 @@ export function VersionHistoryPanel({
                 )}
               </div>
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  diffEditorRef.current?.setModel(null)
+                  setOpen(false)
+                }}
                 className="text-app-dim hover:text-app flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
               >
                 <X className="h-4 w-4" />
@@ -215,8 +252,9 @@ export function VersionHistoryPanel({
 
             {/* Body */}
             <div className="flex min-h-0 flex-1 flex-col">
-              {!selected ? (
-                listLoading ? (
+              {/* List view — hidden when diff is active */}
+              {!selected &&
+                (listLoading ? (
                   <div className="flex flex-1 items-center justify-center">
                     <Loader2 className="text-app-dim h-5 w-5 animate-spin" />
                   </div>
@@ -247,78 +285,106 @@ export function VersionHistoryPanel({
                 ) : (
                   <div className="flex-1 overflow-y-auto py-2">
                     {visible.map((snap) => (
-                      <button
+                      <div
                         key={snap.id}
-                        onClick={() => openDiff(snap)}
-                        className="hover:bg-app-card-hover flex w-full items-center gap-3 px-5 py-3 text-left transition-colors"
+                        className="hover:bg-app-card-hover group flex w-full items-center gap-3 px-5 py-3 transition-colors"
                       >
-                        <div className="shrink-0">
-                          {snap.label ? (
-                            <BookmarkCheck className="h-4 w-4 text-[#FF2D55]" />
+                        <button
+                          onClick={() => openDiff(snap)}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          <div className="shrink-0">
+                            {snap.label ? (
+                              <BookmarkCheck className="h-4 w-4 text-[#FF2D55]" />
+                            ) : (
+                              <Clock className="text-app-dim h-4 w-4" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-app truncate text-xs font-medium">
+                              {snap.label ?? 'Auto-saved'}
+                            </p>
+                            <p className="text-app-dim mt-0.5 text-xs">
+                              {formatDistanceToNow(new Date(snap.createdAt), {
+                                addSuffix: true,
+                              })}
+                              {snap.createdBy?.name
+                                ? ` · ${snap.createdBy.name}`
+                                : ''}
+                            </p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={(e) => deleteSnapshot(e, snap.id)}
+                          disabled={deletingId === snap.id}
+                          title="Delete snapshot"
+                          className="text-app-dim invisible flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors group-hover:visible hover:bg-white/5 hover:text-red-400 disabled:opacity-50"
+                        >
+                          {deletingId === snap.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
-                            <Clock className="text-app-dim h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-app truncate text-xs font-medium">
-                            {snap.label ?? 'Auto-saved'}
-                          </p>
-                          <p className="text-app-dim mt-0.5 text-xs">
-                            {formatDistanceToNow(new Date(snap.createdAt), {
-                              addSuffix: true,
-                            })}
-                            {snap.createdBy?.name
-                              ? ` · ${snap.createdBy.name}`
-                              : ''}
-                          </p>
-                        </div>
-                      </button>
+                        </button>
+                      </div>
                     ))}
                   </div>
-                )
-              ) : diffLoading ? (
+                ))}
+
+              {/* Diff loading spinner */}
+              {selected && diffLoading && (
                 <div className="flex flex-1 items-center justify-center">
                   <Loader2 className="text-app-dim h-5 w-5 animate-spin" />
                 </div>
-              ) : (
-                /* Diff view */
-                <div className="flex flex-1 flex-col">
-                  <div className="border-app flex shrink-0 items-center justify-between border-b px-5 py-2">
-                    <div className="flex items-center gap-4 text-xs">
-                      <span className="text-app-dim flex items-center gap-1">
-                        <span className="inline-block h-2 w-2 rounded-full bg-[#555]" />
-                        Snapshot
-                      </span>
-                      <span className="text-app-dim flex items-center gap-1">
-                        <span className="inline-block h-2 w-2 rounded-full bg-[#FF2D55]" />
-                        Current
-                      </span>
-                    </div>
-                    {selected.createdBy?.name && (
-                      <span className="text-app-dim text-xs">
-                        by {selected.createdBy.name}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <DiffEditor
-                      original={selected.content}
-                      modified={currentContent}
-                      language={roomLanguage}
-                      theme="vs-dark"
-                      options={{
-                        readOnly: true,
-                        renderSideBySide: true,
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        lineNumbers: 'on',
-                        scrollBeyondLastLine: false,
-                        renderOverviewRuler: false,
-                      }}
-                    />
-                  </div>
-                </div>
               )}
+
+              {/*
+               * DiffEditor stays mounted for the lifetime of the open panel.
+               * Hiding via display:none (not unmounting) prevents TextModel
+               * disposal while Monaco context-menu actions are in flight.
+               */}
+              <div
+                className="flex flex-1 flex-col"
+                style={{ display: showDiff ? 'flex' : 'none' }}
+              >
+                <div className="border-app flex shrink-0 items-center justify-between border-b px-5 py-2">
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-app-dim flex items-center gap-1">
+                      <span className="inline-block h-2 w-2 rounded-full bg-[#FF2D55]" />
+                      Snapshot
+                    </span>
+                    <span className="text-app-dim flex items-center gap-1">
+                      <span className="inline-block h-2 w-2 rounded-full bg-[#9bb955]" />
+                      Current
+                    </span>
+                  </div>
+                  {selected?.createdBy?.name && (
+                    <span className="text-app-dim text-xs">
+                      by {selected.createdBy.name}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <DiffEditor
+                    original={selected?.content ?? ''}
+                    modified={currentContent}
+                    language={roomLanguage}
+                    theme="vs-dark"
+                    options={{
+                      readOnly: true,
+                      renderSideBySide: true,
+                      minimap: { enabled: false },
+                      fontSize: 13,
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                      renderOverviewRuler: false,
+                    }}
+                    onMount={(ed) => {
+                      diffEditorRef.current = ed
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

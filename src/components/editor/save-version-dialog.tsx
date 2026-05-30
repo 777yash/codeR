@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Bookmark, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getYjsStateBytes } from './editor-client'
 
 interface SaveVersionDialogProps {
   roomId: string
@@ -21,16 +22,18 @@ export function SaveVersionDialog({ roomId }: SaveVersionDialogProps) {
 
   function handleClose() {
     setLabel('')
-    handleClose()
+    setOpen(false)
   }
 
   async function handleSave() {
     setSaving(true)
     try {
+      const bytes = getYjsStateBytes()
+      const data = bytes ? btoa(String.fromCharCode(...bytes)) : undefined
       const res = await fetch(`/api/rooms/${roomId}/snapshots`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ label: label.trim() || undefined }),
+        body: JSON.stringify({ label: label.trim() || undefined, data }),
       })
 
       if (!res.ok) {

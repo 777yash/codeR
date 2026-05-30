@@ -36,6 +36,34 @@ function decodeContent(data: Uint8Array): string {
   return doc.getText('content').toString()
 }
 
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string; snapshotId: string }> }
+) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id: roomId, snapshotId } = await params
+  const role = await getUserRoomRole(roomId, session.user.id)
+  if (role !== 'OWNER' && role !== 'EDITOR') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const snapshot = await prisma.documentSnapshot.findUnique({
+    where: { id: snapshotId },
+    select: { roomId: true },
+  })
+
+  if (!snapshot || snapshot.roomId !== roomId) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  await prisma.documentSnapshot.delete({ where: { id: snapshotId } })
+  return new NextResponse(null, { status: 204 })
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string; snapshotId: string }> }

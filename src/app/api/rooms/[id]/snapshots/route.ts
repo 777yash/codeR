@@ -25,6 +25,7 @@ async function getUserRoomRole(
 
 const createSnapshotSchema = z.object({
   label: z.string().min(1).max(100).optional(),
+  data: z.string().optional(), // base64-encoded Yjs state from client
 })
 
 export async function GET(
@@ -80,26 +81,31 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
   }
 
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-    select: { contentSnapshot: true },
-  })
+  let snapshotBytes: Buffer | null = null
 
-  if (!room) {
-    return NextResponse.json({ error: 'Room not found' }, { status: 404 })
-  }
-
-  if (!room.contentSnapshot) {
-    return NextResponse.json(
-      { error: 'No content to snapshot yet' },
-      { status: 422 }
-    )
+  if (parsed.data.data) {
+    snapshotBytes = Buffer.from(parsed.data.data, 'base64')
+  } else {
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      select: { contentSnapshot: true },
+    })
+    if (!room) {
+      return NextResponse.json({ error: 'Room not found' }, { status: 404 })
+    }
+    if (!room.contentSnapshot) {
+      return NextResponse.json(
+        { error: 'No content to snapshot yet' },
+        { status: 422 }
+      )
+    }
+    snapshotBytes = Buffer.from(room.contentSnapshot)
   }
 
   const snapshot = await prisma.documentSnapshot.create({
     data: {
       roomId,
-      data: room.contentSnapshot,
+      data: snapshotBytes as unknown as Uint8Array<ArrayBuffer>,
       label: parsed.data.label ?? null,
       createdById: session.user.id,
     },
