@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-import { env } from '@/lib/env'
 
 async function getUserRoomRole(roomId: string, userId: string) {
   const room = await prisma.room.findUnique({
@@ -48,10 +47,11 @@ export async function POST(
   })
 
   // Derive collab-server HTTP URL from WebSocket URL
-  const collabHttpUrl = env.NEXT_PUBLIC_COLLAB_WS_URL.replace(
-    /^ws:\/\//,
-    'http://'
-  ).replace(/^wss:\/\//, 'https://')
+  const collabHttpUrl = (
+    process.env.NEXT_PUBLIC_COLLAB_WS_URL ?? 'ws://localhost:1234'
+  )
+    .replace(/^ws:\/\//, 'http://')
+    .replace(/^wss:\/\//, 'https://')
 
   const base64Data = Buffer.from(
     snapshot.data as unknown as Uint8Array
@@ -62,7 +62,7 @@ export async function POST(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-internal-secret': env.NEXTJS_INTERNAL_SECRET,
+        'x-internal-secret': process.env.NEXTJS_INTERNAL_SECRET ?? '',
       },
       body: JSON.stringify({ data: base64Data }),
       signal: AbortSignal.timeout(5000),
