@@ -9,10 +9,12 @@ import {
   BookmarkCheck,
   Clock,
   Trash2,
+  RotateCcw,
 } from 'lucide-react'
 import { DiffEditor } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
 import { formatDistanceToNow } from 'date-fns'
+import { toast } from 'sonner'
 import { getEditorContent } from './editor-client'
 
 interface Snapshot {
@@ -51,6 +53,8 @@ export function VersionHistoryPanel({
   const [panelWidth, setPanelWidth] = useState(DEFAULT_WIDTH)
 
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [confirmRestore, setConfirmRestore] = useState(false)
 
   async function deleteSnapshot(e: React.MouseEvent, snapshotId: string) {
     e.stopPropagation()
@@ -84,12 +88,33 @@ export function VersionHistoryPanel({
 
   async function openDiff(snapshot: Snapshot) {
     setDiffLoading(true)
+    setConfirmRestore(false)
     setCurrentContent(getEditorContent())
     try {
       const res = await fetch(`/api/rooms/${roomId}/snapshots/${snapshot.id}`)
       if (res.ok) setSelected(await res.json())
     } finally {
       setDiffLoading(false)
+    }
+  }
+
+  async function restoreSnapshot(snapshotId: string) {
+    setRestoring(true)
+    setConfirmRestore(false)
+    try {
+      const res = await fetch(
+        `/api/rooms/${roomId}/snapshots/${snapshotId}/restore`,
+        { method: 'POST' }
+      )
+      if (res.ok) {
+        toast.success('Restored — all editors updated')
+        diffEditorRef.current?.setModel(null)
+        setOpen(false)
+      } else {
+        toast.error('Restore failed')
+      }
+    } finally {
+      setRestoring(false)
     }
   }
 
@@ -176,7 +201,10 @@ export function VersionHistoryPanel({
               <div className="flex items-center gap-2">
                 {selected && (
                   <button
-                    onClick={() => setSelected(null)}
+                    onClick={() => {
+                      setSelected(null)
+                      setConfirmRestore(false)
+                    }}
                     className="text-app-dim hover:text-app mr-1 flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
@@ -358,11 +386,47 @@ export function VersionHistoryPanel({
                       Current
                     </span>
                   </div>
-                  {selected?.createdBy?.name && (
-                    <span className="text-app-dim text-xs">
-                      by {selected.createdBy.name}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {selected?.createdBy?.name && (
+                      <span className="text-app-dim text-xs">
+                        by {selected.createdBy.name}
+                      </span>
+                    )}
+                    {confirmRestore ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-app-dim text-xs">
+                          Restore this version?
+                        </span>
+                        <button
+                          onClick={() =>
+                            selected && restoreSnapshot(selected.id)
+                          }
+                          disabled={restoring}
+                          className="flex items-center gap-1 rounded bg-[#FF2D55]/15 px-2 py-1 text-xs font-medium text-[#FF2D55] transition-colors hover:bg-[#FF2D55]/25 disabled:opacity-50"
+                        >
+                          {restoring ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : null}
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setConfirmRestore(false)}
+                          className="text-app-dim rounded px-2 py-1 text-xs transition-colors hover:text-[#F0F0F0]"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmRestore(true)}
+                        disabled={restoring}
+                        className="flex items-center gap-1.5 rounded bg-white/5 px-2.5 py-1 text-xs font-medium text-[#F0F0F0] transition-colors hover:bg-white/10 disabled:opacity-50"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Restore
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex-1">
                   <DiffEditor

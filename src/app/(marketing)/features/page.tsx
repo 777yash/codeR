@@ -142,7 +142,7 @@ const phases = [
       { name: 'Per-user attribution on named snapshots', done: true },
       {
         name: 'One-click restore — live clients update instantly',
-        done: false,
+        done: true,
       },
     ],
   },

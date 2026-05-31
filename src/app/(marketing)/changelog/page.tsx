@@ -1,9 +1,69 @@
 const releases = [
   {
+    phase: '07.2',
+    title: 'Version History — One-Click Restore',
+    date: 'May 31, 2026',
+    status: 'latest',
+    accentColor: '#FF9F0A',
+    summary:
+      'Restore any snapshot with one click — all live editors update instantly via Yjs CRDT. No page reload required.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Restore button in diff view — click any snapshot, compare, then restore with two-step confirm (Restore → Yes/Cancel)',
+          'Live clients update instantly — collab-server applies content replacement to the live Y.Doc and broadcasts via y-websocket; all editors reflect restored state without reconnect',
+          'Offline resilience — if collab-server is unreachable, room.contentSnapshot is still updated; clients see restored state on next reconnect',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'POST /api/rooms/[id]/snapshots/[snapshotId]/restore — OWNER/EDITOR; updates room.contentSnapshot then calls collab-server /reset-doc/:roomId (5s timeout, non-fatal on failure)',
+          'POST /reset-doc/:roomId on collab-server — verifies x-internal-secret; finds live Y.Doc via docs Map; applies file-list + per-file text restore in a single Y.transact; broadcasts diff to all connected clients',
+          'Restore strategy: content replacement (delete + insert) inside Y.transact — avoids doc destruction, keeps WebSocket connections alive, handles multi-file workspaces and legacy single-file rooms',
+        ],
+      },
+    ],
+  },
+  {
+    phase: '07.1',
+    title: 'Version History — Bug Fixes',
+    date: 'May 30, 2026',
+    status: 'shipped',
+    accentColor: '#FF9F0A',
+    summary:
+      'Stability fixes for the version history panel: correct snapshot bytes on save, delete snapshots, and Monaco DiffEditor lifecycle fixes.',
+    changes: [
+      {
+        type: 'fix',
+        items: [
+          'Stale snapshot bug — SaveVersionDialog now sends live Yjs bytes (getYjsStateBytes()) as base64 at save time; no longer reads room.contentSnapshot which lags up to 60s',
+          'DiffEditor TextModel disposed error — DiffEditor stays mounted via display:none (not unmounted) while panel is open; both close paths call diffEditor.setModel(null) before React cleanup disposes models',
+          'SaveVersionDialog infinite recursion — handleClose was calling itself instead of setOpen(false)',
+          'Diff legend colors corrected: Snapshot = red (#FF2D55), Current = Monaco insertion green (#9bb955)',
+        ],
+      },
+      {
+        type: 'feature',
+        items: [
+          'Delete snapshot — trash icon on hover in version list; DELETE /api/rooms/[id]/snapshots/[snapshotId] (OWNER/EDITOR); optimistic removal from list',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'getYjsStateBytes() exported from editor-client.tsx — stores Y.encodeStateAsUpdate ref at first dynamic import; returns full Uint8Array doc state (all files)',
+          'POST /api/rooms/[id]/snapshots schema updated: accepts optional data (base64 Yjs state); falls back to room.contentSnapshot only if absent',
+        ],
+      },
+    ],
+  },
+  {
     phase: '07',
     title: 'Version History',
     date: 'May 29, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#FF9F0A',
     summary:
       'Persistent document snapshots with visual diff comparison. Auto-saves every 60 seconds via collab-server; users can save named versions at any time. History panel with tabbed Named / Auto-saves views and drag-to-resize.',
