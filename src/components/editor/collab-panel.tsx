@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import {
   UserPlus,
   MessageSquare,
@@ -8,9 +8,16 @@ import {
   Users,
   X,
   Loader2,
+  Send,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePresence } from '@/hooks/use-presence'
+import {
+  sendChatMessage,
+  subscribeToChatMessages,
+  getChatMessages,
+  type ChatMessageData,
+} from '@/components/editor/editor-client'
 
 export interface CollabMember {
   id: string
@@ -23,6 +30,7 @@ interface CollabPanelProps {
   roomId: string
   members?: CollabMember[]
   currentUserId?: string
+  currentUserName?: string
 }
 
 function colorFromUserId(id: string): string {
@@ -59,6 +67,7 @@ export function CollabPanel({
   roomId,
   members = [],
   currentUserId,
+  currentUserName,
 }: CollabPanelProps) {
   const [tab, setTab] = useState<Tab>('users')
   const [showInvite, setShowInvite] = useState(false)
@@ -66,6 +75,35 @@ export function CollabPanel({
   const [role, setRole] = useState<'EDITOR' | 'VIEWER'>('EDITOR')
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
+
+  // Chat state — lazy init reads current Yjs array before first subscriber fires
+  const [messages, setMessages] = useState<ChatMessageData[]>(getChatMessages)
+  const [chatInput, setChatInput] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const unsub = subscribeToChatMessages((msgs) => setMessages([...msgs]))
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    if (tab === 'chat') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, tab])
+
+  const handleSendMessage = useCallback(() => {
+    const content = chatInput.trim()
+    if (!content || !currentUserId) return
+    sendChatMessage({
+      id: crypto.randomUUID(),
+      userId: currentUserId,
+      userName: currentUserName ?? currentUserId,
+      content,
+      timestamp: Date.now(),
+    })
+    setChatInput('')
+  }, [chatInput, currentUserId, currentUserName])
 
   const onlineIds = usePresence(roomId)
   const onlineMembers = useMemo(
@@ -315,9 +353,77 @@ export function CollabPanel({
         )}
 
         {tab === 'chat' && (
-          <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
-            <MessageSquare className="text-app-card-hover h-8 w-8" />
-            <p className="text-app-dim text-xs">Coming soon</p>
+          <div className="flex h-full flex-col">
+            {/* Messages */}
+            <div className="flex-1 space-y-3 overflow-y-auto px-3 py-2">
+              {messages.length === 0 && (
+                <div className="flex h-full flex-col items-center justify-center gap-2 py-12 text-center">
+                  <MessageSquare className="text-app-dim h-7 w-7" />
+                  <p className="text-app-dim text-xs">No messages yet</p>
+                </div>
+              )}
+              {messages.map((msg) => {
+                const isMe = msg.userId === currentUserId
+                const color = colorFromUserId(msg.userId)
+                const time = new Date(msg.timestamp).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="text-[10px] font-semibold"
+                        style={{ color }}
+                      >
+                        {isMe ? 'You' : msg.userName || 'Unknown'}
+                      </span>
+                      <span className="text-app-dim text-[10px]">{time}</span>
+                    </div>
+                    <div
+                      className={`max-w-[200px] rounded-lg px-2.5 py-1.5 text-xs break-words ${
+                        isMe
+                          ? 'bg-[rgba(255,45,85,0.15)] text-[#F0F0F0]'
+                          : 'bg-white/[0.06] text-[#E0E0E0]'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                )
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="border-app shrink-0 border-t p-2">
+              <div className="border-app-mid bg-app flex items-center gap-1.5 rounded-md border px-2 py-1.5 focus-within:border-[#FF2D55]/50">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSendMessage()
+                    }
+                  }}
+                  placeholder="Message…"
+                  maxLength={500}
+                  className="text-app placeholder:text-app-dim min-w-0 flex-1 bg-transparent text-xs outline-none"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!chatInput.trim()}
+                  className="text-app-dim transition-colors hover:text-[#FF2D55] disabled:opacity-30"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

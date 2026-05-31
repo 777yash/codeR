@@ -1,9 +1,38 @@
 const releases = [
   {
+    phase: '08',
+    title: 'In-Session Room Chat',
+    date: 'Jun 1, 2026',
+    status: 'latest',
+    accentColor: '#06B6D4',
+    summary:
+      'Real-time chat inside every room — powered by the existing Yjs WebSocket connection. Zero new infrastructure. Messages sync to all collaborators instantly and persist in the Yjs snapshot.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Chat tab in the collab panel — message list with per-user color coding, auto-scroll, and timestamps',
+          'Send with Enter (Shift+Enter skipped), 500-char limit, Send button',
+          'Messages color-coded by userId (same hash function as cursor colors — consistent identity across editor and chat)',
+          'Empty state when no messages; messages persist as long as the Yjs doc lives (included in contentSnapshot)',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          "Y.Array<ChatMessageData>('chat-messages') — appended to the existing ydoc; synced via y-websocket with zero new WebSocket connections",
+          'sendChatMessage(), getChatMessages(), subscribeToChatMessages() exported from editor-client.tsx — same module-level pattern as execution result subscribers',
+          'chatArray observer wired in handleEditorMount alongside execResultsMap observer; unobserved in cleanup',
+          'CollabPanel accepts currentUserName prop (threaded from EditorWrapper → page.tsx session)',
+        ],
+      },
+    ],
+  },
+  {
     phase: '07.2',
     title: 'Version History — One-Click Restore',
     date: 'May 31, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#FF9F0A',
     summary:
       'Restore any snapshot with one click — all live editors update instantly via Yjs CRDT. No page reload required.',
@@ -702,7 +731,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 08 — Chat
+          Phase 09 — AI Completions
         </h3>
         <p
           style={{
@@ -712,8 +741,8 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          In-session room chat with message persistence, code snippet sharing,
-          and unread count badges.
+          Inline AI code completions powered by Mistral Codestral — tab to
+          accept, context-aware suggestions.
         </p>
         <a
           href="/features#phase-06"

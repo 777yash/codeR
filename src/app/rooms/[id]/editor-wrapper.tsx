@@ -77,6 +77,7 @@ export function EditorWrapper({
           roomId={roomId}
           members={members}
           currentUserId={currentUserId}
+          currentUserName={currentUserName}
         />
       </div>
 

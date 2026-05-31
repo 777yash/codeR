@@ -106,10 +106,18 @@ interface YText {
   readonly length: number
 }
 
+interface YArray<T> {
+  push(content: T[]): void
+  toArray(): T[]
+  observe(fn: () => void): void
+  unobserve(fn: () => void): void
+}
+
 interface YDoc {
   clientID: number
   getMap(name: string): YMap
   getText(name: string): YText
+  getArray<T>(name: string): YArray<T>
   transact(fn: () => void): void
   destroy(): void
 }
@@ -131,6 +139,34 @@ export function getYjsStateBytes(): Uint8Array | null {
 
 // Module-level registry — subscriptions registered before ydoc is ready still work
 const executionResultSubscribers = new Set<(result: unknown) => void>()
+
+export interface ChatMessageData {
+  id: string
+  userId: string
+  userName: string
+  content: string
+  timestamp: number
+}
+
+// Chat subscribers — same pattern as execution results
+const chatMessageSubscribers = new Set<(msgs: ChatMessageData[]) => void>()
+
+export function sendChatMessage(data: ChatMessageData): void {
+  if (!_ydoc) return
+  _ydoc.getArray<ChatMessageData>('chat-messages').push([data])
+}
+
+export function getChatMessages(): ChatMessageData[] {
+  if (!_ydoc) return []
+  return _ydoc.getArray<ChatMessageData>('chat-messages').toArray()
+}
+
+export function subscribeToChatMessages(
+  callback: (msgs: ChatMessageData[]) => void
+): () => void {
+  chatMessageSubscribers.add(callback)
+  return () => chatMessageSubscribers.delete(callback)
+}
 
 // Guard against double-destroy on MonacoBinding (yjs throws if handler already removed)
 const _destroyedBindings = new WeakSet<object>()
@@ -364,6 +400,13 @@ export function EditorClient({
         }
       }
       execResultsMap.observe(execResultsObserver)
+
+      const chatArray = ydoc.getArray<ChatMessageData>('chat-messages')
+      const chatObserver = () => {
+        const msgs = chatArray.toArray()
+        chatMessageSubscribers.forEach((cb) => cb(msgs))
+      }
+      chatArray.observe(chatObserver)
 
       const provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
         connect: true,
@@ -606,6 +649,7 @@ export function EditorClient({
         })
         modelsRef.current.clear()
         execResultsMap.unobserve(execResultsObserver)
+        chatArray.unobserve(chatObserver)
         provider.awareness.off('change', handleAwarenessChange)
         styleEl.remove()
         provider.destroy()
