@@ -21,6 +21,8 @@ interface EditorWrapperProps {
   members?: CollabMember[]
   currentUserId?: string
   currentUserName?: string
+  roomLanguage?: string
+  canSave?: boolean
 }
 
 export function EditorWrapper({
@@ -31,6 +33,8 @@ export function EditorWrapper({
   members = [],
   currentUserId,
   currentUserName,
+  roomLanguage,
+  canSave = false,
 }: EditorWrapperProps) {
   const router = useRouter()
 
@@ -78,6 +82,8 @@ export function EditorWrapper({
           members={members}
           currentUserId={currentUserId}
           currentUserName={currentUserName}
+          roomLanguage={roomLanguage}
+          canSave={canSave}
         />
       </div>
 

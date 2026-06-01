@@ -1,9 +1,67 @@
 const releases = [
   {
+    phase: '08.2',
+    title: 'Chat — Unread Badge & @Mentions',
+    date: 'Jun 2, 2026',
+    status: 'latest',
+    accentColor: '#06B6D4',
+    summary:
+      'Unread message count badge on the Chat tab, and @mention autocomplete with inline highlighting.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Unread count badge — red pill on the Chat tab showing messages received while on another tab; clears on tab switch',
+          '@mention autocomplete — type @ to open a member dropdown filtered by prefix; click or Enter to insert',
+          '@mentions highlighted in accent red in rendered message text',
+          'Escape closes mention dropdown without sending; Enter with dropdown open inserts top suggestion',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'lastReadRef (useRef) tracks message count at last chat-tab visit; frozen when off tab; unreadCount derived reactively',
+          'mentionQuery state drives mentionSuggestions memo (filtered from members prop, excludes self)',
+          'handleInputChange detects /@(\\S*)$/ at end of input to open/close dropdown',
+          'onMouseDown on dropdown items prevents input blur before insertMention fires',
+        ],
+      },
+    ],
+  },
+  {
+    phase: '08.1',
+    title: 'Chat — Code Snippet Sharing',
+    date: 'Jun 1, 2026',
+    status: 'shipped',
+    accentColor: '#06B6D4',
+    summary:
+      'Share code snippets directly in chat — styled code blocks with copy button, language badge, and auto-detected language from the active editor file.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Code snippet mode — </> toggle button in chat input switches to monospace textarea (Ctrl+Enter to send)',
+          'Language auto-detected from active editor file; displayed as badge in code block header',
+          'Styled code block render — dark bg, scrollable (max 140px), copy button with 2s feedback checkmark',
+          'Copy button uses navigator.clipboard; shows Check icon on success',
+          '4000-char limit for code snippets (vs 500 for text messages)',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'ChatMessageData interface extended: type?: "text" | "code", language?: string — backward compatible (existing messages render as text)',
+          'sendChatMessage() passes type + language when code mode active; no Yjs schema change needed',
+          'useEditorStore language selector wired into CollabPanel for live language detection',
+        ],
+      },
+    ],
+  },
+  {
     phase: '08',
     title: 'In-Session Room Chat',
     date: 'Jun 1, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#06B6D4',
     summary:
       'Real-time chat inside every room — powered by the existing Yjs WebSocket connection. Zero new infrastructure. Messages sync to all collaborators instantly and persist in the Yjs snapshot.',

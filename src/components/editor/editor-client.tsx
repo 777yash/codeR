@@ -146,6 +146,8 @@ export interface ChatMessageData {
   userName: string
   content: string
   timestamp: number
+  type?: 'text' | 'code'
+  language?: string
 }
 
 // Chat subscribers — same pattern as execution results
