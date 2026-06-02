@@ -21,6 +21,9 @@ const envSchema = z.object({
 
   // Collab server internal auth
   NEXTJS_INTERNAL_SECRET: z.string().min(1),
+
+  // AI completions
+  CODESTRAL_API_KEY: z.string().min(1).optional(),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),

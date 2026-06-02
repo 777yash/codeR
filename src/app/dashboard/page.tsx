@@ -8,17 +8,17 @@ import {
   Users,
   Clock,
   Star,
-  Settings,
   HelpCircle,
   Search,
   LogOut,
-  User,
 } from 'lucide-react'
 import type { Metadata } from 'next'
 import { RoomList } from '@/components/rooms/room-list'
 import { CollabWarmup } from '@/components/collab-warmup'
 import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import { InviteNotifications } from '@/components/notifications/invite-notifications'
+import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-settings-panel'
+import { DashboardProfilePanel } from '@/components/dashboard/dashboard-profile-panel'
 
 export const metadata: Metadata = {
   title: 'Dashboard — codeR',
@@ -210,17 +210,8 @@ export default async function DashboardPage({
           </div>
 
           <div className="border-app space-y-0.5 border-t p-3">
-            <Link
-              href="/profile"
-              className="text-app-muted hover-app-row flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm transition-colors"
-            >
-              <User className="h-4 w-4" />
-              Profile
-            </Link>
-            <button className="text-app-muted hover-app-row flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm transition-colors">
-              <Settings className="h-4 w-4" />
-              Settings
-            </button>
+            <DashboardProfilePanel />
+            <DashboardSettingsPanel />
             <button className="text-app-muted hover-app-row flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm transition-colors">
               <HelpCircle className="h-4 w-4" />
               Help

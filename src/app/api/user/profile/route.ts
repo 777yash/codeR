@@ -11,14 +11,30 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, email: true, image: true, createdAt: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      createdAt: true,
+      password: true,
+      accounts: { select: { provider: true } },
+    },
   })
 
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  return NextResponse.json(user)
+  return NextResponse.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    image: user.image,
+    createdAt: user.createdAt,
+    hasPassword: !!user.password,
+    providers: user.accounts.map((a) => a.provider),
+  })
 }
 
 const updateSchema = z.object({

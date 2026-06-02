@@ -18,6 +18,8 @@ export function EditorSettings({
     setWordWrap,
     fontSize,
     setFontSize,
+    inlineSuggest,
+    setInlineSuggest,
   } = useEditorStore()
 
   if (!open) return null
@@ -77,6 +79,22 @@ export function EditorSettings({
             <div
               className={`h-4 w-4 rounded-full bg-white transition-transform ${
                 wordWrap === 'on' ? 'translate-x-4' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-app-muted text-xs">AI Suggestions</span>
+          <button
+            onClick={() => setInlineSuggest(!inlineSuggest)}
+            className={`h-5 w-9 rounded-full transition-colors ${
+              inlineSuggest ? 'bg-[#FF2D55]' : 'bg-white/20'
+            }`}
+          >
+            <div
+              className={`h-4 w-4 rounded-full bg-white transition-transform ${
+                inlineSuggest ? 'translate-x-4' : 'translate-x-0.5'
               }`}
             />
           </button>

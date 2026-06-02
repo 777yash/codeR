@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export type Theme = 'vs-dark' | 'light'
 export type LineNumbers = 'on' | 'off' | 'relative'
@@ -47,76 +48,98 @@ interface EditorState {
 
   executionPanelOpen: boolean
   setExecutionPanelOpen: (open: boolean) => void
+
+  inlineSuggest: boolean
+  setInlineSuggest: (inlineSuggest: boolean) => void
 }
 
-export const useEditorStore = create<EditorState>((set, get) => ({
-  theme: 'vs-dark',
-  setTheme: (theme) => set({ theme }),
+export const useEditorStore = create<EditorState>()(
+  persist(
+    (set, get) => ({
+      theme: 'vs-dark',
+      setTheme: (theme) => set({ theme }),
 
-  language: 'javascript',
-  setLanguage: (language) => {
-    set({ language })
-    const { activeFileId, files } = get()
-    if (activeFileId) {
-      set({
-        files: files.map((f) =>
-          f.id === activeFileId ? { ...f, language } : f
-        ),
-      })
-    }
-  },
+      language: 'javascript',
+      setLanguage: (language) => {
+        set({ language })
+        const { activeFileId, files } = get()
+        if (activeFileId) {
+          set({
+            files: files.map((f) =>
+              f.id === activeFileId ? { ...f, language } : f
+            ),
+          })
+        }
+      },
 
-  lineNumbers: 'on',
-  setLineNumbers: (lineNumbers) => set({ lineNumbers }),
+      lineNumbers: 'on',
+      setLineNumbers: (lineNumbers) => set({ lineNumbers }),
 
-  minimap: true,
-  setMinimap: (minimap) => set({ minimap }),
+      minimap: true,
+      setMinimap: (minimap) => set({ minimap }),
 
-  wordWrap: 'off',
-  setWordWrap: (wordWrap) => set({ wordWrap }),
+      wordWrap: 'off',
+      setWordWrap: (wordWrap) => set({ wordWrap }),
 
-  fontSize: 14,
-  setFontSize: (fontSize) => set({ fontSize }),
+      fontSize: 14,
+      setFontSize: (fontSize) => set({ fontSize }),
 
-  files: [
-    { id: 'default', name: 'main.js', content: '', language: 'javascript' },
-  ],
-  activeFileId: 'default',
-  addFile: (file) => set((state) => ({ files: [...state.files, file] })),
-  removeFile: (id) =>
-    set((state) => {
-      const newFiles = state.files.filter((f) => f.id !== id)
-      let newActiveId = state.activeFileId
-      if (state.activeFileId === id) {
-        newActiveId =
-          newFiles.length > 0 ? newFiles[newFiles.length - 1].id : null
-      }
-      return { files: newFiles, activeFileId: newActiveId }
+      files: [
+        { id: 'default', name: 'main.js', content: '', language: 'javascript' },
+      ],
+      activeFileId: 'default',
+      addFile: (file) => set((state) => ({ files: [...state.files, file] })),
+      removeFile: (id) =>
+        set((state) => {
+          const newFiles = state.files.filter((f) => f.id !== id)
+          let newActiveId = state.activeFileId
+          if (state.activeFileId === id) {
+            newActiveId =
+              newFiles.length > 0 ? newFiles[newFiles.length - 1].id : null
+          }
+          return { files: newFiles, activeFileId: newActiveId }
+        }),
+      updateFileContent: (id, content) =>
+        set((state) => ({
+          files: state.files.map((f) => (f.id === id ? { ...f, content } : f)),
+        })),
+      setActiveFile: (id) => {
+        const file = get().files.find((f) => f.id === id)
+        if (file) {
+          set({ activeFileId: id, language: file.language })
+        } else {
+          set({ activeFileId: id })
+        }
+      },
+      renameFile: (id, name) =>
+        set((state) => ({
+          files: state.files.map((f) => (f.id === id ? { ...f, name } : f)),
+        })),
+      setFiles: (files) => set({ files }),
+
+      isSaving: false,
+      setIsSaving: (isSaving) => set({ isSaving }),
+
+      lastSaved: null,
+      setLastSaved: (date) => set({ lastSaved: date }),
+
+      executionPanelOpen: false,
+      setExecutionPanelOpen: (open) => set({ executionPanelOpen: open }),
+
+      inlineSuggest: true,
+      setInlineSuggest: (inlineSuggest) => set({ inlineSuggest }),
     }),
-  updateFileContent: (id, content) =>
-    set((state) => ({
-      files: state.files.map((f) => (f.id === id ? { ...f, content } : f)),
-    })),
-  setActiveFile: (id) => {
-    const file = get().files.find((f) => f.id === id)
-    if (file) {
-      set({ activeFileId: id, language: file.language })
-    } else {
-      set({ activeFileId: id })
+    {
+      name: 'coder-editor-prefs',
+      // Only persist user preferences — not ephemeral runtime state
+      partialize: (state) => ({
+        theme: state.theme,
+        lineNumbers: state.lineNumbers,
+        minimap: state.minimap,
+        wordWrap: state.wordWrap,
+        fontSize: state.fontSize,
+        inlineSuggest: state.inlineSuggest,
+      }),
     }
-  },
-  renameFile: (id, name) =>
-    set((state) => ({
-      files: state.files.map((f) => (f.id === id ? { ...f, name } : f)),
-    })),
-  setFiles: (files) => set({ files }),
-
-  isSaving: false,
-  setIsSaving: (isSaving) => set({ isSaving }),
-
-  lastSaved: null,
-  setLastSaved: (date) => set({ lastSaved: date }),
-
-  executionPanelOpen: false,
-  setExecutionPanelOpen: (open) => set({ executionPanelOpen: open }),
-}))
+  )
+)

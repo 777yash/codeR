@@ -93,7 +93,7 @@ const phases = [
       { name: 'Text selection highlighting', done: true },
       { name: 'Join/leave toast notifications', done: true },
       { name: 'Live collaborator sidebar', done: true },
-      { name: 'Deterministic user colors (hash-based)', done: true },
+      { name: 'Consistent user colors across editor and sidebar', done: true },
     ],
   },
   {
@@ -109,9 +109,8 @@ const phases = [
         name: 'Shared output panel — all collaborators see results',
         done: true,
       },
-      { name: 'Rate limiting (10 runs/user/minute)', done: true },
       { name: 'Stdin support for interactive programs', done: true },
-      { name: 'Execution history log (ExecutionLog table)', done: true },
+      { name: 'Execution history log', done: true },
       {
         name: 'Status badges (running / success / error / timeout)',
         done: true,
@@ -155,7 +154,7 @@ const phases = [
     accentColor: '#06B6D4',
     features: [
       { name: 'In-session room chat via Yjs Y.Array', done: true },
-      { name: 'Real-time sync — zero new infrastructure', done: true },
+      { name: 'Real-time sync', done: true },
       { name: 'Color-coded by user, auto-scroll', done: true },
       { name: 'Messages persist in Yjs snapshot', done: true },
       { name: 'Code snippet sharing in chat', done: true },
@@ -166,16 +165,19 @@ const phases = [
   {
     number: '09',
     title: 'AI Completions',
-    status: 'upcoming',
-    date: 'Planned',
+    status: 'shipped',
+    date: 'Jun 2026',
     icon: <Sparkles className="h-5 w-5" />,
     accentColor: '#BF5AF2',
     features: [
-      { name: 'Inline suggestions (Mistral Codestral)', done: false },
-      { name: 'Tab to accept, Escape to dismiss', done: false },
-      { name: 'Context-aware completions', done: false },
-      { name: 'Multi-line ghost text', done: false },
-      { name: 'Per-user on/off toggle', done: false },
+      { name: 'Inline suggestions (Mistral Codestral FIM)', done: true },
+      { name: 'Tab to accept, Escape to dismiss', done: true },
+      { name: 'Context-aware completions (multi-file)', done: true },
+      { name: 'Multi-line ghost text', done: true },
+      {
+        name: 'Per-user on/off toggle (persisted across sessions)',
+        done: true,
+      },
     ],
   },
   {
@@ -548,7 +550,7 @@ export default function FeaturesPage() {
             marginBottom: '8px',
           }}
         >
-          Start building with Phase 1–6 today
+          Start building with Phase 1–9 today
         </h2>
         <p
           style={{
@@ -557,8 +559,8 @@ export default function FeaturesPage() {
             marginBottom: '24px',
           }}
         >
-          CRDT collaboration, live code execution, presence, and Monaco Editor —
-          available now, free.
+          CRDT collaboration, AI completions, live code execution, presence, and
+          Monaco Editor — available now, free.
         </p>
         <a
           href="/signup"

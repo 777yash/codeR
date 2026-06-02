@@ -1,9 +1,46 @@
 const releases = [
   {
+    phase: '09',
+    title: 'AI Completions',
+    date: 'Jun 3, 2026',
+    status: 'latest',
+    accentColor: '#BF5AF2',
+    summary:
+      'Inline AI code completions powered by Mistral Codestral FIM. Multi-line ghost text, context-aware suggestions across all open workspace files, per-user toggle persisted to localStorage.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Inline ghost text completions — Tab to accept, Escape to dismiss, showToolbar on hover',
+          'Multi-line completions — max_tokens 128, no \\n\\n stop token',
+          'Context-aware — smart prefix (file header + recent 60 lines), suffix (30 lines), up to 3 other workspace files as context blocks',
+          'Language hint prepended to every prompt (// File: script.ts style) — prevents cross-language suggestions',
+          'Per-user on/off toggle in editor settings panel and dashboard preferences panel',
+          'Toggle persisted across sessions via Zustand persist middleware (localStorage key: coder-editor-prefs)',
+          'Dashboard preferences panel — Settings button in sidebar now opens slide-in panel with AI Completions + Editor sections',
+          'Dashboard profile panel — Profile link opens slide-in panel instead of navigating to a separate page',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'POST /api/ai/complete — server-side Codestral FIM proxy; CODESTRAL_API_KEY never exposed to client',
+          'Native fetch throughout — no @mistralai/mistralai package installed',
+          'CODESTRAL_API_KEY optional in Zod env schema — app works without key (503 returns empty completion)',
+          'monaco.languages.registerInlineCompletionsProvider("*") — registered on editor mount, disposed on cleanup',
+          'Cancellation token + 300ms sleep debounce — stale calls cancelled by Monaco when user keeps typing',
+          'disposeInlineCompletions + freeInlineCompletions both implemented (Monaco version compatibility)',
+          'GET /api/user/profile extended to return hasPassword + providers[] for profile panel',
+          'Zustand persist middleware with partialize — persists only preference fields (theme, lineNumbers, minimap, wordWrap, fontSize, inlineSuggest)',
+        ],
+      },
+    ],
+  },
+  {
     phase: '08.2',
     title: 'Chat — Unread Badge & @Mentions',
     date: 'Jun 2, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#06B6D4',
     summary:
       'Unread message count badge on the Chat tab, and @mention autocomplete with inline highlighting.',
@@ -789,7 +826,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 09 — AI Completions
+          Phase 10 — Polish & Security
         </h3>
         <p
           style={{
@@ -799,8 +836,8 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Inline AI code completions powered by Mistral Codestral — tab to
-          accept, context-aware suggestions.
+          Full security audit, performance optimisations, PostHog analytics, and
+          mobile-responsive layout.
         </p>
         <a
           href="/features#phase-06"

@@ -261,6 +261,7 @@ export function EditorClient({
   const modelsRef = useRef<Map<string, any>>(new Map())
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeBindingRef = useRef<any>(null)
+  const completionProviderRef = useRef<{ dispose(): void } | null>(null)
 
   const {
     theme,
@@ -273,6 +274,7 @@ export function EditorClient({
     setLastSaved,
     renameFile,
     files,
+    inlineSuggest,
   } = useEditorStore()
 
   // Activate a file: switch Monaco model + create new MonacoBinding
@@ -372,6 +374,72 @@ export function EditorClient({
       editorRef.current = editor
       monacoApiRef.current = monaco
       _editor = editor as typeof _editor
+
+      completionProviderRef.current =
+        monaco.languages.registerInlineCompletionsProvider('*', {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          provideInlineCompletions: async (
+            model: any,
+            position: any,
+            _context: any,
+            token: any
+          ) => {
+            // Debounce — Monaco cancels stale calls via token when user keeps typing
+            await new Promise<void>((resolve) => setTimeout(resolve, 300))
+            if (token.isCancellationRequested) return { items: [] }
+
+            const offset = model.getOffsetAt(position)
+            const fullText = model.getValue()
+            const prefix = fullText.slice(0, offset)
+            const suffix = fullText.slice(offset)
+            const language = model.getLanguageId() as string
+
+            // Skip blank lines — avoid triggering on Enter
+            if (/\n\s*$/.test(prefix)) return { items: [] }
+
+            // Other open files for cross-file context (exclude active)
+            const { files: wsFiles, activeFileId } = useEditorStore.getState()
+            const otherFiles = wsFiles
+              .filter((f) => f.id !== activeFileId)
+              .map((f) => ({
+                name: f.name,
+                content: _ydoc
+                  ? _ydoc.getText(`file:${f.id}`).toString()
+                  : f.content,
+              }))
+              .filter((f) => f.content.trim().length > 0)
+
+            try {
+              const res = await fetch('/api/ai/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prefix, suffix, language, otherFiles }),
+              })
+              if (token.isCancellationRequested) return { items: [] }
+              const { completion } = (await res.json()) as {
+                completion: string
+              }
+              if (!completion) return { items: [] }
+              return {
+                items: [
+                  {
+                    insertText: completion,
+                    range: {
+                      startLineNumber: position.lineNumber,
+                      startColumn: position.column,
+                      endLineNumber: position.lineNumber,
+                      endColumn: position.column,
+                    },
+                  },
+                ],
+              }
+            } catch {
+              return { items: [] }
+            }
+          },
+          freeInlineCompletions: () => {},
+          disposeInlineCompletions: () => {},
+        })
 
       const [Y, { WebsocketProvider }, { MonacoBinding }] = await Promise.all([
         import('yjs'),
@@ -650,6 +718,8 @@ export function EditorClient({
           } catch {}
         })
         modelsRef.current.clear()
+        completionProviderRef.current?.dispose()
+        completionProviderRef.current = null
         execResultsMap.unobserve(execResultsObserver)
         chatArray.unobserve(chatObserver)
         provider.awareness.off('change', handleAwarenessChange)
@@ -696,6 +766,7 @@ export function EditorClient({
           verticalScrollbarSize: 10,
           horizontalScrollbarSize: 10,
         },
+        inlineSuggest: { enabled: inlineSuggest, showToolbar: 'onHover' },
       }}
     />
   )
