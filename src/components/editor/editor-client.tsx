@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import Editor, { type OnMount } from '@monaco-editor/react'
+import type * as MonacoEditor from 'monaco-editor'
 import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import { toast } from 'sonner'
 
@@ -377,12 +378,11 @@ export function EditorClient({
 
       completionProviderRef.current =
         monaco.languages.registerInlineCompletionsProvider('*', {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           provideInlineCompletions: async (
-            model: any,
-            position: any,
-            _context: any,
-            token: any
+            model: MonacoEditor.editor.ITextModel,
+            position: MonacoEditor.Position,
+            _context: MonacoEditor.languages.InlineCompletionContext,
+            token: MonacoEditor.CancellationToken
           ) => {
             // Debounce — Monaco cancels stale calls via token when user keeps typing
             await new Promise<void>((resolve) => setTimeout(resolve, 300))
