@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { env } from '@/lib/env'
 
 const LANG_FILENAME: Record<string, string> = {
   javascript: 'script.js',
@@ -71,7 +70,7 @@ function buildContextBlocks(
 }
 
 export async function POST(req: NextRequest) {
-  const key = env.CODESTRAL_API_KEY
+  const key = process.env.CODESTRAL_API_KEY
   if (!key) return NextResponse.json({ completion: '' }, { status: 503 })
 
   const { prefix, suffix, language, otherFiles } = (await req.json()) as {
