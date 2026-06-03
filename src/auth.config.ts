@@ -7,6 +7,8 @@ const authRoutes = ['/signin', '/signup']
 export const authConfig = {
   session: {
     strategy: 'jwt',
+    maxAge: 7 * 24 * 60 * 60, // 7 days — reduced from NextAuth default 30 days
+    updateAge: 60 * 60, // re-sign JWT every hour (token rotation)
   },
   pages: {
     signIn: '/signin',

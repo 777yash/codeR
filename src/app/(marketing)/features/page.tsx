@@ -183,12 +183,12 @@ const phases = [
   {
     number: '10',
     title: 'Polish & Security',
-    status: 'planned',
-    date: 'Planned',
+    status: 'upcoming',
+    date: 'Jun 4, 2026',
     icon: <Wrench className="h-5 w-5" />,
-    accentColor: '#888888',
+    accentColor: '#FF2D55',
     features: [
-      { name: 'Full security audit (CSP, CSRF, JWT rotation)', done: false },
+      { name: 'Full security audit (CSP, CSRF, JWT rotation)', done: true },
       { name: 'Monaco lazy loading + CRDT compression', done: false },
       { name: 'PostHog analytics', done: false },
       { name: 'Mobile-responsive layout', done: false },

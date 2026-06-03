@@ -25,6 +25,7 @@
 *.pem
 CLAUDE.md
 .claude
+.fallow
 
 # debug
 npm-debug.log*

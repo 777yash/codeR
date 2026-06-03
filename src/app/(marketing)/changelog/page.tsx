@@ -1,9 +1,30 @@
 const releases = [
   {
+    phase: '10.1',
+    title: 'Security Hardening',
+    date: 'Jun 4, 2026',
+    status: 'latest',
+    accentColor: '#FF2D55',
+    summary:
+      'Full security audit: Content Security Policy headers, JWT token rotation, and auth gate on the AI completions endpoint.',
+    changes: [
+      {
+        type: 'security',
+        items: [
+          'Content-Security-Policy header on all routes — default-src self; script-src includes cdn.jsdelivr.net for Monaco loader; frame-ancestors none; base-uri self; form-action self',
+          'X-Frame-Options: DENY, X-Content-Type-Options: nosniff, HSTS (1yr), Referrer-Policy: strict-origin-when-cross-origin, Permissions-Policy',
+          'JWT session maxAge reduced to 7 days (was 30); updateAge set to 1 hour — token re-signed hourly (rotation without DB overhead)',
+          'POST /api/ai/complete now requires authenticated session — unauthenticated callers receive 401 instead of burning API quota',
+          'verifyCsrfOrigin() utility in src/lib/csrf.ts — Origin header validation helper for per-route CSRF protection',
+        ],
+      },
+    ],
+  },
+  {
     phase: '09',
     title: 'AI Completions',
     date: 'Jun 3, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#BF5AF2',
     summary:
       'Inline AI code completions powered by Mistral Codestral FIM. Multi-line ghost text, context-aware suggestions across all open workspace files, per-user toggle persisted to localStorage.',
@@ -547,6 +568,7 @@ const typeConfig = {
   feature: { label: 'Feature', color: '#32D74B', bg: 'rgba(50,215,75,0.10)' },
   fix: { label: 'Fix', color: '#FF9F0A', bg: 'rgba(255,159,10,0.10)' },
   infra: { label: 'Infra', color: '#888888', bg: 'rgba(136,136,136,0.15)' },
+  security: { label: 'Security', color: '#FF2D55', bg: 'rgba(255,45,85,0.12)' },
 }
 
 const statusConfig = {

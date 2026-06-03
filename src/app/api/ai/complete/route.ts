@@ -1,3 +1,4 @@
+import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 const LANG_FILENAME: Record<string, string> = {
@@ -70,6 +71,11 @@ function buildContextBlocks(
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ completion: '' }, { status: 401 })
+  }
+
   const key = process.env.CODESTRAL_API_KEY
   if (!key) return NextResponse.json({ completion: '' }, { status: 503 })
 
