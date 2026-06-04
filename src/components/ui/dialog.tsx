@@ -24,27 +24,6 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
   )
 }
 
-function DialogPortal({ children }: { children: React.ReactNode }) {
-  if (typeof window === 'undefined') return null
-  return ReactDOM.createPortal(children, document.body)
-}
-
-function DialogOverlay({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm',
-        className
-      )}
-      {...props}
-    />
-  )
-}
-DialogOverlay.displayName = 'DialogOverlay'
-
 interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
 }
@@ -145,8 +124,6 @@ import ReactDOM from 'react-dom'
 
 export {
   Dialog,
-  DialogPortal,
-  DialogOverlay,
   DialogContent,
   DialogHeader,
   DialogTitle,

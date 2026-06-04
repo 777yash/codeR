@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 
 const LANG_FILENAME: Record<string, string> = {
   javascript: 'script.js',
@@ -71,6 +72,9 @@ function buildContextBlocks(
 }
 
 export async function POST(req: NextRequest) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ completion: '' }, { status: 401 })

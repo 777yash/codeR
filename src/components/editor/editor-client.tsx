@@ -5,12 +5,7 @@ import Editor, { type OnMount } from '@monaco-editor/react'
 import type * as MonacoEditor from 'monaco-editor'
 import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import { toast } from 'sonner'
-
-function colorFromUserId(id: string): string {
-  let hash = 0
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
-  return `hsl(${hash % 360}, 80%, 60%)`
-}
+import { colorFromUserId } from '@/lib/color'
 
 interface EditorClientProps {
   roomId: string

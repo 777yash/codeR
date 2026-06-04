@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type Theme = 'vs-dark' | 'light'
-export type LineNumbers = 'on' | 'off' | 'relative'
-export type WordWrap = 'on' | 'off'
+type Theme = 'vs-dark' | 'light'
+type LineNumbers = 'on' | 'off' | 'relative'
+type WordWrap = 'on' | 'off'
 
 export interface EditorFile {
   id: string

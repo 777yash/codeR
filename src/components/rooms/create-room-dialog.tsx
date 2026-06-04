@@ -15,38 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-
-const languages = [
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'typescript', label: 'TypeScript' },
-  { value: 'python', label: 'Python' },
-  { value: 'java', label: 'Java' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'c', label: 'C' },
-  { value: 'csharp', label: 'C#' },
-  { value: 'go', label: 'Go' },
-  { value: 'rust', label: 'Rust' },
-  { value: 'ruby', label: 'Ruby' },
-  { value: 'php', label: 'PHP' },
-  { value: 'swift', label: 'Swift' },
-  { value: 'kotlin', label: 'Kotlin' },
-  { value: 'scala', label: 'Scala' },
-  { value: 'r', label: 'R' },
-  { value: 'sql', label: 'SQL' },
-  { value: 'bash', label: 'Bash' },
-  { value: 'lua', label: 'Lua' },
-  { value: 'perl', label: 'Perl' },
-  { value: 'haskell', label: 'Haskell' },
-  { value: 'elixir', label: 'Elixir' },
-  { value: 'clojure', label: 'Clojure' },
-  { value: 'dart', label: 'Dart' },
-  { value: 'julia', label: 'Julia' },
-  { value: 'matlab', label: 'MATLAB' },
-  { value: 'vbnet', label: 'VB.NET' },
-  { value: 'cobol', label: 'COBOL' },
-  { value: 'fortran', label: 'Fortran' },
-  { value: 'assembly', label: 'Assembly' },
-]
+import { LANGUAGES } from '@/lib/editor-options'
 
 interface CreateRoomDialogProps {
   open: boolean
@@ -172,7 +141,7 @@ export function CreateRoomDialog({
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
             >
-              {languages.map((lang) => (
+              {LANGUAGES.map((lang) => (
                 <option key={lang.value} value={lang.value}>
                   {lang.label}
                 </option>

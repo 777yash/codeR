@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { canPerform } from '@/lib/room-permissions'
+import { getUserRoomRole } from '@/lib/api/room-access'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 import type { Language } from '@/generated/prisma/client'
 
 const updateRoomSchema = z.object({
@@ -11,23 +13,6 @@ const updateRoomSchema = z.object({
   language: z.string().optional(),
   isPublic: z.boolean().optional(),
 })
-
-async function getUserRoomRole(roomId: string, userId: string) {
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-    select: { ownerId: true },
-  })
-
-  if (!room) return null
-  if (room.ownerId === userId) return 'OWNER' as const
-
-  const member = await prisma.roomMember.findUnique({
-    where: { roomId_userId: { roomId, userId } },
-    select: { role: true },
-  })
-
-  return member?.role ?? null
-}
 
 export async function GET(
   _req: Request,
@@ -95,6 +80,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -131,9 +119,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

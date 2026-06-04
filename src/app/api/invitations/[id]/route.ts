@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import type { Role } from '@/generated/prisma/client'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 
 const schema = z.object({ action: z.enum(['accept', 'decline']) })
 
@@ -10,6 +11,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

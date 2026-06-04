@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import type { Role } from '@/generated/prisma/client'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 
 const updateSchema = z.object({
   role: z.enum(['EDITOR', 'VIEWER']),
@@ -21,6 +22,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -63,9 +67,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string; userId: string }> }
 ) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

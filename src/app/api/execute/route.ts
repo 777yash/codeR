@@ -5,7 +5,8 @@ import { z } from 'zod'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { canPerform } from '@/lib/room-permissions'
-import type { Role } from '@/generated/prisma/client'
+import { getUserRoomRole } from '@/lib/api/room-access'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 
 const ONECOMPILER_URL = 'https://onecompiler-apis.p.rapidapi.com/api/v1/run'
 const MAX_CODE_LENGTH = 50_000
@@ -71,24 +72,6 @@ function checkRateLimit(userId: string): {
   return { allowed: true }
 }
 
-async function getUserRoomRole(
-  roomId: string,
-  userId: string
-): Promise<Role | null> {
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-    select: { ownerId: true },
-  })
-  if (!room) return null
-  if (room.ownerId === userId) return 'OWNER'
-
-  const member = await prisma.roomMember.findUnique({
-    where: { roomId_userId: { roomId, userId } },
-    select: { role: true },
-  })
-  return member?.role ?? null
-}
-
 const executeSchema = z.object({
   roomId: z.string().min(1),
   language: z.string().min(1),
@@ -105,6 +88,9 @@ const executeSchema = z.object({
 })
 
 export async function POST(req: Request) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

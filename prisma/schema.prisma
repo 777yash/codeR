@@ -25,7 +25,6 @@ model User {
   // Phase 2 relations
   ownedRooms  Room[]      @relation("RoomOwner")
   roomMembers RoomMember[]
-  chatMessages ChatMessage[]
 
   invitationsSent     Invitation[] @relation("InvitationsSent")
   invitationsReceived Invitation[] @relation("InvitationsReceived")
@@ -130,7 +129,6 @@ model Room {
 
   members     RoomMember[]
   shareLinks  ShareLink[]
-  chatMessages ChatMessage[]
   invitations Invitation[]
   executionLogs     ExecutionLog[]
   documentSnapshots DocumentSnapshot[]
@@ -184,20 +182,6 @@ model Invitation {
 
   @@unique([roomId, inviteeId])
   @@map("invitations")
-}
-
-model ChatMessage {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-
-  roomId String
-  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("chat_messages")
 }
 
 model ExecutionLog {

@@ -24,6 +24,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 import { usePresence } from '@/hooks/use-presence'
 import { useEditorStore } from '@/stores/editor-store'
+import { colorFromUserId } from '@/lib/color'
 import {
   sendChatMessage,
   subscribeToChatMessages,
@@ -81,14 +82,6 @@ const ROLE_LABEL: Record<string, string> = {
 const HIST_MIN_WIDTH = 380
 const HIST_MAX_WIDTH_RATIO = 0.92
 const HIST_DEFAULT_WIDTH = 640
-
-// ─── Pure helpers ─────────────────────────────────────────────────────────────
-
-function colorFromUserId(id: string): string {
-  let hash = 0
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
-  return `hsl(${hash % 360}, 80%, 60%)`
-}
 
 function getInitials(name: string | null): string {
   if (!name) return '?'

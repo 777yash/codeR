@@ -13,7 +13,7 @@ const credentialsSchema = z.object({
   password: z.string().min(8),
 })
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
 

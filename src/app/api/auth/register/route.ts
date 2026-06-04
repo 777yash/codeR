@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 
 const registerSchema = z.object({
   name: z.string().min(2).max(50),
@@ -10,6 +11,9 @@ const registerSchema = z.object({
 })
 
 export async function POST(req: Request) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const body = await req.json()
   const parsed = registerSchema.safeParse(body)
 

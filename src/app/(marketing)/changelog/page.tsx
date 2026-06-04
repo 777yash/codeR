@@ -1,9 +1,55 @@
 const releases = [
   {
+    phase: '10.2',
+    title: 'Codebase Cleanup & Security Activation',
+    date: 'Jun 5, 2026',
+    status: 'latest',
+    accentColor: '#FF2D55',
+    summary:
+      'Dead code audit + full deduplication pass. CSRF and env validation wired in. Dead Prisma model dropped. 8 unused files deleted, 6 duplicate functions unified.',
+    changes: [
+      {
+        type: 'security',
+        items: [
+          'verifyCsrfOrigin() now enforced on all 16 mutation endpoints (POST/PATCH/PUT/DELETE) — was defined but never called in 10.1',
+          'Env validation (Zod schema in lib/env.ts) wired into instrumentation.ts Node.js startup — app now crashes fast on missing required env vars instead of failing silently at runtime',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'Dead ChatMessage Prisma model removed — chat was always Yjs-only (Y.Array); the DB model was migrated but never queried; Prisma client regenerated',
+          'version-history-panel.tsx deleted — version history already fully implemented in CollabPanel History tab; standalone file was an unreachable duplicate',
+          'session-provider.tsx deleted — AuthSessionProvider was never mounted anywhere (no useSession consumers)',
+          'lib/env.ts + lib/csrf.ts no longer dead — both wired at startup/routes respectively',
+        ],
+      },
+      {
+        type: 'refactor',
+        items: [
+          'getUserRoomRole() extracted to lib/api/room-access.ts — was copy-pasted identically in 6 separate API route files',
+          'colorFromUserId() extracted to lib/color.ts — was duplicated in editor-client.tsx and collab-panel.tsx',
+          'LANGUAGES constant extracted to lib/editor-options.ts — was copy-pasted in settings-client, editor-toolbar, and create-room-dialog',
+          'OAuthButtons + GithubIcon/GoogleIcon/AUTH_INPUT_CLASS extracted to components/auth/auth-shared.tsx — was duplicated across sign-in and sign-up forms',
+          'Dead exports removed: requireRole, isOwner, isAtLeastEditor from room-permissions.ts; auth.ts signIn re-export; DialogPortal/DialogOverlay; buttonVariants (external); editor-store Theme/LineNumbers/WordWrap types (external); SelectProps (external)',
+        ],
+      },
+      {
+        type: 'chore',
+        items: [
+          'Dead code + duplication sweep — 8 files deleted, 6 functions unified into shared lib/ modules',
+          'Deleted 8 unused component files: run-button.tsx, ui/avatar.tsx, ui/badge.tsx, ui/card.tsx, ui/label.tsx, ui/separator.tsx, providers/session-provider.tsx, editor/version-history-panel.tsx',
+          'tsc --noEmit: 0 errors throughout; eslint: 0 errors; prettier: all files formatted',
+          'Pre-existing share.test.ts failures (7) — share route DELETE mock missing members[] field; noted but out of scope',
+        ],
+      },
+    ],
+  },
+  {
     phase: '10.1',
     title: 'Security Hardening',
     date: 'Jun 4, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#FF2D55',
     summary:
       'Full security audit: Content Security Policy headers, JWT token rotation, and auth gate on the AI completions endpoint.',
@@ -15,7 +61,7 @@ const releases = [
           'X-Frame-Options: DENY, X-Content-Type-Options: nosniff, HSTS (1yr), Referrer-Policy: strict-origin-when-cross-origin, Permissions-Policy',
           'JWT session maxAge reduced to 7 days (was 30); updateAge set to 1 hour — token re-signed hourly (rotation without DB overhead)',
           'POST /api/ai/complete now requires authenticated session — unauthenticated callers receive 401 instead of burning API quota',
-          'verifyCsrfOrigin() utility in src/lib/csrf.ts — Origin header validation helper for per-route CSRF protection',
+          'verifyCsrfOrigin() utility in src/lib/csrf.ts — Origin header validation helper for per-route CSRF protection (activated in Phase 10.2)',
         ],
       },
     ],
@@ -569,6 +615,12 @@ const typeConfig = {
   fix: { label: 'Fix', color: '#FF9F0A', bg: 'rgba(255,159,10,0.10)' },
   infra: { label: 'Infra', color: '#888888', bg: 'rgba(136,136,136,0.15)' },
   security: { label: 'Security', color: '#FF2D55', bg: 'rgba(255,45,85,0.12)' },
+  refactor: {
+    label: 'Refactor',
+    color: '#0EA5E9',
+    bg: 'rgba(14,165,233,0.12)',
+  },
+  chore: { label: 'Chore', color: '#555555', bg: 'rgba(85,85,85,0.15)' },
 }
 
 const statusConfig = {
@@ -848,7 +900,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 10 — Polish & Security
+          Phase 10.3 — Polish & Performance
         </h3>
         <p
           style={{
@@ -858,8 +910,8 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Full security audit, performance optimisations, PostHog analytics, and
-          mobile-responsive layout.
+          Monaco lazy loading, PostHog analytics, mobile-responsive layout, and
+          GitHub Gist export.
         </p>
         <a
           href="/features#phase-06"

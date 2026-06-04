@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 
 export async function GET() {
   const session = await auth()
@@ -42,6 +43,9 @@ const updateSchema = z.object({
 })
 
 export async function PATCH(req: Request) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

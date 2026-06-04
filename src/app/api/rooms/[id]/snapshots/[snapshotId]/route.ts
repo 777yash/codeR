@@ -1,22 +1,9 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { getUserRoomRole } from '@/lib/api/room-access'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 import * as Y from 'yjs'
-
-async function getUserRoomRole(roomId: string, userId: string) {
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-    select: { ownerId: true },
-  })
-  if (!room) return null
-  if (room.ownerId === userId) return 'OWNER' as const
-
-  const member = await prisma.roomMember.findUnique({
-    where: { roomId_userId: { roomId, userId } },
-    select: { role: true },
-  })
-  return member?.role ?? null
-}
 
 function decodeContent(data: Uint8Array): string {
   const doc = new Y.Doc()
@@ -37,9 +24,12 @@ function decodeContent(data: Uint8Array): string {
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string; snapshotId: string }> }
 ) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

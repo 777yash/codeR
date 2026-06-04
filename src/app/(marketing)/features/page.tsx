@@ -183,12 +183,17 @@ const phases = [
   {
     number: '10',
     title: 'Polish & Security',
-    status: 'upcoming',
-    date: 'Jun 4, 2026',
+    status: 'in_progress',
+    date: 'Jun 2026',
     icon: <Wrench className="h-5 w-5" />,
     accentColor: '#FF2D55',
     features: [
       { name: 'Full security audit (CSP, CSRF, JWT rotation)', done: true },
+      { name: 'CSRF enforcement on all mutation endpoints', done: true },
+      {
+        name: 'Env validation at startup (fail-fast on missing vars)',
+        done: true,
+      },
       { name: 'Monaco lazy loading + CRDT compression', done: false },
       { name: 'PostHog analytics', done: false },
       { name: 'Mobile-responsive layout', done: false },
@@ -250,6 +255,11 @@ const phases = [
 
 const statusConfig = {
   shipped: { label: 'Shipped', color: '#32D74B', bg: 'rgba(50,215,75,0.10)' },
+  in_progress: {
+    label: 'In Progress',
+    color: '#FF9F0A',
+    bg: 'rgba(255,159,10,0.10)',
+  },
   upcoming: {
     label: 'In Progress',
     color: '#FF9F0A',

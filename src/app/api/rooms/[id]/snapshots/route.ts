@@ -3,25 +3,8 @@ import { z } from 'zod'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { canPerform } from '@/lib/room-permissions'
-import type { Role } from '@/generated/prisma/client'
-
-async function getUserRoomRole(
-  roomId: string,
-  userId: string
-): Promise<Role | null> {
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-    select: { ownerId: true },
-  })
-  if (!room) return null
-  if (room.ownerId === userId) return 'OWNER'
-
-  const member = await prisma.roomMember.findUnique({
-    where: { roomId_userId: { roomId, userId } },
-    select: { role: true },
-  })
-  return member?.role ?? null
-}
+import { getUserRoomRole } from '@/lib/api/room-access'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 
 const createSnapshotSchema = z.object({
   label: z.string().min(1).max(100).optional(),
@@ -63,6 +46,9 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

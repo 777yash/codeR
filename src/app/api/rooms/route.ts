@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { Language } from '@/generated/prisma/client'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 
 const createRoomSchema = z.object({
   name: z.string().min(1).max(100),
@@ -39,6 +40,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

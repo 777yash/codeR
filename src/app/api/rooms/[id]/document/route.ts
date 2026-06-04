@@ -2,25 +2,10 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { verifyCsrfOrigin } from '@/lib/csrf'
 import { canPerform } from '@/lib/room-permissions'
+import { getUserRoomRole } from '@/lib/api/room-access'
 import type { Language } from '@/generated/prisma/client'
-
-async function getUserRoomRole(roomId: string, userId: string) {
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-    select: { ownerId: true, isPublic: true },
-  })
-
-  if (!room) return null
-  if (room.ownerId === userId) return 'OWNER' as const
-
-  const member = await prisma.roomMember.findUnique({
-    where: { roomId_userId: { roomId, userId } },
-    select: { role: true },
-  })
-
-  return member?.role ?? null
-}
 
 const updateDocumentSchema = z.object({
   content: z.string().max(500000).optional(),
@@ -63,6 +48,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrf = verifyCsrfOrigin(req)
+  if (csrf) return csrf
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
