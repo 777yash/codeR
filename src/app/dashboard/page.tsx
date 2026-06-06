@@ -111,7 +111,7 @@ export default async function DashboardPage({
           inviter: inv.inviter,
         }))}
       >
-        <RoomList initialRooms={rooms} view={safeView} />
+        <RoomList key={safeView} initialRooms={rooms} view={safeView} />
       </DashboardShell>
     </>
   )

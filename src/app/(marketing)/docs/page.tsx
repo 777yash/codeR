@@ -530,9 +530,26 @@ export default function DocsPage() {
           <Heading3>Auto-save</Heading3>
           <Prose>
             There is no save button. Every keystroke is broadcast via WebSocket
-            and persisted as a Yjs snapshot to the database. The editor state
-            survives server restarts, network interruptions, and browser
-            refreshes.
+            and merged into the shared CRDT document. The collab server persists
+            a compressed Yjs snapshot to the database every 30 seconds (only
+            when the document has changed — idle rooms generate no writes). The
+            editor state survives server restarts, network interruptions, and
+            browser refreshes.
+          </Prose>
+
+          <Heading3>Version history</Heading3>
+          <Prose>
+            codeR automatically saves up to 50 snapshots per room (capped,
+            oldest auto-save pruned first). You can also save a named version at
+            any time — click the bookmark icon in the room header, optionally
+            add a label, and confirm. Named versions are kept indefinitely.
+          </Prose>
+          <Prose>
+            Open the History tab in the collab panel to browse versions. Click
+            any entry to open a Monaco DiffEditor comparing that snapshot
+            against the current file. Owners and Editors can restore any version
+            — all collaborators see the change applied instantly via the live
+            Yjs document; no page reload required.
           </Prose>
 
           <Heading3>Mobile support</Heading3>

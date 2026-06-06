@@ -1,12 +1,16 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
-import Editor, { type OnMount } from '@monaco-editor/react'
+import Editor, { loader, type OnMount } from '@monaco-editor/react'
 import type * as MonacoEditor from 'monaco-editor'
 import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import { toast } from 'sonner'
 import { colorFromUserId } from '@/lib/color'
 import { useIsMobile } from '@/hooks/use-is-mobile'
+
+loader.config({
+  paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs' },
+})
 
 interface EditorClientProps {
   roomId: string
@@ -445,9 +449,18 @@ export function EditorClient({
         import('y-monaco'),
       ])
 
-      _encodeStateAsUpdate = Y.encodeStateAsUpdate as (
-        doc: unknown
-      ) => Uint8Array
+      const encodeV2 = Y.encodeStateAsUpdateV2 as (doc: unknown) => Uint8Array
+      // Tagged V2 container (uncompressed): [0x59, 0x5A, FLAG_V2]. Matches
+      // collab-server/coder decoders. No gzip here — keeps zlib out of the client bundle.
+      _encodeStateAsUpdate = (doc: unknown) => {
+        const update = encodeV2(doc)
+        const out = new Uint8Array(3 + update.length)
+        out[0] = 0x59
+        out[1] = 0x5a
+        out[2] = 0x01
+        out.set(update, 3)
+        return out
+      }
       MonacoBindingClassRef.current = MonacoBinding
 
       editor.addCommand(2048 | 49, () => setLastSaved(new Date()))

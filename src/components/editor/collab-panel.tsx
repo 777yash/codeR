@@ -18,8 +18,16 @@ import {
   Trash2,
   RotateCcw,
 } from 'lucide-react'
-import { DiffEditor } from '@monaco-editor/react'
+import dynamic from 'next/dynamic'
 import type { editor } from 'monaco-editor'
+
+const DiffEditor = dynamic(
+  () => import('@monaco-editor/react').then((m) => ({ default: m.DiffEditor })),
+  {
+    ssr: false,
+    loading: () => <div className="h-64 animate-pulse rounded bg-[#1e1e1e]" />,
+  }
+)
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 import { usePresence } from '@/hooks/use-presence'
@@ -182,6 +190,15 @@ export function CollabPanel({
       setHistListLoading(false)
     }
   }, [roomId])
+
+  // Re-fetch history list when SaveVersionDialog saves while history tab is open
+  useEffect(() => {
+    const handler = () => {
+      if (tab === 'history') void fetchHistList()
+    }
+    window.addEventListener('coder:version-saved', handler)
+    return () => window.removeEventListener('coder:version-saved', handler)
+  }, [tab, fetchHistList])
 
   // Refresh DiffEditor layout when diff becomes visible
   useEffect(() => {

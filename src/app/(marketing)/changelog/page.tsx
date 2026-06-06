@@ -1,9 +1,49 @@
 const releases = [
   {
+    phase: '10.4',
+    title: 'Performance & Instant UI',
+    date: 'Jun 6, 2026',
+    status: 'latest',
+    accentColor: '#0EA5E9',
+    summary:
+      'Monaco editor and DiffEditor split to lazy chunks, CRDT snapshots compressed with Yjs V2+gzip, idle rooms skip redundant DB writes, and dashboard tabs plus the version history list update instantly without a full-page reload.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'EditorClient lazy-loaded via next/dynamic (ssr: false) — skeleton shown during chunk load; Monaco removed from initial page bundle',
+          'DiffEditor in version history panel lazy-loaded separately — pulsing skeleton on first open',
+          'Monaco CDN pinned to @0.55.1 via loader.config() — prevents silent version drift from jsDelivr',
+          'Dashboard tab switching (My Rooms → Shared With Me → Recent) now instant — no full reload required',
+          'Saved versions appear immediately in the History tab without switching away and back',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'CRDT snapshot codec: tagged YZ container format (0x59 0x5A, flags, payload) — FLAG_V2=0x01, FLAG_GZIP=0x02. Server encodes V2+gzip; browser encodes V2 only (no zlib in client bundle)',
+          'encodeStateAsUpdateV2 replaces V1 encodeStateAsUpdate — ~20% smaller before gzip; gzip level 6 applied server-side for net 40–70% reduction on real code snapshots',
+          'All 3 decoders (collab-server bindState, collab-server handleResetDoc, Next.js snapshot GET) handle tagged V2/gzip and untagged legacy V1 — zero DB migration required',
+          'yjs-snapshot-codec.ts (server-only) added to coder — mirrors collab-server codec, used in snapshot GET route to decode version diffs',
+          'Idle room optimization: state-vector diff on each 30s tick — if doc unchanged since last save, both HTTP uploads skipped entirely. Active rooms unaffected',
+          'Snapshot interval 60s → 30s (idle-skip guard keeps DB write cost neutral for inactive rooms)',
+          'coder:version-saved custom DOM event bridges SaveVersionDialog → CollabPanel without prop drilling or store changes',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'Dashboard tabs not filtering without refresh — RoomList useState(initialRooms) ignored updated props after client-side navigation; useEffect([view]) now resyncs rooms from fresh server-rendered data',
+          'Version history list stale after saving — CollabPanel listener on coder:version-saved refetches when History tab is active',
+        ],
+      },
+    ],
+  },
+  {
     phase: '10.3',
     title: 'Mobile Responsive Layout',
     date: 'Jun 6, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#0EA5E9',
     summary:
       'Full mobile responsiveness across marketing, auth, dashboard, editor, and profile pages. Single-pane bottom tab switcher for the editor, overlay drawers, dynamic viewport height, and safe-area insets for notched devices.',
@@ -943,7 +983,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 10.4 — Polish & Performance
+          Phase 11 — WebContainers + Live Preview
         </h3>
         <p
           style={{
@@ -953,7 +993,9 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Monaco lazy loading, PostHog analytics, and GitHub Gist export.
+          Run Node.js projects entirely in-browser via WebContainers. Live
+          preview pane, integrated terminal, and npm install — no server
+          round-trip.
         </p>
         <a
           href="/features#phase-06"

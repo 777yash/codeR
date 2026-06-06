@@ -43,6 +43,7 @@ export function SaveVersionDialog({ roomId }: SaveVersionDialogProps) {
       }
 
       toast.success('Version saved')
+      window.dispatchEvent(new CustomEvent('coder:version-saved'))
       handleClose()
     } catch {
       toast.error('Failed to save version')

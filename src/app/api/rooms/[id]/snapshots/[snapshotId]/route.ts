@@ -3,12 +3,13 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { getUserRoomRole } from '@/lib/api/room-access'
 import { verifyCsrfOrigin } from '@/lib/csrf'
+import { decodeInto } from '@/lib/yjs-snapshot-codec'
 import * as Y from 'yjs'
 
 function decodeContent(data: Uint8Array): string {
   const doc = new Y.Doc()
   // Prisma Bytes = Uint8Array<ArrayBuffer>; yjs expects Uint8Array<ArrayBufferLike>
-  Y.applyUpdate(doc, data as unknown as Uint8Array)
+  decodeInto(doc, data as unknown as Uint8Array)
 
   const fileList = doc.getMap<string>('file-list')
   if (fileList.size > 0) {

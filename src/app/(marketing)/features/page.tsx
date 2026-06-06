@@ -133,7 +133,7 @@ const phases = [
     icon: <Clock className="h-5 w-5" />,
     accentColor: '#FF9F0A',
     features: [
-      { name: 'Auto-snapshots every 60s via collab-server', done: true },
+      { name: 'Auto-snapshots every 30s via collab-server', done: true },
       { name: 'Named versions (user-triggered, any time)', done: true },
       { name: 'Visual diff viewer (Monaco DiffEditor)', done: true },
       { name: 'Named / Auto-saves tabs in history panel', done: true },
@@ -183,7 +183,7 @@ const phases = [
   {
     number: '10',
     title: 'Polish & Security',
-    status: 'in_progress',
+    status: 'shipped',
     date: 'Jun 2026',
     icon: <Wrench className="h-5 w-5" />,
     accentColor: '#FF2D55',
@@ -194,9 +194,9 @@ const phases = [
         name: 'Env validation at startup (fail-fast on missing vars)',
         done: true,
       },
-      { name: 'Monaco lazy loading + CRDT compression', done: false },
-      { name: 'PostHog analytics', done: false },
+      { name: 'Monaco lazy loading + CRDT V2+gzip compression', done: true },
       { name: 'Mobile-responsive layout', done: true },
+      { name: 'PostHog analytics', done: false },
       { name: 'Export to GitHub Gist', done: false },
     ],
   },
@@ -560,7 +560,7 @@ export default function FeaturesPage() {
             marginBottom: '8px',
           }}
         >
-          Start building with Phase 1–9 today
+          Start building with Phase 1–10 today
         </h2>
         <p
           style={{
@@ -569,8 +569,8 @@ export default function FeaturesPage() {
             marginBottom: '24px',
           }}
         >
-          CRDT collaboration, AI completions, live code execution, presence, and
-          Monaco Editor — available now, free.
+          CRDT collaboration, AI completions, live code execution, version
+          history, presence, and Monaco Editor — available now, free.
         </p>
         <a
           href="/signup"

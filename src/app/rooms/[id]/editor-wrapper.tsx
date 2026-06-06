@@ -1,18 +1,35 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { FolderOpen, Code2, Users } from 'lucide-react'
 import { FileTabs } from '@/components/editor/file-tabs'
 import { EditorToolbar } from '@/components/editor/editor-toolbar'
-import { EditorClient } from '@/components/editor/editor-client'
 import { FileExplorer } from '@/components/editor/file-explorer'
 import {
   CollabPanel,
   type CollabMember,
 } from '@/components/editor/collab-panel'
 import { StatusBar } from '@/components/editor/status-bar'
+
+function EditorSkeleton() {
+  return (
+    <div
+      className="flex-1 animate-pulse bg-[#1e1e1e]"
+      aria-label="Loading editor…"
+    />
+  )
+}
+
+const EditorClient = dynamic(
+  () =>
+    import('@/components/editor/editor-client').then((m) => ({
+      default: m.EditorClient,
+    })),
+  { ssr: false, loading: () => <EditorSkeleton /> }
+)
 
 type MobilePane = 'editor' | 'files' | 'collab'
 
