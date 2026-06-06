@@ -64,7 +64,7 @@ export default async function ProfilePage() {
   const hasPassword = !!user.password
 
   return (
-    <div className="bg-app text-app flex h-screen flex-col">
+    <div className="bg-app text-app flex h-dvh flex-col">
       {/* Top Nav */}
       <header className="border-app bg-app flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
         <AppLogo size="md" href="/dashboard" />
@@ -86,7 +86,7 @@ export default async function ProfilePage() {
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="border-app bg-app-surface flex w-[220px] shrink-0 flex-col border-r">
+        <aside className="border-app bg-app-surface hidden w-[220px] shrink-0 flex-col border-r md:flex">
           <div className="flex-1 overflow-y-auto p-3">
             <p className="text-app-dim mb-2 px-2 text-[11px] font-medium tracking-wider uppercase">
               Workspace
@@ -135,7 +135,7 @@ export default async function ProfilePage() {
         </aside>
 
         {/* Main */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <h1 className="text-app mb-1 text-3xl font-semibold">Profile</h1>
           <p className="text-app-muted mb-8 text-sm">
             Manage your account details

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/marketing/theme-toggle'
+import { MobileNav } from '@/components/marketing/mobile-nav'
 
 export default function MarketingLayout({
   children,
@@ -93,6 +94,7 @@ export default function MarketingLayout({
           <ThemeToggle />
           <Link
             href="/signin"
+            className="hidden md:inline-flex"
             style={{
               padding: '8px 16px',
               fontSize: '14px',
@@ -106,6 +108,7 @@ export default function MarketingLayout({
           >
             Sign In
           </Link>
+          <MobileNav />
         </div>
       </nav>
 

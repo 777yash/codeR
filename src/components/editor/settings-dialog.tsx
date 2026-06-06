@@ -17,7 +17,7 @@ export function SettingsDialog({ room, userRole }: SettingsDialogProps) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
+        className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
         title="Room settings"
       >
         <Settings className="text-app-dim h-3.5 w-3.5" />
@@ -34,7 +34,7 @@ export function SettingsDialog({ room, userRole }: SettingsDialogProps) {
               <h2 className="text-app text-sm font-semibold">Room Settings</h2>
               <button
                 onClick={() => setOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
+                className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
               >
                 <X className="text-app-dim h-4 w-4" />
               </button>

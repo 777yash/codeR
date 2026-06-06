@@ -47,9 +47,15 @@ function extToLang(ext: string): string {
 
 interface FileExplorerProps {
   roomName?: string
+  mobileOpen?: boolean
+  onFileSelect?: () => void
 }
 
-export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
+export function FileExplorer({
+  roomName = 'project',
+  mobileOpen = false,
+  onFileSelect,
+}: FileExplorerProps) {
   const {
     files: rawFiles,
     activeFileId,
@@ -124,7 +130,11 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
   }
 
   return (
-    <div className="border-app bg-app-surface flex w-[220px] shrink-0 flex-col overflow-hidden border-r">
+    <div
+      className={`border-app bg-app-surface flex-col overflow-hidden border-r max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[300px] max-md:shadow-[4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[220px] md:shrink-0 ${
+        mobileOpen ? 'max-md:flex' : 'max-md:hidden'
+      }`}
+    >
       {/* Header */}
       <div className="flex h-9 items-center justify-between px-3">
         <span className="text-app-dim text-[10px] font-semibold tracking-widest uppercase">
@@ -160,7 +170,10 @@ export function FileExplorer({ roomName = 'project' }: FileExplorerProps) {
             }`}
           >
             <button
-              onClick={() => setActiveFile(file.id)}
+              onClick={() => {
+                setActiveFile(file.id)
+                onFileSelect?.()
+              }}
               onDoubleClick={() => startRename(file.id, file.name)}
               className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5"
             >

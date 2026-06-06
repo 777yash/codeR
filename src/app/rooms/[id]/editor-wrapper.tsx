@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { FolderOpen, Code2, Users } from 'lucide-react'
 import { FileTabs } from '@/components/editor/file-tabs'
 import { EditorToolbar } from '@/components/editor/editor-toolbar'
 import { EditorClient } from '@/components/editor/editor-client'
@@ -12,6 +13,8 @@ import {
   type CollabMember,
 } from '@/components/editor/collab-panel'
 import { StatusBar } from '@/components/editor/status-bar'
+
+type MobilePane = 'editor' | 'files' | 'collab'
 
 interface EditorWrapperProps {
   roomId: string
@@ -37,6 +40,7 @@ export function EditorWrapper({
   canSave = false,
 }: EditorWrapperProps) {
   const router = useRouter()
+  const [mobilePane, setMobilePane] = useState<MobilePane>('editor')
 
   useEffect(() => {
     const check = async () => {
@@ -55,15 +59,34 @@ export function EditorWrapper({
     return () => clearInterval(interval)
   }, [roomId, router])
 
+  const mobileTabs: { id: MobilePane; label: string; icon: React.ReactNode }[] =
+    [
+      { id: 'files', label: 'Files', icon: <FolderOpen className="h-4 w-4" /> },
+      { id: 'editor', label: 'Editor', icon: <Code2 className="h-4 w-4" /> },
+      { id: 'collab', label: 'Collab', icon: <Users className="h-4 w-4" /> },
+    ]
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <EditorToolbar />
 
-      {/* 3-column main area */}
-      <div className="flex flex-1 overflow-hidden">
-        <FileExplorer roomName={roomName} />
+      {/* Main area — 3-column on desktop, single-pane + drawers on mobile */}
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* Mobile drawer backdrop */}
+        {mobilePane !== 'editor' && (
+          <div
+            className="absolute inset-0 z-20 bg-black/60 md:hidden"
+            onClick={() => setMobilePane('editor')}
+          />
+        )}
 
-        {/* Center: file tabs + editor */}
+        <FileExplorer
+          roomName={roomName}
+          mobileOpen={mobilePane === 'files'}
+          onFileSelect={() => setMobilePane('editor')}
+        />
+
+        {/* Center: file tabs + editor — always mounted (unmount drops WS) */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <FileTabs />
           <div className="flex-1 overflow-hidden">
@@ -84,10 +107,32 @@ export function EditorWrapper({
           currentUserName={currentUserName}
           roomLanguage={roomLanguage}
           canSave={canSave}
+          mobileOpen={mobilePane === 'collab'}
         />
       </div>
 
       <StatusBar />
+
+      {/* Mobile pane switcher */}
+      <div
+        className="border-app bg-app-surface flex h-12 shrink-0 items-stretch border-t md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {mobileTabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setMobilePane(t.id)}
+            className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+              mobilePane === t.id
+                ? 'text-[#FF2D55]'
+                : 'text-app-dim hover:text-app-muted'
+            }`}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

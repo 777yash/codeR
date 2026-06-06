@@ -145,7 +145,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
   const extraCount = Math.max(0, allMembers.length - 3)
 
   return (
-    <div className="bg-app text-app flex h-screen flex-col">
+    <div className="bg-app text-app flex h-dvh flex-col">
       {/* Top bar — 44px */}
       <header className="border-app bg-app flex h-11 shrink-0 items-center justify-between gap-4 border-b px-3">
         {/* Left: back + breadcrumb + lang badge */}
@@ -154,14 +154,14 @@ export default async function RoomPage({ params }: RoomPageProps) {
             href={
               userRole === 'OWNER' ? '/dashboard' : '/dashboard?view=shared'
             }
-            className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
+            className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
             title="Back to dashboard"
           >
             <ArrowLeft className="h-3.5 w-3.5 text-[#555555]" />
           </Link>
 
           {/* Breadcrumb */}
-          <div className="flex items-center gap-1 text-xs">
+          <div className="hidden items-center gap-1 text-xs sm:flex">
             <span className="text-[#555555]">dashboard</span>
             <span className="text-[#333]">›</span>
             <span className="text-app flex items-center gap-1 font-medium">
@@ -170,7 +170,12 @@ export default async function RoomPage({ params }: RoomPageProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5">
+          {/* Room name — mobile only (breadcrumb hidden) */}
+          <span className="text-app max-w-[140px] truncate text-xs font-medium sm:hidden">
+            {room.name}
+          </span>
+
+          <div className="hidden items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 sm:flex">
             <LanguageIcon language={room.language} size={14} />
             <span className="text-[11px] font-medium text-[#888888]">
               {LANG_LABEL[room.language.toLowerCase()] ?? room.language}
@@ -178,8 +183,8 @@ export default async function RoomPage({ params }: RoomPageProps) {
           </div>
         </div>
 
-        {/* Center: live badge + avatar cluster */}
-        <div className="flex items-center gap-3">
+        {/* Center: live badge + avatar cluster (hidden on mobile — see Collab → Users) */}
+        <div className="hidden items-center gap-3 sm:flex">
           {/* Live badge — client component, polls presence API */}
           <LiveBadge roomId={id} />
 
@@ -216,7 +221,9 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
         {/* Right: actions */}
         <div className="flex items-center gap-1.5">
-          <ThemeToggle />
+          <span className="hidden sm:block">
+            <ThemeToggle />
+          </span>
           <ShareButton roomId={id} userRole={userRole ?? null} />
 
           {userRole !== 'VIEWER' && <SaveVersionDialog roomId={id} />}

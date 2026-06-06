@@ -6,6 +6,7 @@ import type * as MonacoEditor from 'monaco-editor'
 import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import { toast } from 'sonner'
 import { colorFromUserId } from '@/lib/color'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 
 interface EditorClientProps {
   roomId: string
@@ -258,6 +259,8 @@ export function EditorClient({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeBindingRef = useRef<any>(null)
   const completionProviderRef = useRef<{ dispose(): void } | null>(null)
+
+  const isMobile = useIsMobile()
 
   const {
     theme,
@@ -745,10 +748,11 @@ export function EditorClient({
       onMount={handleEditorMount}
       options={{
         readOnly,
-        fontSize,
+        fontSize: isMobile ? Math.max(fontSize, 14) : fontSize,
         fontFamily: "'JetBrains Mono', monospace",
         lineNumbers: lineNumbers === 'off' ? 'off' : lineNumbers,
-        minimap: { enabled: minimap },
+        minimap: { enabled: isMobile ? false : minimap },
+        folding: !isMobile,
         wordWrap,
         scrollBeyondLastLine: false,
         automaticLayout: true,

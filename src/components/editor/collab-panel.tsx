@@ -49,6 +49,7 @@ interface CollabPanelProps {
   currentUserName?: string
   roomLanguage?: string
   canSave?: boolean
+  mobileOpen?: boolean
 }
 
 interface Snapshot {
@@ -115,6 +116,7 @@ export function CollabPanel({
   currentUserName,
   roomLanguage = 'javascript',
   canSave = false,
+  mobileOpen = false,
 }: CollabPanelProps) {
   // ── Tab ────────────────────────────────────────────────────────────────────
   const [tab, setTab] = useState<Tab>('users')
@@ -375,7 +377,11 @@ export function CollabPanel({
 
   return (
     <>
-      <div className="border-app bg-app-surface flex w-[280px] shrink-0 flex-col overflow-hidden border-l">
+      <div
+        className={`border-app bg-app-surface flex-col overflow-hidden border-l max-md:absolute max-md:inset-y-0 max-md:right-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[320px] max-md:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[280px] md:shrink-0 ${
+          mobileOpen ? 'max-md:flex' : 'max-md:hidden'
+        }`}
+      >
         {/* Tab bar */}
         <div className="border-app flex h-10 shrink-0 items-stretch border-b">
           {tabs.map((t) => (

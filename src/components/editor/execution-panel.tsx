@@ -161,7 +161,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
         <button
           onClick={handleRun}
           disabled={running}
-          className="flex h-7 items-center gap-1.5 rounded-md bg-[#32D74B] px-3 text-xs font-semibold text-black transition-colors hover:bg-[#32D74B]/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-7 items-center gap-1.5 rounded-md bg-[#32D74B] px-3 text-xs font-semibold text-black transition-colors hover:bg-[#32D74B]/90 disabled:cursor-not-allowed disabled:opacity-50 max-md:h-9 max-md:px-4"
         >
           <Play className="h-3 w-3" />
           {running ? 'Running…' : 'Run'}
@@ -170,10 +170,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
 
       {/* Bottom drawer */}
       {open && (
-        <div
-          className="fixed right-0 bottom-0 left-0 z-40 flex flex-col border-t border-white/[0.08] bg-[#111111]"
-          style={{ height: 280 }}
-        >
+        <div className="fixed right-0 bottom-0 left-0 z-40 flex h-[280px] flex-col border-t border-white/[0.08] bg-[#111111] max-md:bottom-[calc(3rem+env(safe-area-inset-bottom))] max-md:h-[42vh]">
           <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/[0.08] px-4">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-[#888888]">

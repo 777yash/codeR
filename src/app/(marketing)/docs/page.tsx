@@ -210,6 +210,7 @@ const navItems = [
   { href: '#sharing', label: 'Sharing' },
   { href: '#keyboard-shortcuts', label: 'Keyboard Shortcuts' },
   { href: '#languages', label: 'Supported Languages' },
+  { href: '#mobile', label: 'Mobile' },
   { href: '#api', label: 'API Reference' },
 ]
 
@@ -339,8 +340,8 @@ export default function DocsPage() {
               },
               {
                 icon: <Globe className="h-4 w-4" />,
-                label: '60+ languages',
-                sub: 'Syntax highlighting',
+                label: '29 languages',
+                sub: 'Syntax highlighting + execution',
               },
             ].map(({ icon, label, sub }) => (
               <div
@@ -523,7 +524,7 @@ export default function DocsPage() {
           <Prose>
             The primary language is set per room and controls syntax
             highlighting. You can switch it any time from the language selector
-            in the top bar. 60+ languages are supported.
+            in the top bar. 29 languages are supported.
           </Prose>
 
           <Heading3>Auto-save</Heading3>
@@ -532,6 +533,25 @@ export default function DocsPage() {
             and persisted as a Yjs snapshot to the database. The editor state
             survives server restarts, network interruptions, and browser
             refreshes.
+          </Prose>
+
+          <Heading3>Mobile support</Heading3>
+          <Prose>
+            codeR is fully mobile-responsive. On small screens the editor
+            switches to a single-pane layout with a bottom tab bar — tap{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Editor
+            </strong>
+            ,{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Files
+            </strong>
+            , or{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Collab
+            </strong>{' '}
+            to switch between panes. The file explorer and collab panel slide in
+            as overlays without disconnecting from the WebSocket session.
           </Prose>
 
           <Callout type="warning">
@@ -734,9 +754,9 @@ export default function DocsPage() {
         <section style={{ marginBottom: '48px' }}>
           <Heading2 id="languages">Supported Languages</Heading2>
           <Prose>
-            Syntax highlighting is provided by Monaco for all 60+ languages.
-            Code execution (Phase 6, coming soon) will support the subset below
-            via Judge0 sandboxes.
+            29 languages are available in the language selector. Syntax
+            highlighting is provided by Monaco; code execution runs via
+            OneCompiler — click Run in the top bar to execute.
           </Prose>
           <div
             style={{
@@ -762,6 +782,46 @@ export default function DocsPage() {
               </span>
             ))}
           </div>
+        </section>
+
+        {/* Mobile */}
+        <section style={{ marginBottom: '48px' }}>
+          <Heading2 id="mobile">Mobile</Heading2>
+          <Prose>
+            codeR works on phones and tablets. The layout adapts automatically
+            at the 768px breakpoint.
+          </Prose>
+
+          <Heading3>Editor on mobile</Heading3>
+          <Prose>
+            A bottom tab bar replaces the three-panel desktop layout. Tap{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Editor
+            </strong>{' '}
+            to focus the Monaco editor,{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Files
+            </strong>{' '}
+            to open the file explorer, or{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Collab
+            </strong>{' '}
+            to open the presence + chat + history panel. Switching panes never
+            disconnects the WebSocket session — other collaborators remain
+            unaware of your navigation.
+          </Prose>
+
+          <Heading3>Dashboard on mobile</Heading3>
+          <Prose>
+            Tap the hamburger icon in the top bar to open the sidebar drawer.
+            Tap outside or navigate to close it. Room cards stack to a single
+            column on phones, two columns on tablets.
+          </Prose>
+
+          <Callout type="tip">
+            Font size is enforced at 14px minimum on mobile to prevent iOS from
+            auto-zooming when the editor gains focus.
+          </Callout>
         </section>
 
         {/* API Reference */}

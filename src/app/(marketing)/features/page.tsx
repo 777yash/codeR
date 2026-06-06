@@ -196,7 +196,7 @@ const phases = [
       },
       { name: 'Monaco lazy loading + CRDT compression', done: false },
       { name: 'PostHog analytics', done: false },
-      { name: 'Mobile-responsive layout', done: false },
+      { name: 'Mobile-responsive layout', done: true },
       { name: 'Export to GitHub Gist', done: false },
     ],
   },

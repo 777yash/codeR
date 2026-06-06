@@ -551,7 +551,7 @@ export default function LandingPage() {
               icon: <Play className="h-6 w-6" fill="currentColor" />,
               iconColor: '#32D74B',
               title: 'Live Code Execution',
-              desc: 'Run Python, JavaScript, Go, Rust and 60+ more languages in isolated, secure sandboxes.',
+              desc: 'Run Python, JavaScript, Go, Rust, and 24+ more languages in isolated, secure sandboxes.',
             },
             {
               icon: <Sparkles className="h-6 w-6" />,
@@ -629,7 +629,7 @@ export default function LandingPage() {
           }}
         >
           {[
-            { value: '60+', label: 'Languages supported' },
+            { value: '29', label: 'Languages supported' },
             { value: 'CRDT', label: 'Conflict-free sync' },
             { value: '<50ms', label: 'Collaboration latency' },
             { value: 'Free', label: 'Forever on solo plan' },

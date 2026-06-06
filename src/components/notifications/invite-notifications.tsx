@@ -129,7 +129,7 @@ export function InviteNotifications({
                     <button
                       onClick={() => handleAction(inv.id, 'accept')}
                       disabled={acting === inv.id}
-                      className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded bg-[#FF2D55] text-xs font-medium text-white transition-colors hover:bg-[#FF2D55]/90 disabled:opacity-50"
+                      className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded bg-[#FF2D55] text-xs font-medium text-white transition-colors hover:bg-[#FF2D55]/90 disabled:opacity-50 max-md:h-9"
                     >
                       {acting === inv.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -141,7 +141,7 @@ export function InviteNotifications({
                     <button
                       onClick={() => handleAction(inv.id, 'decline')}
                       disabled={acting === inv.id}
-                      className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded border border-white/10 text-xs text-[#888888] transition-colors hover:border-white/20 hover:text-[#F0F0F0] disabled:opacity-50"
+                      className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded border border-white/10 text-xs text-[#888888] transition-colors hover:border-white/20 hover:text-[#F0F0F0] disabled:opacity-50 max-md:h-9"
                     >
                       <X className="h-3 w-3" />
                       Decline

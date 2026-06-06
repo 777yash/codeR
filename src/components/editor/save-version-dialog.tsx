@@ -61,7 +61,7 @@ export function SaveVersionDialog({ roomId }: SaveVersionDialogProps) {
       <button
         onClick={() => setOpen(true)}
         title="Save named version"
-        className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
+        className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
       >
         <Bookmark className="h-3.5 w-3.5" />
       </button>
@@ -77,7 +77,7 @@ export function SaveVersionDialog({ roomId }: SaveVersionDialogProps) {
               <h3 className="text-app text-sm font-semibold">Save Version</h3>
               <button
                 onClick={() => handleClose()}
-                className="text-app-dim hover:text-app flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5"
+                className="text-app-dim hover:text-app flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

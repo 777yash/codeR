@@ -85,7 +85,7 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <button
           onClick={() => setIsCreateOpen(true)}
           className="group flex h-48 flex-col items-center justify-center rounded-md border border-dashed border-white/10 transition-all duration-150 hover:border-[rgba(255,45,85,0.30)] hover:bg-[rgba(255,45,85,0.08)]"

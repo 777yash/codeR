@@ -42,9 +42,9 @@ export function SignInForm({ callbackUrl }: Props) {
   }
 
   return (
-    <div className="bg-app flex min-h-screen items-center justify-center px-4">
+    <div className="bg-app flex min-h-dvh items-center justify-center px-4">
       <div
-        className="border-app-mid bg-app-card w-full max-w-[420px] rounded-[10px] border px-10 py-10"
+        className="border-app-mid bg-app-card w-full max-w-[420px] rounded-[10px] border px-6 py-8 sm:px-10 sm:py-10"
         style={{ boxShadow: 'var(--coder-shadow-md)' }}
       >
         {/* Logo */}

@@ -76,7 +76,7 @@ export default async function RoomSettingsPage({ params }: SettingsPageProps) {
   const { room, userRole } = result
 
   return (
-    <div className="bg-app text-app flex h-screen flex-col">
+    <div className="bg-app text-app flex h-dvh flex-col">
       <header className="border-app bg-app flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
         <div className="flex items-center gap-3">
           <Link
@@ -102,7 +102,7 @@ export default async function RoomSettingsPage({ params }: SettingsPageProps) {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="mx-auto max-w-2xl">
           <h2 className="mb-6 text-2xl font-semibold">Room Settings</h2>
           <RoomSettingsClient room={room} userRole={userRole} />

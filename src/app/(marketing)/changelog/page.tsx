@@ -1,9 +1,52 @@
 const releases = [
   {
+    phase: '10.3',
+    title: 'Mobile Responsive Layout',
+    date: 'Jun 6, 2026',
+    status: 'latest',
+    accentColor: '#0EA5E9',
+    summary:
+      'Full mobile responsiveness across marketing, auth, dashboard, editor, and profile pages. Single-pane bottom tab switcher for the editor, overlay drawers, dynamic viewport height, and safe-area insets for notched devices.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Editor bottom tab switcher (Editor / Files / Collab) — single active pane on mobile; no panel overlap',
+          'File explorer and collab panel become absolute overlay drawers on mobile — never unmounted (preserves WebSocket/presence)',
+          'Dashboard mobile drawer — hamburger button opens sidebar as overlay; backdrop tap closes',
+          'Mobile nav on marketing pages — hamburger menu with all nav links and sign-in',
+          'Room card grid: grid-cols-1 → sm:grid-cols-2 → lg:grid-cols-3',
+          'Header collapse on room page — breadcrumb, avatar cluster, and theme toggle hidden on mobile; room name shown instead',
+          'Terminal drawer sits above mobile tab bar via calc(3rem + env(safe-area-inset-bottom))',
+          'Run button enlarged to 44px touch target on mobile (max-md:h-9)',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'h-screen → h-dvh on all full-height layouts (dashboard, rooms, profile, room settings, share pages) — fixes mobile URL bar stealing viewport height',
+          'Profile page sidebar hidden on mobile — was always 220px wide, leaving only 155px of content on 375px screens',
+          'Terminal capped at 42vh on mobile (was 50vh — too tall on small screens)',
+          'Sign-in / sign-up card padding responsive: px-6 py-8 on mobile → sm:px-10 sm:py-10 on tablet+',
+          'Room settings and profile main padding: p-8 → p-4 md:p-8',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'Viewport meta export added to root layout — width=device-width, initialScale=1, viewportFit=cover',
+          'useIsMobile hook via useSyncExternalStore + window.matchMedia — SSR-safe, no hydration mismatch',
+          'Monaco mobile options: fontSize min 14 (prevents iOS auto-zoom on focus), minimap disabled, folding disabled',
+          'safe-area insets via env(safe-area-inset-*) on tab bar and terminal — notch and home-indicator support',
+        ],
+      },
+    ],
+  },
+  {
     phase: '10.2',
     title: 'Codebase Cleanup & Security Activation',
     date: 'Jun 5, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#FF2D55',
     summary:
       'Dead code audit + full deduplication pass. CSRF and env validation wired in. Dead Prisma model dropped. 8 unused files deleted, 6 duplicate functions unified.',
@@ -900,7 +943,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 10.3 — Polish & Performance
+          Phase 10.4 — Polish & Performance
         </h3>
         <p
           style={{
@@ -910,8 +953,7 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Monaco lazy loading, PostHog analytics, mobile-responsive layout, and
-          GitHub Gist export.
+          Monaco lazy loading, PostHog analytics, and GitHub Gist export.
         </p>
         <a
           href="/features#phase-06"
