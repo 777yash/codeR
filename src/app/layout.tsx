@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
+import { auth } from '@/auth'
+import { PostHogProvider } from '@/components/providers/posthog-provider'
 
 const inter = Inter({
   variable: '--font-inter',
@@ -26,11 +28,20 @@ export const metadata: Metadata = {
     'A real-time collaborative code editor with live execution, presence-aware cursors, and AI completions.',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const session = await auth()
+  const phUser = session?.user?.id
+    ? {
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.name,
+      }
+    : null
+
   return (
     <html
       lang="en"
@@ -47,7 +58,7 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col">
-        {children}
+        <PostHogProvider user={phUser}>{children}</PostHogProvider>
         <Toaster />
       </body>
     </html>

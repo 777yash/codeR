@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
+import { usePostHog } from 'posthog-js/react'
 import { toast } from 'sonner'
 import { FolderOpen, Code2, Users } from 'lucide-react'
 import { FileTabs } from '@/components/editor/file-tabs'
@@ -57,7 +58,12 @@ export function EditorWrapper({
   canSave = false,
 }: EditorWrapperProps) {
   const router = useRouter()
+  const posthog = usePostHog()
   const [mobilePane, setMobilePane] = useState<MobilePane>('editor')
+
+  useEffect(() => {
+    posthog?.capture('room_joined', { room_id: roomId, read_only: readOnly })
+  }, [posthog, roomId, readOnly])
 
   useEffect(() => {
     const check = async () => {

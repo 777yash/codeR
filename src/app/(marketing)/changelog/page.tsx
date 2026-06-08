@@ -1,9 +1,46 @@
 const releases = [
   {
+    phase: '10.5',
+    title: 'Product Analytics',
+    date: 'Jun 9, 2026',
+    status: 'latest',
+    accentColor: '#BF5AF2',
+    summary:
+      'PostHog product analytics — privacy-first, client-only. User funnels from signup through room creation, joining, code execution, and chat are now visible. No source code, output, or message text ever leaves the browser. Analytics are fully optional and disabled when no key is set.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Five events tracked via posthog-js: $pageview, room_created, room_joined, code_executed, chat_message_sent — full signup → room → execution funnel',
+          'Users identified by account ID on login (email + name) — events tied to real accounts, not anonymous sessions; posthog.reset() on logout',
+          'Automatic pageview capture on client-side navigation (SPA history_change defaults) — no per-route instrumentation',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'EU cloud region (eu.i.posthog.com) — matches existing Sentry EU data residency',
+          'Reverse-proxied through /ingest/* via next.config rewrites — analytics stay same-origin (zero CSP changes) and survive ad-blockers; skipTrailingSlashRedirect enabled',
+          'NEXT_PUBLIC_POSTHOG_KEY optional in Zod env schema — absent disables analytics entirely; app and CI unaffected. Every capture is optional-chained',
+          'person_profiles: identified_only — anonymous visitors create no person records',
+          'Identify wired via auth() in root layout — no SessionProvider added (marketing route now dynamically rendered)',
+        ],
+      },
+      {
+        type: 'security',
+        items: [
+          'posthog-js pinned to exact 1.382.0 (no caret) and installed --ignore-scripts — package was hit by the Nov 24 2025 Shai-Hulud 2.0 npm worm (credential stealer); pin blocks auto-pull of any future compromised release',
+          'Session replay disabled (disable_session_recording) — editor source code is never recorded',
+          'Event properties scrubbed of sensitive data — no source code, stdin/stdout, or chat message text sent; only language, role, and boolean flags',
+        ],
+      },
+    ],
+  },
+  {
     phase: '10.4',
     title: 'Performance & Instant UI',
     date: 'Jun 6, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#0EA5E9',
     summary:
       'Monaco editor and DiffEditor split to lazy chunks, CRDT snapshots compressed with Yjs V2+gzip, idle rooms skip redundant DB writes, and dashboard tabs plus the version history list update instantly without a full-page reload.',

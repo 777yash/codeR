@@ -30,6 +30,7 @@ const DiffEditor = dynamic(
 )
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
+import { usePostHog } from 'posthog-js/react'
 import { usePresence } from '@/hooks/use-presence'
 import { useEditorStore } from '@/stores/editor-store'
 import { colorFromUserId } from '@/lib/color'
@@ -135,6 +136,8 @@ export function CollabPanel({
   const [role, setRole] = useState<'EDITOR' | 'VIEWER'>('EDITOR')
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
+
+  const posthog = usePostHog()
 
   // ── Chat state ────────────────────────────────────────────────────────────
   const [messages, setMessages] = useState<ChatMessageData[]>(getChatMessages)
@@ -324,9 +327,17 @@ export function CollabPanel({
         ? { type: 'code' as const, language: editorLanguage }
         : {}),
     })
+    posthog?.capture('chat_message_sent', { has_code: isCodeMode })
     setChatInput('')
     setMentionQuery(null)
-  }, [chatInput, currentUserId, currentUserName, isCodeMode, editorLanguage])
+  }, [
+    chatInput,
+    currentUserId,
+    currentUserName,
+    isCodeMode,
+    editorLanguage,
+    posthog,
+  ])
 
   const handleCopy = useCallback((content: string, id: string) => {
     navigator.clipboard

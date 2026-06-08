@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { usePostHog } from 'posthog-js/react'
 import { Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { RoomCard } from './room-card'
@@ -27,6 +28,7 @@ interface RoomListProps {
 
 export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
   const router = useRouter()
+  const posthog = usePostHog()
   const [rooms, setRooms] = useState(initialRooms)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -68,6 +70,10 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
         }
 
         const newRoom = await res.json()
+        posthog?.capture('room_created', {
+          language: data.language,
+          is_public: data.isPublic,
+        })
         setRooms((prev) => [newRoom, ...prev])
         setIsCreateOpen(false)
         toast.success(`Room "${data.name}" created`)
@@ -80,7 +86,7 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
         setIsLoading(false)
       }
     },
-    [router]
+    [router, posthog]
   )
 
   return (

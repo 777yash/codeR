@@ -19,6 +19,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url(),
   NEXT_PUBLIC_COLLAB_WS_URL: z.string().default('ws://localhost:1234'),
 
+  // Analytics (optional — absent disables PostHog, app runs normally)
+  NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
+
   // Collab server internal auth
   NEXTJS_INTERNAL_SECRET: z.string().min(1),
 

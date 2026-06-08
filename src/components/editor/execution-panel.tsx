@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { Play, ChevronDown, Terminal } from 'lucide-react'
 import { useEditorStore } from '@/stores/editor-store'
 import {
@@ -49,6 +50,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
     setExecutionPanelOpen: setOpen,
     language,
   } = useEditorStore()
+  const posthog = usePostHog()
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<ExecutionResult | null>(null)
   const [stdin, setStdin] = useState('')
@@ -71,6 +73,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
 
   async function handleRun() {
     const files = getAllFilesContent()
+    posthog?.capture('code_executed', { language })
     setOpen(true)
     setStatus('running')
     setResult(null)
