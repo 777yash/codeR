@@ -81,7 +81,8 @@ export async function POST(
       { status: 409 }
     )
   }
-  if (!account.scope?.split(' ').includes('gist')) {
+  // GitHub returns granted scopes comma-separated; tolerate spaces too.
+  if (!account.scope?.split(/[,\s]+/).includes('gist')) {
     return NextResponse.json(
       { error: 'Re-sign in with GitHub to enable gist export.' },
       { status: 409 }

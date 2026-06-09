@@ -65,4 +65,32 @@ export const { handlers, auth, signOut } = NextAuth({
       },
     }),
   ],
+
+  events: {
+    // Auth.js only persists OAuth tokens on first link. Refresh them on every
+    // sign-in so re-authenticating with an expanded scope (e.g. adding `gist`)
+    // actually updates the stored access_token + scope.
+    async signIn({ account }) {
+      if (
+        account &&
+        account.access_token &&
+        (account.provider === 'github' || account.provider === 'google')
+      ) {
+        await prisma.account.updateMany({
+          where: {
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+          },
+          data: {
+            access_token: account.access_token,
+            refresh_token: account.refresh_token,
+            expires_at: account.expires_at,
+            token_type: account.token_type,
+            scope: account.scope,
+            id_token: account.id_token,
+          },
+        })
+      }
+    },
+  },
 })
