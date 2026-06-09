@@ -1,9 +1,44 @@
 const releases = [
   {
+    phase: '10.6',
+    title: 'Export to GitHub Gist',
+    date: 'Jun 9, 2026',
+    status: 'latest',
+    accentColor: '#32D74B',
+    summary:
+      'Export any room workspace to a GitHub Gist in one click. All open files are pushed to a secret (or public) gist under your GitHub account; the link is copied to your clipboard. Closes the last open Phase 10 item.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Export to GitHub Gist button in the room header — dialog with optional description and a Secret / Public toggle (defaults to Secret)',
+          'All open workspace files exported together (reuses getAllFilesContent() — the same source as the Run button); empty files are skipped',
+          'Gist link copied to clipboard on success, with an Open action in the toast',
+          'gist_exported analytics event { is_public, file_count }',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'POST /api/rooms/[id]/gist — CSRF + auth + room-access guarded (mutation endpoint #17); creates the gist server-side via native fetch to api.github.com (no octokit dependency)',
+          'GitHub OAuth login scope broadened to include gist — token read on demand from the Account table; never exposed to the browser or stored in the JWT',
+          'Actionable errors: non-GitHub accounts and pre-scope tokens get a 409 prompting sign-in / re-sign-in with GitHub',
+        ],
+      },
+      {
+        type: 'security',
+        items: [
+          'Gist creation is server-only — the GitHub access token never leaves the server',
+          'Export gated on room access (members or public rooms); whitespace-only files rejected before hitting the GitHub API',
+        ],
+      },
+    ],
+  },
+  {
     phase: '10.5',
     title: 'Product Analytics',
     date: 'Jun 9, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#BF5AF2',
     summary:
       'PostHog product analytics — privacy-first, client-only. User funnels from signup through room creation, joining, code execution, and chat are now visible. No source code, output, or message text ever leaves the browser. Analytics are fully optional and disabled when no key is set.',
@@ -11,7 +46,7 @@ const releases = [
       {
         type: 'feature',
         items: [
-          'Five events tracked via posthog-js: $pageview, room_created, room_joined, code_executed, chat_message_sent — full signup → room → execution funnel',
+          'Five events tracked via posthog-js: $pageviewR, room_created, room_joined, code_executed, chat_message_sent — full signup → room → execution funnel',
           'Users identified by account ID on login (email + name) — events tied to real accounts, not anonymous sessions; posthog.reset() on logout',
           'Automatic pageview capture on client-side navigation (SPA history_change defaults) — no per-route instrumentation',
         ],
@@ -19,7 +54,7 @@ const releases = [
       {
         type: 'infra',
         items: [
-          'EU cloud region (eu.i.posthog.com) — matches existing Sentry EU data residency',
+          'EU cloud region (eu.posthog.com) — matches existing Sentry EU data residency',
           'Reverse-proxied through /ingest/* via next.config rewrites — analytics stay same-origin (zero CSP changes) and survive ad-blockers; skipTrailingSlashRedirect enabled',
           'NEXT_PUBLIC_POSTHOG_KEY optional in Zod env schema — absent disables analytics entirely; app and CI unaffected. Every capture is optional-chained',
           'person_profiles: identified_only — anonymous visitors create no person records',

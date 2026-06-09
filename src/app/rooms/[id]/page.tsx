@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { ArrowLeft } from 'lucide-react'
 import { ShareButton } from '@/components/rooms/share-button'
+import { GistExportButton } from '@/components/rooms/gist-export-button'
 import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import type { Metadata } from 'next'
 import { EditorWrapper } from './editor-wrapper'
@@ -122,6 +123,11 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
   const { room, userRole } = result
 
+  const githubLinked = !!(await prisma.account.findFirst({
+    where: { userId: session.user.id!, provider: 'github' },
+    select: { id: true },
+  }))
+
   // Build unified member list (owner first, then members)
   const allMembers: CollabMember[] = [
     {
@@ -225,6 +231,8 @@ export default async function RoomPage({ params }: RoomPageProps) {
             <ThemeToggle />
           </span>
           <ShareButton roomId={id} userRole={userRole ?? null} />
+
+          <GistExportButton roomId={id} githubLinked={githubLinked} />
 
           {userRole !== 'VIEWER' && <SaveVersionDialog roomId={id} />}
 
