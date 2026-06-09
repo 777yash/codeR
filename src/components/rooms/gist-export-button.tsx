@@ -55,6 +55,7 @@ export function GistExportButton({
       await navigator.clipboard.writeText(data.url).catch(() => {})
       toast.success('Gist created — link copied', {
         description: data.url,
+        classNames: { description: '!text-black' },
         action: {
           label: 'Open',
           onClick: () => window.open(data.url, '_blank'),
