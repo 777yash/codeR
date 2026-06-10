@@ -81,7 +81,7 @@ export default async function RoomSettingsPage({ params }: SettingsPageProps) {
         <div className="flex items-center gap-3">
           <Link
             href={`/rooms/${id}`}
-            className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-white/5"
+            className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--coder-bg-card-hover)]"
           >
             <ArrowLeft className="text-app-muted h-4 w-4" />
           </Link>
@@ -94,7 +94,7 @@ export default async function RoomSettingsPage({ params }: SettingsPageProps) {
         <div className="flex items-center gap-2">
           <Link
             href={`/rooms/${id}`}
-            className="text-app-muted hover:text-app flex h-8 items-center gap-1.5 rounded-md px-3 text-sm transition-colors hover:bg-white/5"
+            className="text-app-muted hover:text-app flex h-8 items-center gap-1.5 rounded-md px-3 text-sm transition-colors hover:bg-[var(--coder-bg-card-hover)]"
           >
             <Settings className="h-4 w-4" />
             Settings

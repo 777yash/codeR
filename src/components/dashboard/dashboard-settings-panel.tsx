@@ -15,7 +15,9 @@ function Toggle({
     <button
       onClick={onChange}
       className={`h-5 w-9 rounded-full transition-colors ${
-        checked ? 'bg-[#FF2D55]' : 'bg-white/20'
+        checked
+          ? 'bg-[var(--coder-accent)]'
+          : 'bg-[var(--coder-bg-card-active)]'
       }`}
     >
       <div
@@ -88,7 +90,7 @@ export function DashboardSettingsPanel() {
               <h2 className="text-app text-sm font-semibold">Preferences</h2>
               <button
                 onClick={() => setOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
+                className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)] max-md:h-9 max-md:w-9"
               >
                 <X className="text-app-dim h-4 w-4" />
               </button>
@@ -168,7 +170,7 @@ export function DashboardSettingsPanel() {
                     max={24}
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
-                    className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/20"
+                    className="h-1 w-full cursor-pointer appearance-none rounded-full bg-[var(--coder-bg-card-active)]"
                   />
                 </div>
               </div>

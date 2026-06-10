@@ -17,7 +17,7 @@ export function MobileNav() {
     <div className="md:hidden">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-white/5"
+        className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
         aria-label={open ? 'Close menu' : 'Open menu'}
         style={{ color: 'var(--coder-text-primary)' }}
       >

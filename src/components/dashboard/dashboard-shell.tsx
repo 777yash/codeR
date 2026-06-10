@@ -75,10 +75,10 @@ function SidebarContent({
                 key={label}
                 href={`/dashboard?view=${navView}`}
                 onClick={onNavigate}
-                className={`flex h-9 w-full items-center gap-2.5 rounded text-sm transition-colors ${
+                className={`flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-sm transition-colors ${
                   isActive
-                    ? 'border-app-accent bg-app-card-hover text-app border-l-2 pl-[6px]'
-                    : 'text-app-muted hover-app-row px-2'
+                    ? 'bg-app-card-active text-app font-medium'
+                    : 'text-app-muted hover-app-row'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -149,16 +149,16 @@ export function DashboardShell({
           {/* Hamburger — mobile only */}
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-white/5 md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)] md:hidden"
             aria-label="Open navigation"
           >
-            <Menu className="h-5 w-5 text-[#888888]" />
+            <Menu className="h-5 w-5 text-[var(--coder-text-secondary)]" />
           </button>
           <AppLogo size="md" href="/dashboard" />
         </div>
 
         {/* Search — desktop only */}
-        <div className="border-app-mid bg-app-card hidden max-w-xs flex-1 items-center gap-2 rounded-md border px-3 py-1.5 md:flex">
+        <div className="border-app-mid bg-app-surface hidden max-w-xs flex-1 items-center gap-2 rounded-lg border px-3 py-1.5 transition-colors focus-within:border-[var(--coder-border-accent)] md:flex">
           <Search className="text-app-dim h-4 w-4 shrink-0" />
           <input
             type="text"
@@ -173,8 +173,9 @@ export function DashboardShell({
           <div
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
             style={{
-              backgroundColor: 'rgba(255,45,85,0.15)',
-              color: '#FF2D55',
+              backgroundColor: 'var(--coder-accent-glow)',
+              color: 'var(--coder-text-accent)',
+              border: '1px solid var(--coder-border-accent)',
             }}
           >
             {userInitials}
@@ -200,7 +201,7 @@ export function DashboardShell({
                 <span className="text-app text-sm font-semibold">Menu</span>
                 <button
                   onClick={() => setDrawerOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-white/5"
+                  className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
                   aria-label="Close navigation"
                 >
                   <X className="text-app-dim h-4 w-4" />

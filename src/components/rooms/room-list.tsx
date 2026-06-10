@@ -94,16 +94,16 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="group flex h-48 flex-col items-center justify-center rounded-md border border-dashed border-white/10 transition-all duration-150 hover:border-[rgba(255,45,85,0.30)] hover:bg-[rgba(255,45,85,0.08)]"
+          className="group flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--coder-border-mid)] transition-all duration-150 hover:border-[var(--coder-border-accent)] hover:bg-[var(--coder-accent-dim)]"
         >
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 transition-colors group-hover:border-[rgba(255,45,85,0.30)]">
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--coder-border-mid)] transition-colors group-hover:border-[var(--coder-border-accent)]">
             {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-[#555555]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--coder-text-tertiary)]" />
             ) : (
-              <Plus className="h-5 w-5 text-[#555555] transition-colors group-hover:text-[#FF2D55]" />
+              <Plus className="h-5 w-5 text-[var(--coder-text-tertiary)] transition-colors group-hover:text-[var(--coder-accent)]" />
             )}
           </div>
-          <span className="text-sm text-[#555555] transition-colors group-hover:text-[#888888]">
+          <span className="text-sm text-[var(--coder-text-tertiary)] transition-colors group-hover:text-[var(--coder-text-secondary)]">
             New Room
           </span>
         </button>
@@ -114,13 +114,13 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
       </div>
 
       {view === 'starred' && filteredRooms.length === 0 && (
-        <p className="mt-8 text-center text-sm text-[#555555]">
+        <p className="mt-8 text-center text-sm text-[var(--coder-text-tertiary)]">
           No starred rooms — hover a room card and click ☆ to star it
         </p>
       )}
 
       {view !== 'starred' && rooms.length === 0 && (
-        <p className="mt-8 text-center text-sm text-[#555555]">
+        <p className="mt-8 text-center text-sm text-[var(--coder-text-tertiary)]">
           {view === 'shared'
             ? 'No rooms shared with you yet'
             : view === 'recent'

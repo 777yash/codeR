@@ -70,7 +70,7 @@ export function ConnectedAccounts({
   }
 
   return (
-    <div className="border-app bg-app-surface rounded-md border p-6">
+    <div className="border-app bg-app-card shadow-app-sm rounded-xl border p-6">
       <h2 className="text-app mb-4 text-sm font-semibold">Sign-in methods</h2>
 
       <div className="space-y-2">
@@ -93,7 +93,7 @@ export function ConnectedAccounts({
               ) : (
                 <button
                   onClick={() => signIn(id, { callbackUrl })}
-                  className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1 text-xs transition-colors hover:bg-white/5"
+                  className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1 text-xs transition-colors hover:bg-[var(--coder-bg-card-hover)]"
                 >
                   Connect
                 </button>
@@ -116,7 +116,7 @@ export function ConnectedAccounts({
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1 text-xs transition-colors hover:bg-white/5"
+              className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1 text-xs transition-colors hover:bg-[var(--coder-bg-card-hover)]"
             >
               {hasPassword ? 'Change' : 'Set password'}
             </button>
@@ -133,7 +133,7 @@ export function ConnectedAccounts({
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="Current password"
               autoComplete="current-password"
-              className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[#FF2D55]/50"
+              className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[var(--coder-accent)]/50"
             />
           )}
           <input
@@ -142,7 +142,7 @@ export function ConnectedAccounts({
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="New password (min 8 characters)"
             autoComplete="new-password"
-            className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[#FF2D55]/50"
+            className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[var(--coder-accent)]/50"
           />
           <input
             type="password"
@@ -151,19 +151,19 @@ export function ConnectedAccounts({
             placeholder="Confirm new password"
             autoComplete="new-password"
             onKeyDown={(e) => e.key === 'Enter' && handleSavePassword()}
-            className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[#FF2D55]/50"
+            className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[var(--coder-accent)]/50"
           />
           <div className="flex justify-end gap-2">
             <button
               onClick={resetForm}
-              className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-white/5"
+              className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-[var(--coder-bg-card-hover)]"
             >
               Cancel
             </button>
             <button
               onClick={handleSavePassword}
               disabled={saving}
-              className="flex items-center gap-1.5 rounded-md bg-[#FF2D55] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md bg-[var(--coder-accent)] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {saving && <Loader2 className="h-3 w-3 animate-spin" />}
               {hasPassword ? 'Change password' : 'Set password'}

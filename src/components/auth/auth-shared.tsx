@@ -3,10 +3,10 @@
 import { signIn } from 'next-auth/react'
 
 export const AUTH_INPUT_CLASS =
-  'border-app-mid bg-app-surface text-app placeholder:text-app-dim focus:border-app-accent h-11 w-full rounded-md border px-3 text-sm transition-all duration-150 outline-none'
+  'border-app-mid bg-app-surface text-app placeholder:text-app-dim focus:border-app-accent h-11 w-full rounded-lg border px-3 text-sm transition-all duration-150 outline-none focus:ring-3 focus:ring-[var(--coder-accent)]/15'
 
 const OAUTH_BUTTON_CLASS =
-  'border-app-mid bg-app-surface text-app hover-app-card-lift flex h-11 w-full items-center justify-center gap-3 rounded-md border text-sm font-medium transition-all duration-150'
+  'border-app-mid bg-app-surface text-app hover-app-card-lift shadow-app-sm flex h-11 w-full items-center justify-center gap-3 rounded-lg border text-sm font-medium transition-all duration-150'
 
 /** GitHub + Google OAuth sign-in buttons followed by an "or" divider. */
 export function OAuthButtons({ callbackUrl }: { callbackUrl: string }) {

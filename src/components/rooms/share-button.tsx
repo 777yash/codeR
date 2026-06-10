@@ -50,7 +50,7 @@ export function ShareButton({ roomId, userRole }: ShareButtonProps) {
   return (
     <button
       onClick={handleShare}
-      className="flex h-8 items-center gap-1.5 rounded-md bg-[#FF2D55] px-3 text-sm font-medium text-white transition-colors hover:bg-[#FF2D55]/90"
+      className="flex h-8 items-center gap-1.5 rounded-md bg-[var(--coder-accent)] px-3 text-sm font-medium text-white transition-colors hover:bg-[var(--coder-accent)]/90"
     >
       {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
       {copied ? 'Copied!' : 'Share'}

@@ -83,19 +83,19 @@ export function InviteNotifications({
       >
         <Bell className="h-5 w-5" />
         {invitations.length > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF2D55] text-[10px] font-bold text-white">
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--coder-accent)] text-[10px] font-bold text-white">
             {invitations.length > 9 ? '9+' : invitations.length}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute top-9 right-0 z-50 w-80 rounded-lg border border-white/10 bg-[#0D0D0D] shadow-xl">
-          <div className="border-b border-white/10 px-4 py-3">
-            <p className="text-sm font-semibold text-[#F0F0F0]">
+        <div className="absolute top-9 right-0 z-50 w-80 rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] shadow-xl">
+          <div className="border-b border-[var(--coder-border-mid)] px-4 py-3">
+            <p className="text-sm font-semibold text-[var(--coder-text-primary)]">
               Invitations
               {invitations.length > 0 && (
-                <span className="ml-2 rounded-full bg-[#FF2D55]/20 px-1.5 py-0.5 text-xs text-[#FF2D55]">
+                <span className="ml-2 rounded-full bg-[var(--coder-accent)]/20 px-1.5 py-0.5 text-xs text-[var(--coder-accent)]">
                   {invitations.length}
                 </span>
               )}
@@ -104,24 +104,24 @@ export function InviteNotifications({
 
           <div className="max-h-72 overflow-y-auto">
             {invitations.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-[#555555]">
+              <p className="px-4 py-6 text-center text-sm text-[var(--coder-text-tertiary)]">
                 No pending invitations
               </p>
             ) : (
               invitations.map((inv) => (
                 <div
                   key={inv.id}
-                  className="border-b border-white/[0.06] px-4 py-3 last:border-0"
+                  className="border-b border-[var(--coder-border)] px-4 py-3 last:border-0"
                 >
-                  <p className="mb-0.5 text-sm font-medium text-[#F0F0F0]">
+                  <p className="mb-0.5 text-sm font-medium text-[var(--coder-text-primary)]">
                     {inv.room.name}
                   </p>
-                  <p className="mb-3 text-xs text-[#888888]">
-                    <span className="text-[#F0F0F0]">
+                  <p className="mb-3 text-xs text-[var(--coder-text-secondary)]">
+                    <span className="text-[var(--coder-text-primary)]">
                       {inv.inviter.name ?? 'Someone'}
                     </span>{' '}
                     invited you as{' '}
-                    <span className="text-[#FF2D55]">
+                    <span className="text-[var(--coder-accent)]">
                       {inv.role.toLowerCase()}
                     </span>
                   </p>
@@ -129,7 +129,7 @@ export function InviteNotifications({
                     <button
                       onClick={() => handleAction(inv.id, 'accept')}
                       disabled={acting === inv.id}
-                      className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded bg-[#FF2D55] text-xs font-medium text-white transition-colors hover:bg-[#FF2D55]/90 disabled:opacity-50 max-md:h-9"
+                      className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded bg-[var(--coder-accent)] text-xs font-medium text-white transition-colors hover:bg-[var(--coder-accent)]/90 disabled:opacity-50 max-md:h-9"
                     >
                       {acting === inv.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -141,7 +141,7 @@ export function InviteNotifications({
                     <button
                       onClick={() => handleAction(inv.id, 'decline')}
                       disabled={acting === inv.id}
-                      className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded border border-white/10 text-xs text-[#888888] transition-colors hover:border-white/20 hover:text-[#F0F0F0] disabled:opacity-50 max-md:h-9"
+                      className="flex h-7 flex-1 items-center justify-center gap-1.5 rounded border border-[var(--coder-border-mid)] text-xs text-[var(--coder-text-secondary)] transition-colors hover:border-[var(--coder-border-mid)] hover:text-[var(--coder-text-primary)] disabled:opacity-50 max-md:h-9"
                     >
                       <X className="h-3 w-3" />
                       Decline

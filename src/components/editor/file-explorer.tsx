@@ -143,7 +143,7 @@ export function FileExplorer({
         <button
           onClick={() => setShowInput(true)}
           title="New file"
-          className="text-app-dim hover:text-app-muted rounded p-0.5 transition-colors hover:bg-white/5"
+          className="text-app-dim hover:text-app-muted rounded p-0.5 transition-colors hover:bg-[var(--coder-bg-card-hover)]"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -165,7 +165,7 @@ export function FileExplorer({
             }}
             className={`group flex w-full items-center gap-1.5 rounded-sm py-[5px] text-xs transition-colors ${
               activeFileId === file.id
-                ? 'bg-app-card-hover text-app border-l-2 border-[#FF2D55] pr-2 pl-[6px]'
+                ? 'bg-app-card-hover text-app border-l-2 border-[var(--coder-accent)] pr-2 pl-[6px]'
                 : 'text-app-muted hover-app-card hover:text-app pr-2 pl-2'
             }`}
           >
@@ -192,7 +192,7 @@ export function FileExplorer({
                   }}
                   onBlur={commitRename}
                   onClick={(e) => e.stopPropagation()}
-                  className="bg-app text-app w-full rounded border border-[#FF2D55]/40 px-1 py-0 text-xs outline-none"
+                  className="bg-app text-app w-full rounded border border-[var(--coder-accent)]/40 px-1 py-0 text-xs outline-none"
                 />
               ) : (
                 <span className="truncate">{file.name}</span>
@@ -211,7 +211,7 @@ export function FileExplorer({
               left: contextMenu.x,
               zIndex: 200,
             }}
-            className="border-app-mid bg-app-surface min-w-[140px] rounded-md border py-1 shadow-[0_4px_16px_rgba(0,0,0,0.4)]"
+            className="border-app-mid bg-app-surface min-w-[140px] rounded-md border py-1 shadow-[var(--coder-shadow-md)]"
           >
             <button
               onClick={() => {
@@ -251,7 +251,7 @@ export function FileExplorer({
                 if (!newName.trim()) setShowInput(false)
               }}
               placeholder="filename.js"
-              className="bg-app text-app placeholder:text-app-dim w-full rounded border border-[#FF2D55]/40 px-2 py-0.5 text-xs outline-none focus:border-[#FF2D55]/70"
+              className="bg-app text-app placeholder:text-app-dim w-full rounded border border-[var(--coder-accent)]/40 px-2 py-0.5 text-xs outline-none focus:border-[var(--coder-accent)]/70"
             />
           </div>
         )}

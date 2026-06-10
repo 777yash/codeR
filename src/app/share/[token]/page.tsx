@@ -40,16 +40,16 @@ export default async function SharePage({ params }: SharePageProps) {
   if (!shareLink) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-black p-4">
-        <div className="w-full max-w-md space-y-4 rounded-lg border border-white/10 bg-[#0D0D0D] p-8 text-center">
-          <h1 className="text-2xl font-semibold text-[#FF2D55]">
+        <div className="w-full max-w-md space-y-4 rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-8 text-center">
+          <h1 className="text-2xl font-semibold text-[var(--coder-accent)]">
             Invalid Link
           </h1>
-          <p className="text-[#888888]">
+          <p className="text-[var(--coder-text-secondary)]">
             This share link is invalid or has expired.
           </p>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-[#FF2D55] hover:underline"
+            className="inline-flex items-center gap-2 text-sm text-[var(--coder-accent)] hover:underline"
           >
             Go to Dashboard
             <ArrowRight className="h-4 w-4" />
@@ -62,17 +62,17 @@ export default async function SharePage({ params }: SharePageProps) {
   if (shareLink.expiresAt && shareLink.expiresAt < new Date()) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-black p-4">
-        <div className="w-full max-w-md space-y-4 rounded-lg border border-white/10 bg-[#0D0D0D] p-8 text-center">
-          <h1 className="text-2xl font-semibold text-[#FF2D55]">
+        <div className="w-full max-w-md space-y-4 rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-8 text-center">
+          <h1 className="text-2xl font-semibold text-[var(--coder-accent)]">
             Link Expired
           </h1>
-          <p className="text-[#888888]">
+          <p className="text-[var(--coder-text-secondary)]">
             This share link has expired. Please ask the room owner for a new
             link.
           </p>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-[#FF2D55] hover:underline"
+            className="inline-flex items-center gap-2 text-sm text-[var(--coder-accent)] hover:underline"
           >
             Go to Dashboard
             <ArrowRight className="h-4 w-4" />
@@ -85,14 +85,14 @@ export default async function SharePage({ params }: SharePageProps) {
   if (!session?.user) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-black p-4">
-        <div className="w-full max-w-md space-y-4 rounded-lg border border-white/10 bg-[#0D0D0D] p-8 text-center">
+        <div className="w-full max-w-md space-y-4 rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-8 text-center">
           <h1 className="text-2xl font-semibold">Sign in required</h1>
-          <p className="text-[#888888]">
+          <p className="text-[var(--coder-text-secondary)]">
             You need to sign in to join this room.
           </p>
           <Link
             href={`/signin?callbackUrl=/share/${token}`}
-            className="inline-flex items-center gap-2 rounded-md bg-[#FF2D55] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#FF2D55]/90"
+            className="inline-flex items-center gap-2 rounded-md bg-[var(--coder-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--coder-accent)]/90"
           >
             Sign In
             <ArrowRight className="h-4 w-4" />
@@ -114,14 +114,14 @@ export default async function SharePage({ params }: SharePageProps) {
   if (isAlreadyMember) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-black p-4">
-        <div className="w-full max-w-md space-y-4 rounded-lg border border-white/10 bg-[#0D0D0D] p-8 text-center">
+        <div className="w-full max-w-md space-y-4 rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-8 text-center">
           <h1 className="text-2xl font-semibold">Already a member</h1>
-          <p className="text-[#888888]">
+          <p className="text-[var(--coder-text-secondary)]">
             You&apos;re already a member of this room.
           </p>
           <Link
             href={`/rooms/${shareLink.roomId}`}
-            className="inline-flex items-center gap-2 rounded-md bg-[#FF2D55] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#FF2D55]/90"
+            className="inline-flex items-center gap-2 rounded-md bg-[var(--coder-accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--coder-accent)]/90"
           >
             Open Room
             <ArrowRight className="h-4 w-4" />

@@ -25,7 +25,9 @@ const DiffEditor = dynamic(
   () => import('@monaco-editor/react').then((m) => ({ default: m.DiffEditor })),
   {
     ssr: false,
-    loading: () => <div className="h-64 animate-pulse rounded bg-[#1e1e1e]" />,
+    loading: () => (
+      <div className="h-64 animate-pulse rounded bg-[var(--coder-bg-surface)]" />
+    ),
   }
 )
 import { formatDistanceToNow } from 'date-fns'
@@ -78,9 +80,9 @@ type HistorySubTab = 'named' | 'auto'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ROLE_STYLE: Record<string, string> = {
-  OWNER: 'text-[#FF2D55] bg-[rgba(255,45,85,0.12)]',
+  OWNER: 'text-[var(--coder-accent)] bg-[var(--coder-accent-glow)]',
   EDITOR: 'text-[#32D74B] bg-[rgba(50,215,75,0.10)]',
-  VIEWER: 'text-[#888888] bg-white/[0.05]',
+  VIEWER: 'text-[var(--coder-text-secondary)] bg-[var(--coder-bg-card-hover)]',
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -107,7 +109,7 @@ function renderWithMentions(text: string): React.ReactNode {
   const parts = text.split(/(@\S+)/)
   return parts.map((part, i) =>
     part.startsWith('@') ? (
-      <span key={i} className="font-semibold text-[#FF2D55]">
+      <span key={i} className="font-semibold text-[var(--coder-accent)]">
         {part}
       </span>
     ) : (
@@ -422,7 +424,7 @@ export function CollabPanel({
               }}
               className={`relative flex flex-1 items-center justify-center gap-1 text-xs font-medium capitalize transition-colors ${
                 tab === t.id
-                  ? 'text-app border-b-2 border-[#FF2D55]'
+                  ? 'text-app border-b-2 border-[var(--coder-accent)]'
                   : 'text-app-dim hover:text-app-muted'
               }`}
             >
@@ -431,7 +433,7 @@ export function CollabPanel({
                 ? `Users (${onlineMembers.length})`
                 : t.id.charAt(0).toUpperCase() + t.id.slice(1)}
               {t.id === 'chat' && unreadCount > 0 && (
-                <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF2D55] px-1 text-[9px] font-bold text-white">
+                <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--coder-accent)] px-1 text-[9px] font-bold text-white">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
@@ -509,7 +511,7 @@ export function CollabPanel({
                         key={member.id}
                         className="flex items-center gap-3 rounded-sm px-4 py-2.5 opacity-40"
                       >
-                        <div className="text-app-dim flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-[11px] font-semibold">
+                        <div className="text-app-dim flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--coder-bg-card-hover)] text-[11px] font-semibold">
                           {getInitials(member.name)}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -529,7 +531,7 @@ export function CollabPanel({
                             {roleLabel}
                           </span>
                         </div>
-                        <div className="h-2 w-2 shrink-0 rounded-full bg-[#444]" />
+                        <div className="h-2 w-2 shrink-0 rounded-full bg-[var(--coder-text-tertiary)]" />
                       </div>
                     )
                   })}
@@ -541,7 +543,7 @@ export function CollabPanel({
                   {!showInvite ? (
                     <button
                       onClick={() => setShowInvite(true)}
-                      className="border-app-mid text-app-muted flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs transition-colors hover:border-[rgba(255,45,85,0.30)] hover:bg-[rgba(255,45,85,0.08)] hover:text-[#FF2D55]"
+                      className="border-app-mid text-app-muted flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs transition-colors hover:border-[var(--coder-border-accent)] hover:bg-[var(--coder-accent-dim)] hover:text-[var(--coder-accent)]"
                     >
                       <UserPlus className="h-3.5 w-3.5" />
                       Invite to room
@@ -573,7 +575,7 @@ export function CollabPanel({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="user@example.com"
-                        className="border-app-mid bg-app text-app placeholder:text-app-dim mb-2 w-full rounded border px-2 py-1.5 text-xs outline-none focus:border-[#FF2D55]/50"
+                        className="border-app-mid bg-app text-app placeholder:text-app-dim mb-2 w-full rounded border px-2 py-1.5 text-xs outline-none focus:border-[var(--coder-accent)]/50"
                       />
                       <div className="mb-2 flex gap-2">
                         {(['EDITOR', 'VIEWER'] as const).map((r) => (
@@ -583,7 +585,7 @@ export function CollabPanel({
                             onClick={() => setRole(r)}
                             className={`flex-1 rounded py-1 text-xs font-medium transition-colors ${
                               role === r
-                                ? 'bg-app-card-hover text-[#FF2D55]'
+                                ? 'bg-app-card-hover text-[var(--coder-accent)]'
                                 : 'text-app-dim hover:text-app-muted'
                             }`}
                           >
@@ -599,7 +601,7 @@ export function CollabPanel({
                       <button
                         type="submit"
                         disabled={inviting || !email.trim()}
-                        className="flex w-full items-center justify-center gap-1.5 rounded bg-[#FF2D55] py-1.5 text-xs font-semibold text-white transition-opacity disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-1.5 rounded bg-[var(--coder-accent)] py-1.5 text-xs font-semibold text-white transition-opacity disabled:opacity-50"
                       >
                         {inviting && (
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -645,9 +647,9 @@ export function CollabPanel({
                         <span className="text-app-dim text-[10px]">{time}</span>
                       </div>
                       {msg.type === 'code' ? (
-                        <div className="w-[232px] overflow-hidden rounded-md border border-white/[0.08]">
-                          <div className="flex items-center justify-between bg-white/[0.04] px-2 py-1">
-                            <span className="font-mono text-[10px] text-[#888]">
+                        <div className="w-[232px] overflow-hidden rounded-md border border-[var(--coder-border)]">
+                          <div className="flex items-center justify-between bg-[var(--coder-bg-card-hover)] px-2 py-1">
+                            <span className="font-mono text-[10px] text-[var(--coder-text-secondary)]">
                               {msg.language ?? 'code'}
                             </span>
                             <button
@@ -662,7 +664,7 @@ export function CollabPanel({
                               )}
                             </button>
                           </div>
-                          <pre className="max-h-[140px] overflow-auto bg-black/40 px-2.5 py-2 font-mono text-[11px] leading-relaxed break-all whitespace-pre-wrap text-[#E0E0E0]">
+                          <pre className="max-h-[140px] overflow-auto bg-[var(--coder-bg-surface)] px-2.5 py-2 font-mono text-[11px] leading-relaxed break-all whitespace-pre-wrap text-[var(--coder-text-primary)]">
                             <code>{msg.content}</code>
                           </pre>
                         </div>
@@ -670,8 +672,8 @@ export function CollabPanel({
                         <div
                           className={`max-w-[200px] rounded-lg px-2.5 py-1.5 text-xs break-words ${
                             isMe
-                              ? 'bg-[rgba(255,45,85,0.15)] text-[#F0F0F0]'
-                              : 'bg-white/[0.06] text-[#E0E0E0]'
+                              ? 'bg-[var(--coder-accent-glow)] text-[var(--coder-text-primary)]'
+                              : 'bg-[var(--coder-bg-card-hover)] text-[var(--coder-text-primary)]'
                           }`}
                         >
                           {renderWithMentions(msg.content)}
@@ -714,7 +716,7 @@ export function CollabPanel({
                   )}
 
                 {isCodeMode ? (
-                  <div className="border-app-mid bg-app rounded-md border focus-within:border-[#FF2D55]/50">
+                  <div className="border-app-mid bg-app rounded-md border focus-within:border-[var(--coder-accent)]/50">
                     <textarea
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
@@ -729,8 +731,8 @@ export function CollabPanel({
                       rows={4}
                       className="text-app placeholder:text-app-dim w-full resize-none bg-transparent px-2 pt-2 pb-1 font-mono text-[11px] leading-relaxed outline-none"
                     />
-                    <div className="flex items-center justify-between border-t border-white/[0.05] px-2 py-1">
-                      <span className="font-mono text-[10px] text-[#888]">
+                    <div className="flex items-center justify-between border-t border-[var(--coder-border)] px-2 py-1">
+                      <span className="font-mono text-[10px] text-[var(--coder-text-secondary)]">
                         {editorLanguage}
                       </span>
                       <div className="flex items-center gap-1.5">
@@ -746,7 +748,7 @@ export function CollabPanel({
                         <button
                           onClick={handleSendMessage}
                           disabled={!chatInput.trim()}
-                          className="text-app-dim transition-colors hover:text-[#FF2D55] disabled:opacity-30"
+                          className="text-app-dim transition-colors hover:text-[var(--coder-accent)] disabled:opacity-30"
                         >
                           <Send className="h-3.5 w-3.5" />
                         </button>
@@ -754,7 +756,7 @@ export function CollabPanel({
                     </div>
                   </div>
                 ) : (
-                  <div className="border-app-mid bg-app flex items-center gap-1.5 rounded-md border px-2 py-1.5 focus-within:border-[#FF2D55]/50">
+                  <div className="border-app-mid bg-app flex items-center gap-1.5 rounded-md border px-2 py-1.5 focus-within:border-[var(--coder-accent)]/50">
                     <input
                       type="text"
                       value={chatInput}
@@ -789,7 +791,7 @@ export function CollabPanel({
                         setChatInput('')
                         setMentionQuery(null)
                       }}
-                      className="text-app-dim transition-colors hover:text-[#FF2D55]"
+                      className="text-app-dim transition-colors hover:text-[var(--coder-accent)]"
                       title="Share code snippet"
                     >
                       <Code2 className="h-3.5 w-3.5" />
@@ -797,7 +799,7 @@ export function CollabPanel({
                     <button
                       onClick={handleSendMessage}
                       disabled={!chatInput.trim()}
-                      className="text-app-dim transition-colors hover:text-[#FF2D55] disabled:opacity-30"
+                      className="text-app-dim transition-colors hover:text-[var(--coder-accent)] disabled:opacity-30"
                     >
                       <Send className="h-3.5 w-3.5" />
                     </button>
@@ -833,8 +835,8 @@ export function CollabPanel({
                     onClick={() => setHistSubTab(id)}
                     className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 py-2 text-xs font-medium transition-colors ${
                       histSubTab === id
-                        ? 'border-[#FF2D55] text-[#FF2D55]'
-                        : 'border-transparent text-[#555555] hover:text-[#888888]'
+                        ? 'border-[var(--coder-accent)] text-[var(--coder-accent)]'
+                        : 'border-transparent text-[var(--coder-text-tertiary)] hover:text-[var(--coder-text-secondary)]'
                     }`}
                   >
                     <Icon className="h-3 w-3" />
@@ -842,8 +844,8 @@ export function CollabPanel({
                     <span
                       className={`rounded px-1 py-0.5 text-[10px] ${
                         histSubTab === id
-                          ? 'bg-[#FF2D55]/20 text-[#FF2D55]'
-                          : 'bg-white/5 text-[#555555]'
+                          ? 'bg-[var(--coder-accent)]/20 text-[var(--coder-accent)]'
+                          : 'bg-[var(--coder-bg-card-hover)] text-[var(--coder-text-tertiary)]'
                       }`}
                     >
                       {count}
@@ -890,7 +892,7 @@ export function CollabPanel({
                       >
                         <div className="shrink-0">
                           {snap.label ? (
-                            <BookmarkCheck className="h-3.5 w-3.5 text-[#FF2D55]" />
+                            <BookmarkCheck className="h-3.5 w-3.5 text-[var(--coder-accent)]" />
                           ) : (
                             <Clock className="text-app-dim h-3.5 w-3.5" />
                           )}
@@ -914,7 +916,7 @@ export function CollabPanel({
                           onClick={(e) => deleteHistSnapshot(e, snap.id)}
                           disabled={histDeletingId === snap.id}
                           title="Delete snapshot"
-                          className="text-app-dim invisible flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors group-hover:visible hover:bg-white/5 hover:text-red-400 disabled:opacity-50"
+                          className="text-app-dim invisible flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors group-hover:visible hover:bg-[var(--coder-bg-card-hover)] hover:text-red-400 disabled:opacity-50"
                         >
                           {histDeletingId === snap.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -949,7 +951,7 @@ export function CollabPanel({
             {/* Resize handle */}
             <div
               onMouseDown={startHistResize}
-              className="absolute top-0 left-0 h-full w-1 cursor-col-resize transition-colors hover:bg-[#FF2D55]/40"
+              className="absolute top-0 left-0 h-full w-1 cursor-col-resize transition-colors hover:bg-[var(--coder-accent)]/40"
             />
 
             {/* Overlay header */}
@@ -960,7 +962,7 @@ export function CollabPanel({
                     setHistSelected(null)
                     setHistConfirmRestore(false)
                   }}
-                  className="text-app-dim hover:text-app mr-1 flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5"
+                  className="text-app-dim hover:text-app mr-1 flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                 </button>
@@ -982,7 +984,7 @@ export function CollabPanel({
                   diffEditorRef.current?.setModel(null)
                   setHistSelected(null)
                 }}
-                className="text-app-dim hover:text-app flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5"
+                className="text-app-dim hover:text-app flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1004,7 +1006,7 @@ export function CollabPanel({
                 <div className="border-app flex shrink-0 items-center justify-between border-b px-5 py-2">
                   <div className="flex items-center gap-4 text-xs">
                     <span className="text-app-dim flex items-center gap-1">
-                      <span className="inline-block h-2 w-2 rounded-full bg-[#FF2D55]" />
+                      <span className="inline-block h-2 w-2 rounded-full bg-[var(--coder-accent)]" />
                       Snapshot
                     </span>
                     <span className="text-app-dim flex items-center gap-1">
@@ -1030,7 +1032,7 @@ export function CollabPanel({
                               restoreHistSnapshot(histSelected.id)
                             }
                             disabled={histRestoring}
-                            className="flex items-center gap-1 rounded bg-[#FF2D55]/15 px-2 py-1 text-xs font-medium text-[#FF2D55] transition-colors hover:bg-[#FF2D55]/25 disabled:opacity-50"
+                            className="flex items-center gap-1 rounded bg-[var(--coder-accent)]/15 px-2 py-1 text-xs font-medium text-[var(--coder-accent)] transition-colors hover:bg-[var(--coder-accent)]/25 disabled:opacity-50"
                           >
                             {histRestoring && (
                               <Loader2 className="h-3 w-3 animate-spin" />
@@ -1039,7 +1041,7 @@ export function CollabPanel({
                           </button>
                           <button
                             onClick={() => setHistConfirmRestore(false)}
-                            className="text-app-dim rounded px-2 py-1 text-xs transition-colors hover:text-[#F0F0F0]"
+                            className="text-app-dim rounded px-2 py-1 text-xs transition-colors hover:text-[var(--coder-text-primary)]"
                           >
                             Cancel
                           </button>
@@ -1048,7 +1050,7 @@ export function CollabPanel({
                         <button
                           onClick={() => setHistConfirmRestore(true)}
                           disabled={histRestoring}
-                          className="flex items-center gap-1.5 rounded bg-white/5 px-2.5 py-1 text-xs font-medium text-[#F0F0F0] transition-colors hover:bg-white/10 disabled:opacity-50"
+                          className="flex items-center gap-1.5 rounded bg-[var(--coder-bg-card-hover)] px-2.5 py-1 text-xs font-medium text-[var(--coder-text-primary)] transition-colors hover:bg-[var(--coder-bg-card-active)] disabled:opacity-50"
                         >
                           <RotateCcw className="h-3 w-3" />
                           Restore

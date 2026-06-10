@@ -22,7 +22,7 @@ const phases = [
     status: 'shipped',
     date: 'April 2026',
     icon: <Lock className="h-5 w-5" />,
-    accentColor: '#FF2D55',
+    accentColor: 'var(--coder-accent)',
     features: [
       { name: 'GitHub OAuth sign-in', done: true },
       { name: 'Google OAuth sign-in', done: true },
@@ -86,7 +86,7 @@ const phases = [
     status: 'shipped',
     date: 'May 2026',
     icon: <Users className="h-5 w-5" />,
-    accentColor: '#FF2D55',
+    accentColor: 'var(--coder-accent)',
     features: [
       { name: 'Colored remote cursors per user', done: true },
       { name: 'Cursor name labels', done: true },
@@ -186,7 +186,7 @@ const phases = [
     status: 'shipped',
     date: 'Jun 2026',
     icon: <Wrench className="h-5 w-5" />,
-    accentColor: '#FF2D55',
+    accentColor: 'var(--coder-accent)',
     features: [
       { name: 'Full security audit (CSP, CSRF, JWT rotation)', done: true },
       { name: 'CSRF enforcement on all mutation endpoints', done: true },
@@ -265,7 +265,11 @@ const statusConfig = {
     color: '#FF9F0A',
     bg: 'rgba(255,159,10,0.10)',
   },
-  planned: { label: 'Planned', color: '#555555', bg: 'rgba(85,85,85,0.15)' },
+  planned: {
+    label: 'Planned',
+    color: 'var(--coder-text-tertiary)',
+    bg: 'rgba(85,85,85,0.15)',
+  },
 }
 
 export default function FeaturesPage() {

@@ -15,7 +15,7 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
   return ReactDOM.createPortal(
     <>
       <div
-        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
         onClick={() => onOpenChange?.(false)}
       />
       {children}
@@ -32,7 +32,7 @@ function DialogContent({ children, className, ...props }: DialogContentProps) {
   return (
     <div
       className={cn(
-        'fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-lg border border-white/10 bg-[#0D0D0D] p-6 shadow-xl',
+        'fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-xl border border-[var(--coder-border-mid)] bg-[var(--coder-bg-card)] p-6 shadow-[var(--coder-shadow-md)]',
         className
       )}
       {...props}
@@ -65,7 +65,10 @@ function DialogTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn('text-lg font-semibold text-[#F0F0F0]', className)}
+      className={cn(
+        'text-lg font-semibold tracking-tight text-[var(--coder-text-primary)]',
+        className
+      )}
       {...props}
     />
   )
@@ -76,7 +79,15 @@ function DialogDescription({
   className,
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('text-sm text-[#888888]', className)} {...props} />
+  return (
+    <p
+      className={cn(
+        'text-sm leading-relaxed text-[var(--coder-text-secondary)]',
+        className
+      )}
+      {...props}
+    />
+  )
 }
 DialogDescription.displayName = 'DialogDescription'
 
@@ -110,11 +121,11 @@ function DialogClose({
       type="button"
       onClick={onClose}
       className={cn(
-        'absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100',
+        'absolute top-4 right-4 rounded-md p-1 opacity-70 transition-[opacity,background-color] hover:bg-[var(--coder-bg-card-hover)] hover:opacity-100',
         className
       )}
     >
-      {children || <X className="h-4 w-4 text-[#888888]" />}
+      {children || <X className="h-4 w-4 text-[var(--coder-text-secondary)]" />}
     </button>
   )
 }

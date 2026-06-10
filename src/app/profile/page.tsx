@@ -75,8 +75,8 @@ export default async function ProfilePage() {
           <div
             className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
             style={{
-              backgroundColor: 'rgba(255,45,85,0.15)',
-              color: '#FF2D55',
+              backgroundColor: 'var(--coder-accent-glow)',
+              color: 'var(--coder-accent)',
             }}
           >
             {initials}
@@ -110,7 +110,7 @@ export default async function ProfilePage() {
           <div className="border-app space-y-0.5 border-t p-3">
             <Link
               href="/profile"
-              className="border-app-accent bg-app-card-hover text-app flex h-9 w-full items-center gap-2.5 rounded border-l-2 pl-[6px] text-sm"
+              className="bg-app-card-active text-app flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-sm font-medium"
             >
               <User className="h-4 w-4" />
               Profile
@@ -144,13 +144,13 @@ export default async function ProfilePage() {
 
           <div className="max-w-lg space-y-6">
             {/* Avatar + name card */}
-            <div className="border-app bg-app-surface rounded-md border p-6">
+            <div className="border-app bg-app-card shadow-app-sm rounded-xl border p-6">
               <div className="mb-6 flex items-center gap-4">
                 <div
                   className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold"
                   style={{
-                    backgroundColor: 'rgba(255,45,85,0.15)',
-                    color: '#FF2D55',
+                    backgroundColor: 'var(--coder-accent-glow)',
+                    color: 'var(--coder-accent)',
                   }}
                 >
                   {initials}
@@ -167,7 +167,7 @@ export default async function ProfilePage() {
             </div>
 
             {/* Account info */}
-            <div className="border-app bg-app-surface rounded-md border p-6">
+            <div className="border-app bg-app-card shadow-app-sm rounded-xl border p-6">
               <h2 className="text-app mb-4 text-sm font-semibold">Account</h2>
               <div className="flex items-center justify-between">
                 <span className="text-app-dim text-xs">Member since</span>

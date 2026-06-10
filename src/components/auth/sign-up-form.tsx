@@ -58,7 +58,7 @@ export function SignUpForm({ callbackUrl }: Props) {
   return (
     <div className="bg-app flex min-h-dvh items-center justify-center px-4">
       <div
-        className="border-app-mid bg-app-card w-full max-w-[420px] rounded-[10px] border px-6 py-8 sm:px-10 sm:py-10"
+        className="border-app bg-app-card w-full max-w-[420px] rounded-2xl border px-6 py-8 sm:px-10 sm:py-10"
         style={{ boxShadow: 'var(--coder-shadow-md)' }}
       >
         {/* Logo */}
@@ -131,7 +131,7 @@ export function SignUpForm({ callbackUrl }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="bg-app-accent flex h-11 w-full items-center justify-center rounded-md text-sm font-semibold text-white transition-all duration-150 hover:opacity-90 disabled:opacity-60"
+            className="bg-app-accent hover-app-accent flex h-11 w-full items-center justify-center rounded-lg text-sm font-semibold text-white shadow-[var(--coder-shadow-accent)] transition-all duration-150 disabled:opacity-60"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

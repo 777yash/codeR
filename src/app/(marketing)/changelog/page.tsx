@@ -1,9 +1,44 @@
 const releases = [
   {
+    phase: '10.7',
+    title: 'Visual Redesign — Editorial Noir v2',
+    date: 'Jun 11, 2026',
+    status: 'latest',
+    accentColor: 'var(--coder-accent)',
+    summary:
+      'Complete visual overhaul of every surface — marketing site, auth, dashboard, editor, and all shared components — with zero functional changes. A single token-driven design system now powers both themes: a deep-zinc dark mode with a refined rose accent, and a new warm-paper light mode that is softer, calmer, and fully accessible.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Dark theme rebuilt: pure black replaced with deep zinc surfaces, red-tinted cards replaced with neutral elevation, brand accent refined from neon red to rose with layered soft shadows',
+          'Light theme rebuilt as "Soft Paper": warm off-white page, white cards with soft warm shadows, unified rose accent (replacing the old blue), all text at WCAG AA contrast',
+          'Unified component language: consistent radii, hover-lift room cards, filled-pill sidebar active states, soft accent focus rings on every input, refined dialogs and toasts',
+          'Typography polish: tighter heading tracking, balanced headline wrapping, Inter cv11 alternate glyphs',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'Light mode now reaches every screen — dialogs, inputs, selects, the execution panel, collab panel, and full editor chrome were previously hardcoded dark',
+          'shadcn theme variables rewired to the actual html.light toggle (the .dark class they referenced was never applied), fixing button and toast primitives',
+          'All hardcoded hex colors and translucent-white borders replaced with theme tokens across ~30 components',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'Single source of truth: every color, shadow, and border flows from --coder-* CSS variables in globals.css — future restyles are one-file changes',
+          'No new dependencies; pre-redesign state preserved',
+        ],
+      },
+    ],
+  },
+  {
     phase: '10.6',
     title: 'Export to GitHub Gist',
     date: 'Jun 9, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#32D74B',
     summary:
       'Export any room workspace to a GitHub Gist in one click. All open files are pushed to a secret (or public) gist under your GitHub account; the link is copied to your clipboard. Closes the last open Phase 10 item.',
@@ -159,7 +194,7 @@ const releases = [
     title: 'Codebase Cleanup & Security Activation',
     date: 'Jun 5, 2026',
     status: 'shipped',
-    accentColor: '#FF2D55',
+    accentColor: 'var(--coder-accent)',
     summary:
       'Dead code audit + full deduplication pass. CSRF and env validation wired in. Dead Prisma model dropped. 8 unused files deleted, 6 duplicate functions unified.',
     changes: [
@@ -205,7 +240,7 @@ const releases = [
     title: 'Security Hardening',
     date: 'Jun 4, 2026',
     status: 'shipped',
-    accentColor: '#FF2D55',
+    accentColor: 'var(--coder-accent)',
     summary:
       'Full security audit: Content Security Policy headers, JWT token rotation, and auth gate on the AI completions endpoint.',
     changes: [
@@ -480,7 +515,7 @@ const releases = [
     title: 'Horizontal Scaling via Redis Pub/Sub',
     date: 'May 28, 2026',
     status: 'shipped',
-    accentColor: '#FF2D55',
+    accentColor: 'var(--coder-accent)',
     summary:
       'collab-server now scales horizontally. Yjs updates on one instance are broadcast to all instances via Redis pub/sub — multiple Render replicas share the same real-time document state.',
     changes: [
@@ -574,7 +609,7 @@ const releases = [
     title: 'Presence & Awareness',
     date: 'May 17, 2026',
     status: 'shipped',
-    accentColor: '#FF2D55',
+    accentColor: 'var(--coder-accent)',
     summary:
       'Colored remote cursors, join/leave toasts, and a live collaborator sidebar.',
     changes: [
@@ -706,7 +741,7 @@ const releases = [
     title: 'Authentication',
     date: 'April 2026',
     status: 'shipped',
-    accentColor: '#0075DE',
+    accentColor: 'var(--coder-accent)',
     summary:
       'NextAuth v5 with GitHub OAuth, Google OAuth, and email/password credentials.',
     changes: [
@@ -737,7 +772,7 @@ const releases = [
     title: 'Foundation',
     date: 'April 2026',
     status: 'shipped',
-    accentColor: '#555555',
+    accentColor: 'var(--coder-text-tertiary)',
     summary:
       'Project scaffolding, CI pipeline, database schema, and design system.',
     changes: [
@@ -768,18 +803,34 @@ const releases = [
 const typeConfig = {
   feature: { label: 'Feature', color: '#32D74B', bg: 'rgba(50,215,75,0.10)' },
   fix: { label: 'Fix', color: '#FF9F0A', bg: 'rgba(255,159,10,0.10)' },
-  infra: { label: 'Infra', color: '#888888', bg: 'rgba(136,136,136,0.15)' },
-  security: { label: 'Security', color: '#FF2D55', bg: 'rgba(255,45,85,0.12)' },
+  infra: {
+    label: 'Infra',
+    color: 'var(--coder-text-secondary)',
+    bg: 'rgba(136,136,136,0.15)',
+  },
+  security: {
+    label: 'Security',
+    color: 'var(--coder-accent)',
+    bg: 'var(--coder-accent-glow)',
+  },
   refactor: {
     label: 'Refactor',
     color: '#0EA5E9',
     bg: 'rgba(14,165,233,0.12)',
   },
-  chore: { label: 'Chore', color: '#555555', bg: 'rgba(85,85,85,0.15)' },
+  chore: {
+    label: 'Chore',
+    color: 'var(--coder-text-tertiary)',
+    bg: 'rgba(85,85,85,0.15)',
+  },
 }
 
 const statusConfig = {
-  latest: { label: 'Latest', color: '#FF2D55', bg: 'rgba(255,45,85,0.12)' },
+  latest: {
+    label: 'Latest',
+    color: 'var(--coder-accent)',
+    bg: 'var(--coder-accent-glow)',
+  },
   shipped: { label: 'Shipped', color: '#32D74B', bg: 'rgba(50,215,75,0.10)' },
 }
 

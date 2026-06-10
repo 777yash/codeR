@@ -58,7 +58,8 @@ const languageColors: Record<string, string> = {
 
 export function RoomCard({ room, onClick }: RoomCardProps) {
   const memberCount = room._count?.members ?? room.members?.length ?? 0
-  const languageColor = languageColors[room.language] || '#888888'
+  const languageColor =
+    languageColors[room.language] || 'var(--coder-text-secondary)'
   const [avatarError, setAvatarError] = useState(false)
   const starred = useSyncExternalStore(
     (cb) => {
@@ -93,7 +94,7 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
   }
 
   return (
-    <div className="group border-app-mid bg-app-surface hover-app-card-lift relative flex h-48 flex-col justify-between rounded-md border p-4 transition-all hover:border-[#FF2D55]/30">
+    <div className="group border-app bg-app-card shadow-app-sm relative flex h-48 flex-col justify-between rounded-xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--coder-border-accent)] hover:shadow-[var(--coder-shadow-md)]">
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
@@ -101,7 +102,7 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
               className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: languageColor }}
             />
-            <h3 className="text-app truncate text-sm font-medium">
+            <h3 className="text-app truncate text-sm font-semibold">
               {room.name}
             </h3>
           </div>
@@ -114,20 +115,22 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
         <div className="flex items-center gap-1">
           <button
             onClick={toggleStar}
-            className="relative z-20 flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/5"
+            className="relative z-20 flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--coder-bg-card-hover)]"
             aria-label={starred ? 'Unstar room' : 'Star room'}
           >
             <Star
               className="h-4 w-4 transition-colors"
-              style={{ color: starred ? '#FF9F0A' : '#555555' }}
+              style={{
+                color: starred ? '#FF9F0A' : 'var(--coder-text-tertiary)',
+              }}
               fill={starred ? '#FF9F0A' : 'none'}
             />
           </button>
           <button
             onClick={onClick}
-            className="relative z-20 flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/5"
+            className="relative z-20 flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--coder-bg-card-hover)]"
           >
-            <MoreHorizontal className="h-4 w-4 text-[#888888]" />
+            <MoreHorizontal className="h-4 w-4 text-[var(--coder-text-secondary)]" />
           </button>
         </div>
       </div>
@@ -164,7 +167,7 @@ export function RoomCard({ room, onClick }: RoomCardProps) {
               onError={() => setAvatarError(true)}
             />
           ) : (
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF2D55]/20 text-[10px] font-medium text-[#FF2D55]">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--coder-accent)]/20 text-[10px] font-medium text-[var(--coder-accent)]">
               {(room.owner?.name || 'U')[0].toUpperCase()}
             </div>
           )}

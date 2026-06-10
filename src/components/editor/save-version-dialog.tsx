@@ -62,7 +62,7 @@ export function SaveVersionDialog({ roomId }: SaveVersionDialogProps) {
       <button
         onClick={() => setOpen(true)}
         title="Save named version"
-        className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
+        className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)] max-md:h-9 max-md:w-9"
       >
         <Bookmark className="h-3.5 w-3.5" />
       </button>
@@ -73,12 +73,12 @@ export function SaveVersionDialog({ roomId }: SaveVersionDialogProps) {
             className="absolute inset-0 bg-black/60"
             onClick={() => handleClose()}
           />
-          <div className="border-app bg-app-surface relative z-10 w-full max-w-sm rounded-lg border p-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+          <div className="border-app-mid bg-app-card relative z-10 w-full max-w-sm rounded-xl border p-5 shadow-[var(--coder-shadow-md)]">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-app text-sm font-semibold">Save Version</h3>
               <button
                 onClick={() => handleClose()}
-                className="text-app-dim hover:text-app flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
+                className="text-app-dim hover:text-app flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)] max-md:h-9 max-md:w-9"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -92,7 +92,7 @@ export function SaveVersionDialog({ roomId }: SaveVersionDialogProps) {
               onKeyDown={handleKeyDown}
               placeholder="Version label (optional)"
               maxLength={100}
-              className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[#FF2D55]/50"
+              className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[var(--coder-accent)]/50"
             />
 
             <p className="text-app-dim mt-2 text-xs">
@@ -102,14 +102,14 @@ export function SaveVersionDialog({ roomId }: SaveVersionDialogProps) {
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => handleClose()}
-                className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-white/5"
+                className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-[var(--coder-bg-card-hover)]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1.5 rounded-md bg-[#FF2D55] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-md bg-[var(--coder-accent)] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {saving && <Loader2 className="h-3 w-3 animate-spin" />}
                 Save version

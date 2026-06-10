@@ -36,12 +36,12 @@ const STATUS_LABEL: Record<Status, string> = {
 }
 
 const STATUS_COLOR: Record<Status, string> = {
-  idle: '#555555',
+  idle: 'var(--coder-text-tertiary)',
   running: '#0A84FF',
   success: '#32D74B',
   error: '#FF453A',
   timeout: '#FF9F0A',
-  offline: '#555555',
+  offline: 'var(--coder-text-tertiary)',
 }
 
 export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
@@ -152,8 +152,8 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
         title={open ? 'Hide output' : 'Show output'}
         className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
           open
-            ? 'bg-white/10 text-[#F0F0F0]'
-            : 'text-[#555555] hover:bg-white/5 hover:text-[#888888]'
+            ? 'bg-[var(--coder-bg-card-active)] text-[var(--coder-text-primary)]'
+            : 'text-[var(--coder-text-tertiary)] hover:bg-[var(--coder-bg-card-hover)] hover:text-[var(--coder-text-secondary)]'
         }`}
       >
         <Terminal className="h-3.5 w-3.5" />
@@ -173,10 +173,10 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
 
       {/* Bottom drawer */}
       {open && (
-        <div className="fixed right-0 bottom-0 left-0 z-40 flex h-[280px] flex-col border-t border-white/[0.08] bg-[#111111] max-md:bottom-[calc(3rem+env(safe-area-inset-bottom))] max-md:h-[42vh]">
-          <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/[0.08] px-4">
+        <div className="fixed right-0 bottom-0 left-0 z-40 flex h-[280px] flex-col border-t border-[var(--coder-border)] bg-[var(--coder-bg-surface)] max-md:bottom-[calc(3rem+env(safe-area-inset-bottom))] max-md:h-[42vh]">
+          <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--coder-border)] px-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#888888]">
+              <span className="text-xs font-semibold text-[var(--coder-text-secondary)]">
                 Output
               </span>
               <span
@@ -189,7 +189,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
                 {STATUS_LABEL[status]}
               </span>
               {result && !running && (
-                <span className="text-[10px] text-[#444444]">
+                <span className="text-[10px] text-[var(--coder-text-tertiary)]">
                   exit {result.exitCode ?? '—'} · {result.durationMs}ms
                 </span>
               )}
@@ -208,17 +208,17 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
               )}
               <button
                 onClick={() => setOpen(false)}
-                className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5"
+                className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
                 title="Minimize output"
               >
-                <ChevronDown className="h-3.5 w-3.5 text-[#555555]" />
+                <ChevronDown className="h-3.5 w-3.5 text-[var(--coder-text-tertiary)]" />
               </button>
             </div>
           </div>
 
-          <div className="shrink-0 border-b border-white/[0.08]">
+          <div className="shrink-0 border-b border-[var(--coder-border)]">
             <div className="flex items-center gap-2 px-4 py-1">
-              <span className="text-[10px] font-semibold tracking-wide text-[#444444] uppercase">
+              <span className="text-[10px] font-semibold tracking-wide text-[var(--coder-text-tertiary)] uppercase">
                 stdin
               </span>
             </div>
@@ -227,23 +227,25 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
               onChange={(e) => setStdin(e.target.value)}
               disabled={running || !canRun}
               placeholder="Program input (one value per line)…"
-              className="w-full resize-none bg-transparent px-4 pb-2 font-mono text-xs text-[#aaaaaa] placeholder-[#333333] outline-none disabled:opacity-40"
+              className="w-full resize-none bg-transparent px-4 pb-2 font-mono text-xs text-[var(--coder-text-secondary)] placeholder-[var(--coder-text-tertiary)] outline-none disabled:opacity-40"
               rows={2}
             />
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed">
             {running && (
-              <span className="animate-pulse text-[#555555]">Running…</span>
+              <span className="animate-pulse text-[var(--coder-text-tertiary)]">
+                Running…
+              </span>
             )}
             {!running && status === 'offline' && (
-              <span className="text-[#555555]">
+              <span className="text-[var(--coder-text-tertiary)]">
                 Execution service offline. Check ONECOMPILER_RAPIDAPI_KEY is
                 set.
               </span>
             )}
             {!running && status !== 'offline' && !result && (
-              <span className="text-[#444444]">
+              <span className="text-[var(--coder-text-tertiary)]">
                 {canRun
                   ? 'Press Run to execute code.'
                   : 'Waiting for collaborator to run code…'}
@@ -252,7 +254,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
             {!running && result && (
               <>
                 {result.stdout && (
-                  <pre className="whitespace-pre-wrap text-[#eeeeee]">
+                  <pre className="whitespace-pre-wrap text-[var(--coder-text-primary)]">
                     {result.stdout}
                   </pre>
                 )}
@@ -262,7 +264,9 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
                   </pre>
                 )}
                 {!result.stdout && !result.stderr && (
-                  <span className="text-[#444444]">No output.</span>
+                  <span className="text-[var(--coder-text-tertiary)]">
+                    No output.
+                  </span>
                 )}
               </>
             )}

@@ -57,7 +57,9 @@ export function EditorSettings({
           <button
             onClick={() => setMinimap(!minimap)}
             className={`h-5 w-9 rounded-full transition-colors ${
-              minimap ? 'bg-[#FF2D55]' : 'bg-white/20'
+              minimap
+                ? 'bg-[var(--coder-accent)]'
+                : 'bg-[var(--coder-bg-card-active)]'
             }`}
           >
             <div
@@ -73,7 +75,9 @@ export function EditorSettings({
           <button
             onClick={() => setWordWrap(wordWrap === 'on' ? 'off' : 'on')}
             className={`h-5 w-9 rounded-full transition-colors ${
-              wordWrap === 'on' ? 'bg-[#FF2D55]' : 'bg-white/20'
+              wordWrap === 'on'
+                ? 'bg-[var(--coder-accent)]'
+                : 'bg-[var(--coder-bg-card-active)]'
             }`}
           >
             <div
@@ -89,7 +93,9 @@ export function EditorSettings({
           <button
             onClick={() => setInlineSuggest(!inlineSuggest)}
             className={`h-5 w-9 rounded-full transition-colors ${
-              inlineSuggest ? 'bg-[#FF2D55]' : 'bg-white/20'
+              inlineSuggest
+                ? 'bg-[var(--coder-accent)]'
+                : 'bg-[var(--coder-bg-card-active)]'
             }`}
           >
             <div
@@ -111,7 +117,7 @@ export function EditorSettings({
             max={24}
             value={fontSize}
             onChange={(e) => setFontSize(Number(e.target.value))}
-            className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/20"
+            className="h-1 w-full cursor-pointer appearance-none rounded-full bg-[var(--coder-bg-card-active)]"
           />
         </div>
       </div>

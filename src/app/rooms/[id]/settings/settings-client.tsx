@@ -225,7 +225,7 @@ export function RoomSettingsClient({
       <div className="space-y-4">
         <h3 className="text-lg font-medium">General Settings</h3>
 
-        <div className="space-y-4 rounded-lg border border-white/10 bg-[#0D0D0D] p-4">
+        <div className="space-y-4 rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Room Name</label>
             <Input
@@ -268,7 +268,9 @@ export function RoomSettingsClient({
               onClick={() => isOwner && setIsPublic(!isPublic)}
               disabled={!isOwner}
               className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                isPublic ? 'bg-[#FF2D55]' : 'bg-[#555555]'
+                isPublic
+                  ? 'bg-[var(--coder-accent)]'
+                  : 'bg-[var(--coder-text-tertiary)]'
               } disabled:opacity-50`}
             >
               <span
@@ -277,7 +279,7 @@ export function RoomSettingsClient({
                 }`}
               />
             </button>
-            <label className="text-sm text-[#888888]">
+            <label className="text-sm text-[var(--coder-text-secondary)]">
               {isPublic ? 'Public room' : 'Private room'}
             </label>
           </div>
@@ -287,7 +289,7 @@ export function RoomSettingsClient({
               <Button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="bg-[#FF2D55] hover:bg-[#FF2D55]/90"
+                className="bg-[var(--coder-accent)] hover:bg-[var(--coder-accent)]/90"
               >
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
@@ -322,7 +324,7 @@ export function RoomSettingsClient({
             <Button
               type="submit"
               disabled={isInviting || !inviteEmail.trim()}
-              className="bg-[#FF2D55] hover:bg-[#FF2D55]/90"
+              className="bg-[var(--coder-accent)] hover:bg-[var(--coder-accent)]/90"
             >
               {isInviting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -341,7 +343,7 @@ export function RoomSettingsClient({
           {room.members.map((member) => (
             <div
               key={member.id}
-              className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0D0D0D] p-3"
+              className="flex items-center justify-between rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-3"
             >
               <div className="flex items-center gap-3">
                 {member.user.image ? (
@@ -351,7 +353,7 @@ export function RoomSettingsClient({
                     className="h-8 w-8 rounded-full"
                   />
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FF2D55]/20 text-xs font-medium text-[#FF2D55]">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--coder-accent)]/20 text-xs font-medium text-[var(--coder-accent)]">
                     {(member.user.name || 'U')[0].toUpperCase()}
                   </div>
                 )}
@@ -359,12 +361,14 @@ export function RoomSettingsClient({
                   <p className="text-sm font-medium">
                     {member.user.name || member.user.email}
                     {member.userId === room.ownerId && (
-                      <span className="ml-2 text-xs text-[#FF2D55]">
+                      <span className="ml-2 text-xs text-[var(--coder-accent)]">
                         (Owner)
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-[#888888]">{member.user.email}</p>
+                  <p className="text-xs text-[var(--coder-text-secondary)]">
+                    {member.user.email}
+                  </p>
                 </div>
               </div>
 
@@ -386,14 +390,14 @@ export function RoomSettingsClient({
                     </Select>
                     <button
                       onClick={() => setMemberToRemove(member.userId)}
-                      className="flex h-8 w-8 items-center justify-center rounded text-[#888888] transition-colors hover:bg-white/5 hover:text-[#FF2D55]"
+                      className="flex h-8 w-8 items-center justify-center rounded text-[var(--coder-text-secondary)] transition-colors hover:bg-[var(--coder-bg-card-hover)] hover:text-[var(--coder-accent)]"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </>
                 )}
                 {member.userId === room.ownerId && (
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-[#888888]">
+                  <span className="rounded-full bg-[var(--coder-bg-card-hover)] px-2 py-0.5 text-xs text-[var(--coder-text-secondary)]">
                     {member.role}
                   </span>
                 )}
@@ -411,21 +415,21 @@ export function RoomSettingsClient({
             {shareLinks.map((link) => (
               <div
                 key={link.id}
-                className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0D0D0D] p-3"
+                className="flex items-center justify-between rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-3"
               >
                 <div className="flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-[#888888]" />
-                  <code className="text-sm text-[#F0F0F0]">
+                  <Link2 className="h-4 w-4 text-[var(--coder-text-secondary)]" />
+                  <code className="text-sm text-[var(--coder-text-primary)]">
                     /share/{link.token}
                   </code>
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-[#888888]">
+                  <span className="rounded-full bg-[var(--coder-bg-card-hover)] px-2 py-0.5 text-xs text-[var(--coder-text-secondary)]">
                     {link.role}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleCopyLink(link.token)}
-                    className="flex h-8 w-8 items-center justify-center rounded text-[#888888] transition-colors hover:bg-white/5 hover:text-[#F0F0F0]"
+                    className="flex h-8 w-8 items-center justify-center rounded text-[var(--coder-text-secondary)] transition-colors hover:bg-[var(--coder-bg-card-hover)] hover:text-[var(--coder-text-primary)]"
                   >
                     {copiedToken === link.token ? (
                       <Check className="h-4 w-4 text-green-500" />
@@ -435,7 +439,7 @@ export function RoomSettingsClient({
                   </button>
                   <button
                     onClick={() => handleDeleteLink(link.token)}
-                    className="flex h-8 w-8 items-center justify-center rounded text-[#888888] transition-colors hover:bg-white/5 hover:text-[#FF2D55]"
+                    className="flex h-8 w-8 items-center justify-center rounded text-[var(--coder-text-secondary)] transition-colors hover:bg-[var(--coder-bg-card-hover)] hover:text-[var(--coder-accent)]"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -446,7 +450,7 @@ export function RoomSettingsClient({
             <button
               onClick={handleCreateShareLink}
               disabled={isCreatingLink}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-white/10 p-3 text-sm text-[#888888] transition-colors hover:border-[#FF2D55]/30 hover:text-[#F0F0F0]"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--coder-border-mid)] p-3 text-sm text-[var(--coder-text-secondary)] transition-colors hover:border-[var(--coder-accent)]/30 hover:text-[var(--coder-text-primary)]"
             >
               {isCreatingLink ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -461,16 +465,18 @@ export function RoomSettingsClient({
 
       {isOwner && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-[#FF2D55]">Danger Zone</h3>
-          <div className="rounded-lg border border-[#FF2D55]/30 bg-[#FF2D55]/5 p-4">
-            <p className="mb-3 text-sm text-[#888888]">
+          <h3 className="text-lg font-medium text-[var(--coder-accent)]">
+            Danger Zone
+          </h3>
+          <div className="rounded-lg border border-[var(--coder-accent)]/30 bg-[var(--coder-accent)]/5 p-4">
+            <p className="mb-3 text-sm text-[var(--coder-text-secondary)]">
               Deleting a room is permanent. All room data, including version
               history, will be lost.
             </p>
             <Button
               variant="destructive"
               onClick={handleDeleteRoom}
-              className="bg-[#FF2D55] text-white transition-all duration-300 hover:bg-black hover:shadow-[0_0_15px_rgba(255,45,85,0.8)]"
+              className="bg-[var(--coder-accent)] text-white transition-all duration-300 hover:bg-[var(--coder-accent-hover)] hover:shadow-[var(--coder-shadow-accent)]"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete Room
@@ -480,10 +486,10 @@ export function RoomSettingsClient({
       )}
 
       {memberToRemove && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="w-full max-w-md rounded-lg border border-white/10 bg-[#0D0D0D] p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="w-full max-w-md rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-6">
             <h3 className="mb-2 text-lg font-semibold">Remove Member</h3>
-            <p className="mb-4 text-sm text-[#888888]">
+            <p className="mb-4 text-sm text-[var(--coder-text-secondary)]">
               Are you sure you want to remove this member from the room?
             </p>
             <div className="flex justify-end gap-2">
@@ -493,7 +499,7 @@ export function RoomSettingsClient({
               <Button
                 onClick={() => handleRemoveMember(memberToRemove)}
                 disabled={isRemoving}
-                className="bg-[#FF2D55] hover:bg-[#FF2D55]/90"
+                className="bg-[var(--coder-accent)] hover:bg-[var(--coder-accent)]/90"
               >
                 {isRemoving && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

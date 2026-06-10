@@ -45,7 +45,7 @@ export function EditorToolbar() {
           </button>
 
           {showLang && (
-            <div className="border-app-mid bg-app-surface absolute top-8 left-0 z-50 max-h-56 w-44 overflow-y-auto rounded-md border py-1 shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+            <div className="border-app-mid bg-app-surface absolute top-8 left-0 z-50 max-h-56 w-44 overflow-y-auto rounded-md border py-1 shadow-[var(--coder-shadow-md)]">
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.value}
@@ -55,7 +55,7 @@ export function EditorToolbar() {
                   }}
                   className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
                     lang.value === language
-                      ? 'bg-app-card-hover text-[#FF2D55]'
+                      ? 'bg-app-card-hover text-[var(--coder-accent)]'
                       : 'text-app-muted hover-app-card hover:text-app'
                   }`}
                 >
@@ -97,8 +97,8 @@ export function EditorToolbar() {
           title="Editor settings"
           className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
             showSettings
-              ? 'text-app bg-white/10'
-              : 'text-app-dim hover:text-app-muted hover:bg-white/5'
+              ? 'text-app bg-[var(--coder-bg-card-active)]'
+              : 'text-app-dim hover:text-app-muted hover:bg-[var(--coder-bg-card-hover)]'
           }`}
         >
           <Settings className="h-3.5 w-3.5" />

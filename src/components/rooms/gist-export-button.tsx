@@ -74,7 +74,7 @@ export function GistExportButton({
       <button
         onClick={() => setOpen(true)}
         title="Export to GitHub Gist"
-        className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
+        className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)] max-md:h-9 max-md:w-9"
       >
         <svg
           className="h-3.5 w-3.5"
@@ -89,14 +89,14 @@ export function GistExportButton({
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={handleClose} />
-          <div className="border-app bg-app-surface relative z-10 w-full max-w-sm rounded-lg border p-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+          <div className="border-app-mid bg-app-card relative z-10 w-full max-w-sm rounded-xl border p-5 shadow-[var(--coder-shadow-md)]">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-app text-sm font-semibold">
                 Export to GitHub Gist
               </h3>
               <button
                 onClick={handleClose}
-                className="text-app-dim hover:text-app flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
+                className="text-app-dim hover:text-app flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)] max-md:h-9 max-md:w-9"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -112,7 +112,7 @@ export function GistExportButton({
                   onClick={() =>
                     signIn('github', { callbackUrl: window.location.href })
                   }
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-[#FF2D55] px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                  className="flex w-full items-center justify-center gap-2 rounded-md bg-[var(--coder-accent)] px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
                 >
                   <svg
                     className="h-4 w-4"
@@ -136,7 +136,7 @@ export function GistExportButton({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Description (optional)"
                   maxLength={1000}
-                  className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[#FF2D55]/50"
+                  className="border-app-mid bg-app-card text-app placeholder:text-app-dim w-full rounded-md border px-3 py-2 text-sm outline-none focus:border-[var(--coder-accent)]/50"
                 />
 
                 <div className="mt-3 grid grid-cols-2 gap-2">
@@ -145,8 +145,8 @@ export function GistExportButton({
                     onClick={() => setIsPublic(false)}
                     className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs transition-colors ${
                       !isPublic
-                        ? 'text-app border-[#FF2D55]/50 bg-[#FF2D55]/10'
-                        : 'border-app-mid text-app-muted hover:bg-white/5'
+                        ? 'text-app border-[var(--coder-accent)]/50 bg-[var(--coder-accent)]/10'
+                        : 'border-app-mid text-app-muted hover:bg-[var(--coder-bg-card-hover)]'
                     }`}
                   >
                     <Lock className="h-3 w-3" />
@@ -157,8 +157,8 @@ export function GistExportButton({
                     onClick={() => setIsPublic(true)}
                     className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs transition-colors ${
                       isPublic
-                        ? 'text-app border-[#FF2D55]/50 bg-[#FF2D55]/10'
-                        : 'border-app-mid text-app-muted hover:bg-white/5'
+                        ? 'text-app border-[var(--coder-accent)]/50 bg-[var(--coder-accent)]/10'
+                        : 'border-app-mid text-app-muted hover:bg-[var(--coder-bg-card-hover)]'
                     }`}
                   >
                     <Globe className="h-3 w-3" />
@@ -175,14 +175,14 @@ export function GistExportButton({
                 <div className="mt-4 flex justify-end gap-2">
                   <button
                     onClick={handleClose}
-                    className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-white/5"
+                    className="border-app-mid text-app-muted hover:text-app rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-[var(--coder-bg-card-hover)]"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleExport}
                     disabled={exporting}
-                    className="flex items-center gap-1.5 rounded-md bg-[#FF2D55] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-md bg-[var(--coder-accent)] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     {exporting && <Loader2 className="h-3 w-3 animate-spin" />}
                     Export gist

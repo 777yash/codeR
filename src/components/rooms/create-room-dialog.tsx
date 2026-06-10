@@ -94,7 +94,7 @@ export function CreateRoomDialog({
           <div className="space-y-2">
             <label
               htmlFor="name"
-              className="text-sm font-medium text-[#F0F0F0]"
+              className="text-sm font-medium text-[var(--coder-text-primary)]"
             >
               Room Name
             </label>
@@ -106,19 +106,24 @@ export function CreateRoomDialog({
                 if (errors.name) setErrors({})
               }}
               placeholder="My Awesome Project"
-              className={errors.name ? 'border-[#FF2D55]' : ''}
+              className={errors.name ? 'border-[var(--coder-accent)]' : ''}
             />
             {errors.name && (
-              <p className="text-xs text-[#FF2D55]">{errors.name}</p>
+              <p className="text-xs text-[var(--coder-accent)]">
+                {errors.name}
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
             <label
               htmlFor="description"
-              className="text-sm font-medium text-[#F0F0F0]"
+              className="text-sm font-medium text-[var(--coder-text-primary)]"
             >
-              Description <span className="text-[#555555]">(optional)</span>
+              Description{' '}
+              <span className="text-[var(--coder-text-tertiary)]">
+                (optional)
+              </span>
             </label>
             <Textarea
               id="description"
@@ -132,7 +137,7 @@ export function CreateRoomDialog({
           <div className="space-y-2">
             <label
               htmlFor="language"
-              className="text-sm font-medium text-[#F0F0F0]"
+              className="text-sm font-medium text-[var(--coder-text-primary)]"
             >
               Language
             </label>
@@ -156,7 +161,9 @@ export function CreateRoomDialog({
               aria-checked={isPublic}
               onClick={() => setIsPublic(!isPublic)}
               className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                isPublic ? 'bg-[#FF2D55]' : 'bg-[#555555]'
+                isPublic
+                  ? 'bg-[var(--coder-accent)]'
+                  : 'bg-[var(--coder-text-tertiary)]'
               }`}
             >
               <span
@@ -166,7 +173,7 @@ export function CreateRoomDialog({
               />
             </button>
             <label
-              className="cursor-pointer text-sm text-[#888888]"
+              className="cursor-pointer text-sm text-[var(--coder-text-secondary)]"
               onClick={() => setIsPublic(!isPublic)}
             >
               {isPublic ? 'Public room' : 'Private room'}
@@ -185,7 +192,7 @@ export function CreateRoomDialog({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-[#FF2D55] hover:bg-[#FF2D55]/90 sm:w-auto"
+              className="w-full bg-[var(--coder-accent)] hover:bg-[var(--coder-accent)]/90 sm:w-auto"
             >
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

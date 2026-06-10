@@ -110,7 +110,7 @@ function getInitials(name: string | null | undefined): string {
     .slice(0, 2)
 }
 
-const AVATAR_COLORS = ['#FF2D55', '#BF5AF2', '#FF9F0A', '#32D74B']
+const AVATAR_COLORS = ['var(--coder-accent)', '#BF5AF2', '#FF9F0A', '#32D74B']
 
 export default async function RoomPage({ params }: RoomPageProps) {
   const session = await auth()
@@ -160,16 +160,16 @@ export default async function RoomPage({ params }: RoomPageProps) {
             href={
               userRole === 'OWNER' ? '/dashboard' : '/dashboard?view=shared'
             }
-            className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/5 max-md:h-9 max-md:w-9"
+            className="flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)] max-md:h-9 max-md:w-9"
             title="Back to dashboard"
           >
-            <ArrowLeft className="h-3.5 w-3.5 text-[#555555]" />
+            <ArrowLeft className="h-3.5 w-3.5 text-[var(--coder-text-tertiary)]" />
           </Link>
 
           {/* Breadcrumb */}
           <div className="hidden items-center gap-1 text-xs sm:flex">
-            <span className="text-[#555555]">dashboard</span>
-            <span className="text-[#333]">›</span>
+            <span className="text-[var(--coder-text-tertiary)]">dashboard</span>
+            <span className="text-[var(--coder-text-tertiary)]">›</span>
             <span className="text-app flex items-center gap-1 font-medium">
               <span className="text-app-accent">▊</span>
               {room.name}
@@ -181,9 +181,9 @@ export default async function RoomPage({ params }: RoomPageProps) {
             {room.name}
           </span>
 
-          <div className="hidden items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 sm:flex">
+          <div className="hidden items-center gap-1.5 rounded-full border border-[var(--coder-border)] bg-[var(--coder-bg-card-hover)] px-2 py-0.5 sm:flex">
             <LanguageIcon language={room.language} size={14} />
-            <span className="text-[11px] font-medium text-[#888888]">
+            <span className="text-[11px] font-medium text-[var(--coder-text-secondary)]">
               {LANG_LABEL[room.language.toLowerCase()] ?? room.language}
             </span>
           </div>
@@ -216,7 +216,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
             })}
             {extraCount > 0 && (
               <span
-                className="ml-1.5 text-[11px] text-[#555555]"
+                className="ml-1.5 text-[11px] text-[var(--coder-text-tertiary)]"
                 style={{ zIndex: 0 }}
               >
                 +{extraCount}

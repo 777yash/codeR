@@ -18,7 +18,7 @@ import { StatusBar } from '@/components/editor/status-bar'
 function EditorSkeleton() {
   return (
     <div
-      className="flex-1 animate-pulse bg-[#1e1e1e]"
+      className="flex-1 animate-pulse bg-[var(--coder-bg-surface)]"
       aria-label="Loading editor…"
     />
   )
@@ -147,7 +147,7 @@ export function EditorWrapper({
             onClick={() => setMobilePane(t.id)}
             className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
               mobilePane === t.id
-                ? 'text-[#FF2D55]'
+                ? 'text-[var(--coder-accent)]'
                 : 'text-app-dim hover:text-app-muted'
             }`}
           >

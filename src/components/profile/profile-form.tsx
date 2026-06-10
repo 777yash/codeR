@@ -50,12 +50,12 @@ export function ProfileForm({ initialName, email }: ProfileFormProps) {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             placeholder="Your name"
-            className="border-app-mid bg-app-card text-app placeholder:text-app-dim h-9 flex-1 rounded-md border px-3 text-sm transition-colors outline-none focus:border-[#FF2D55]/50 focus:ring-1 focus:ring-[#FF2D55]/20"
+            className="border-app-mid bg-app-card text-app placeholder:text-app-dim h-9 flex-1 rounded-md border px-3 text-sm transition-colors outline-none focus:border-[var(--coder-accent)]/50 focus:ring-1 focus:ring-[var(--coder-accent)]/20"
           />
           <button
             onClick={handleSave}
             disabled={saving || name.trim() === (initialName ?? '')}
-            className="flex h-9 items-center gap-1.5 rounded-md bg-[#FF2D55] px-3 text-xs font-semibold text-white transition-all hover:bg-[#FF2D55]/90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-9 items-center gap-1.5 rounded-md bg-[var(--coder-accent)] px-3 text-xs font-semibold text-white transition-all hover:bg-[var(--coder-accent)]/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

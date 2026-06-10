@@ -148,7 +148,7 @@ function Callout({
       border: 'rgba(0,117,222,0.30)',
       bg: 'rgba(0,117,222,0.06)',
       icon: 'ℹ',
-      color: '#0075DE',
+      color: 'var(--coder-accent)',
     },
     tip: {
       border: 'rgba(50,215,75,0.30)',
@@ -446,7 +446,7 @@ export default function DocsPage() {
             {[
               {
                 role: 'Owner',
-                color: '#FF2D55',
+                color: 'var(--coder-accent)',
                 perms: 'Full access — edit code, manage members, delete room',
               },
               {
@@ -456,7 +456,7 @@ export default function DocsPage() {
               },
               {
                 role: 'Viewer',
-                color: '#888888',
+                color: 'var(--coder-text-secondary)',
                 perms: 'Read-only — see code, cursors, and chat',
               },
             ].map(({ role, color, perms }, i) => (
@@ -923,7 +923,7 @@ export default function DocsPage() {
                     method === 'GET'
                       ? '#32D74B'
                       : method === 'POST'
-                        ? '#0075DE'
+                        ? 'var(--coder-accent)'
                         : '#FF9F0A',
                   fontFamily: 'var(--font-jetbrains-mono), monospace',
                   minWidth: '44px',

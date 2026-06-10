@@ -100,10 +100,13 @@ export default function MarketingLayout({
               fontSize: '14px',
               fontWeight: 500,
               color: 'var(--coder-text-primary)',
+              backgroundColor: 'var(--coder-bg-card)',
               border: '1px solid var(--coder-border-mid)',
-              borderRadius: '6px',
+              borderRadius: '8px',
               textDecoration: 'none',
-              transition: 'border-color 150ms ease',
+              boxShadow: 'var(--coder-shadow-sm)',
+              transition:
+                'border-color 150ms ease, background-color 150ms ease',
             }}
           >
             Sign In

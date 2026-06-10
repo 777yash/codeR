@@ -102,7 +102,7 @@ export function FileTabs() {
             >
               {/* Active indicator: top border */}
               {isActive && (
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-[#FF2D55]" />
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-[var(--coder-accent)]" />
               )}
               <FileCode className="h-3 w-3 shrink-0 opacity-70" />
               <span className="truncate">{file.name}</span>
@@ -138,11 +138,11 @@ export function FileTabs() {
               if (!newFileName.trim()) setShowInput(false)
             }}
             placeholder="filename.js"
-            className="border-app-mid bg-app text-app placeholder:text-app-dim h-6 w-28 rounded border px-2 text-xs outline-none focus:border-[#FF2D55]/50"
+            className="border-app-mid bg-app text-app placeholder:text-app-dim h-6 w-28 rounded border px-2 text-xs outline-none focus:border-[var(--coder-accent)]/50"
           />
           <button
             onClick={handleAdd}
-            className="text-app-muted hover:text-app h-6 rounded px-1.5 text-xs hover:bg-white/10"
+            className="text-app-muted hover:text-app h-6 rounded px-1.5 text-xs hover:bg-[var(--coder-bg-card-active)]"
           >
             Add
           </button>
@@ -151,7 +151,7 @@ export function FileTabs() {
         <button
           onClick={() => setShowInput(true)}
           title="New file"
-          className="text-app-dim hover:text-app-muted flex h-full w-9 items-center justify-center transition-colors hover:bg-white/5"
+          className="text-app-dim hover:text-app-muted flex h-full w-9 items-center justify-center transition-colors hover:bg-[var(--coder-bg-card-hover)]"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>

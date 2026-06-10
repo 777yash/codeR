@@ -5,7 +5,7 @@ export default function LandingPage() {
   return (
     <div
       style={{ position: 'relative', overflow: 'hidden' }}
-      className="selection:bg-[#FF2D55] selection:text-white"
+      className="selection:bg-[var(--coder-accent)] selection:text-white"
     >
       {/* Radial glow */}
       <div
@@ -18,7 +18,7 @@ export default function LandingPage() {
           width: '800px',
           height: '600px',
           background:
-            'radial-gradient(ellipse at top, rgba(255,45,85,0.04), transparent 70%)',
+            'radial-gradient(ellipse at top, rgba(244,63,94,0.05), transparent 70%)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
@@ -112,11 +112,12 @@ export default function LandingPage() {
               borderRadius: '9999px',
               backgroundColor: 'var(--coder-accent)',
               color: '#fff',
-              fontSize: '16px',
-              fontWeight: 500,
+              fontSize: '15px',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
               textDecoration: 'none',
-              boxShadow: '0 0 0 0 var(--coder-shadow-accent)',
-              transition: 'box-shadow 150ms ease',
+              boxShadow: 'var(--coder-shadow-accent)',
+              transition: 'background-color 150ms ease, box-shadow 150ms ease',
             }}
           >
             Start Coding Free <ArrowRight className="h-4 w-4" />
@@ -159,11 +160,12 @@ export default function LandingPage() {
         <div
           style={{
             position: 'relative',
-            borderRadius: '10px',
+            borderRadius: '14px',
             border: '1px solid rgba(255,255,255,0.10)',
-            backgroundColor: '#0D0D0D',
+            backgroundColor: '#101014',
             overflow: 'hidden',
-            boxShadow: '0 32px 80px rgba(255,45,85,0.12)',
+            boxShadow:
+              '0 16px 48px rgba(0,0,0,0.35), 0 32px 96px rgba(244,63,94,0.10)',
           }}
         >
           {/* Browser chrome */}
@@ -175,7 +177,7 @@ export default function LandingPage() {
               padding: '0 16px',
               height: '40px',
               borderBottom: '1px solid rgba(255,255,255,0.06)',
-              backgroundColor: '#000000',
+              backgroundColor: '#0a0a0c',
             }}
           >
             <div
@@ -183,7 +185,7 @@ export default function LandingPage() {
                 width: '12px',
                 height: '12px',
                 borderRadius: '9999px',
-                backgroundColor: '#555555',
+                backgroundColor: '#62626e',
               }}
             />
             <div
@@ -191,7 +193,7 @@ export default function LandingPage() {
                 width: '12px',
                 height: '12px',
                 borderRadius: '9999px',
-                backgroundColor: '#555555',
+                backgroundColor: '#62626e',
               }}
             />
             <div
@@ -199,7 +201,7 @@ export default function LandingPage() {
                 width: '12px',
                 height: '12px',
                 borderRadius: '9999px',
-                backgroundColor: '#555555',
+                backgroundColor: '#62626e',
               }}
             />
           </div>
@@ -222,7 +224,7 @@ export default function LandingPage() {
                 flexShrink: 0,
                 flexDirection: 'column',
                 borderRight: '1px solid rgba(255,255,255,0.06)',
-                backgroundColor: '#0D0D0D',
+                backgroundColor: '#101014',
                 padding: '8px 0',
               }}
             >
@@ -230,7 +232,7 @@ export default function LandingPage() {
                 style={{
                   padding: '4px 16px 8px',
                   fontSize: '11px',
-                  color: '#555555',
+                  color: '#62626e',
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                 }}
@@ -251,9 +253,9 @@ export default function LandingPage() {
                     margin: '1px 8px',
                     padding: '4px 8px',
                     borderRadius: '4px',
-                    borderLeft: active ? '2px solid #FF2D55' : 'none',
-                    backgroundColor: active ? '#2D1018' : 'transparent',
-                    color: active ? '#F0F0F0' : '#888888',
+                    borderLeft: active ? '2px solid #f43f5e' : 'none',
+                    backgroundColor: active ? '#1e1e26' : 'transparent',
+                    color: active ? '#eeeef2' : '#9a9aa5',
                     fontSize: '13px',
                   }}
                 >
@@ -269,7 +271,7 @@ export default function LandingPage() {
                 flex: 1,
                 display: 'flex',
                 overflow: 'hidden',
-                backgroundColor: '#000000',
+                backgroundColor: '#0a0a0c',
                 padding: '16px 0',
               }}
             >
@@ -280,7 +282,7 @@ export default function LandingPage() {
                   flexShrink: 0,
                   paddingRight: '12px',
                   textAlign: 'right',
-                  color: '#555555',
+                  color: '#62626e',
                   fontSize: '13px',
                   borderRight: '1px solid rgba(255,255,255,0.06)',
                   userSelect: 'none',
@@ -299,17 +301,17 @@ export default function LandingPage() {
                   flex: 1,
                   paddingLeft: '16px',
                   whiteSpace: 'pre',
-                  color: '#F0F0F0',
+                  color: '#eeeef2',
                   position: 'relative',
                 }}
               >
                 <div>
-                  <span style={{ color: '#FF2D55' }}>def</span>{' '}
+                  <span style={{ color: '#f43f5e' }}>def</span>{' '}
                   <span style={{ color: '#58A6FF' }}>fibonacci</span>
                   {'(n: '}
-                  <span style={{ color: '#888888' }}>int</span>
+                  <span style={{ color: '#9a9aa5' }}>int</span>
                   {') -> '}
-                  <span style={{ color: '#888888' }}>int</span>:
+                  <span style={{ color: '#9a9aa5' }}>int</span>:
                 </div>
                 <div>
                   {'  '}
@@ -326,12 +328,12 @@ export default function LandingPage() {
                       position: 'absolute',
                       inset: 0,
                       width: '300px',
-                      backgroundColor: 'rgba(255,45,85,0.15)',
+                      backgroundColor: 'rgba(244,63,94,0.16)',
                     }}
                   />
                   <div style={{ position: 'relative' }}>
                     {'  '}
-                    <span style={{ color: '#FF2D55' }}>if</span>
+                    <span style={{ color: '#f43f5e' }}>if</span>
                     {' n <= '}
                     <span style={{ color: '#32D74B' }}>0</span>:
                     <div
@@ -341,7 +343,7 @@ export default function LandingPage() {
                         left: '65px',
                         width: '2px',
                         height: '16px',
-                        backgroundColor: '#FF2D55',
+                        backgroundColor: '#f43f5e',
                       }}
                     >
                       <div
@@ -350,7 +352,7 @@ export default function LandingPage() {
                           bottom: '100%',
                           left: '-4px',
                           marginBottom: '2px',
-                          backgroundColor: '#FF2D55',
+                          backgroundColor: '#f43f5e',
                           color: '#fff',
                           fontSize: '10px',
                           fontWeight: 500,
@@ -368,11 +370,11 @@ export default function LandingPage() {
                 <div
                   style={{
                     position: 'relative',
-                    backgroundColor: 'rgba(255,45,85,0.15)',
+                    backgroundColor: 'rgba(244,63,94,0.16)',
                   }}
                 >
                   {'    '}
-                  <span style={{ color: '#FF2D55' }}>raise</span>{' '}
+                  <span style={{ color: '#f43f5e' }}>raise</span>{' '}
                   <span style={{ color: '#BF5AF2' }}>ValueError</span>
                   {'('}
                   <span style={{ color: '#FF9F0A' }}>
@@ -383,18 +385,18 @@ export default function LandingPage() {
 
                 <div>
                   {'  '}
-                  <span style={{ color: '#FF2D55' }}>if</span>
+                  <span style={{ color: '#f43f5e' }}>if</span>
                   {' n <= '}
                   <span style={{ color: '#32D74B' }}>2</span>:
                 </div>
                 <div>
                   {'    '}
-                  <span style={{ color: '#FF2D55' }}>return</span>{' '}
+                  <span style={{ color: '#f43f5e' }}>return</span>{' '}
                   <span style={{ color: '#32D74B' }}>1</span>
                 </div>
                 <div>
                   {'  '}
-                  <span style={{ color: '#FF2D55' }}>return</span>
+                  <span style={{ color: '#f43f5e' }}>return</span>
                   {' fibonacci(n - '}
                   <span style={{ color: '#32D74B' }}>1</span>
                   {') + fibonacci(n - '}
@@ -403,7 +405,7 @@ export default function LandingPage() {
                 <br />
                 {/* Sam cursor */}
                 <div style={{ position: 'relative' }}>
-                  <span style={{ color: '#FF2D55' }}>def</span>{' '}
+                  <span style={{ color: '#f43f5e' }}>def</span>{' '}
                   <span style={{ color: '#58A6FF' }}>fibonacci_sequence</span>(
                   <div
                     style={{
@@ -436,21 +438,21 @@ export default function LandingPage() {
                 </div>
                 <div>
                   {'  limit: '}
-                  <span style={{ color: '#888888' }}>int</span>,
+                  <span style={{ color: '#9a9aa5' }}>int</span>,
                 </div>
                 <div>
                   {'  memo: '}
-                  <span style={{ color: '#888888' }}>Optional</span>
+                  <span style={{ color: '#9a9aa5' }}>Optional</span>
                   {'['}
-                  <span style={{ color: '#888888' }}>dict</span>
+                  <span style={{ color: '#9a9aa5' }}>dict</span>
                   {'] = '}
                   <span style={{ color: '#BF5AF2' }}>None</span>
                 </div>
                 <div>
                   {') -> '}
-                  <span style={{ color: '#888888' }}>list</span>
+                  <span style={{ color: '#9a9aa5' }}>list</span>
                   {'['}
-                  <span style={{ color: '#888888' }}>int</span>
+                  <span style={{ color: '#9a9aa5' }}>int</span>
                   ]:
                 </div>
                 <br />
@@ -462,7 +464,7 @@ export default function LandingPage() {
                     backgroundColor: 'rgba(255,159,10,0.15)',
                   }}
                 >
-                  <span style={{ color: '#555555', fontStyle: 'italic' }}>
+                  <span style={{ color: '#62626e', fontStyle: 'italic' }}>
                     # TODO: add memoization for performance
                   </span>
                   <div
@@ -503,7 +505,7 @@ export default function LandingPage() {
                     backgroundColor: 'rgba(255,255,255,0.02)',
                   }}
                 >
-                  <span style={{ color: '#555555', fontStyle: 'italic' }}>
+                  <span style={{ color: '#62626e', fontStyle: 'italic' }}>
                     def fibonacci_memo(n: int, memo: dict = {}) -&gt; int:
                   </span>
                   <span
@@ -567,16 +569,17 @@ export default function LandingPage() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '16px',
-                borderRadius: '6px',
+                borderRadius: '12px',
                 border: '1px solid',
                 padding: '32px',
+                boxShadow: 'var(--coder-shadow-sm)',
               }}
             >
               <div
                 style={{
                   width: '48px',
                   height: '48px',
-                  borderRadius: '6px',
+                  borderRadius: '10px',
                   backgroundColor: 'var(--coder-bg-card-active)',
                   display: 'flex',
                   alignItems: 'center',
@@ -697,9 +700,11 @@ export default function LandingPage() {
             borderRadius: '9999px',
             backgroundColor: 'var(--coder-accent)',
             color: '#fff',
-            fontSize: '16px',
-            fontWeight: 500,
+            fontSize: '15px',
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
             textDecoration: 'none',
+            boxShadow: 'var(--coder-shadow-accent)',
           }}
         >
           Get started free <ArrowRight className="h-4 w-4" />
