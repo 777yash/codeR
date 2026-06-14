@@ -58,10 +58,10 @@ const phases = [
     features: [
       { name: 'Monaco Editor (VS Code engine)', done: true },
       { name: '60+ language syntax highlighting', done: true },
-      { name: 'Dynamic language selector', done: true },
+      { name: 'Automatic per-file language detection', done: true },
       { name: 'VS Code keyboard shortcuts', done: true },
       { name: 'Line numbers and minimap', done: true },
-      { name: 'Multi-file workspace', done: true },
+      { name: 'Multi-file workspace with nested folder tree', done: true },
     ],
   },
   {
@@ -203,16 +203,28 @@ const phases = [
   {
     number: '11',
     title: 'WebContainers + Live Preview',
-    status: 'planned',
-    date: 'Planned',
+    status: 'in_progress',
+    date: 'Jun 2026',
     icon: <Globe className="h-5 w-5" />,
     accentColor: '#0EA5E9',
     features: [
-      { name: 'In-browser Node.js runtime (zero server infra)', done: false },
-      { name: 'Virtual terminal via xterm.js', done: false },
-      { name: 'Live preview iframe with hot-reload', done: false },
-      { name: 'Auto npm install from package.json', done: false },
-      { name: 'WebContainer + Monaco VFS bidirectional sync', done: false },
+      { name: 'In-browser Node.js runtime (zero server infra)', done: true },
+      { name: 'Virtual terminal via xterm.js', done: true },
+      { name: 'Live preview iframe with hot-reload', done: true },
+      {
+        name: 'Run flow: auto npm install + dev/start from package.json',
+        done: true,
+      },
+      { name: 'Workspace files live-synced into the container', done: true },
+      {
+        name: 'Save to a local folder — two-way sync + restore on return',
+        done: true,
+      },
+      { name: 'Editor deletions mirror to the linked folder', done: true },
+      { name: 'Polyglot rooms — per-file language detection', done: true },
+      { name: 'GitHub-style language breakdown bar', done: true },
+      { name: 'VS Code-style tabs, file menus & nested tree', done: true },
+      { name: 'Cross-browser verification pass', done: false },
     ],
   },
   {
@@ -261,9 +273,9 @@ const statusConfig = {
     bg: 'rgba(255,159,10,0.10)',
   },
   upcoming: {
-    label: 'In Progress',
-    color: '#FF9F0A',
-    bg: 'rgba(255,159,10,0.10)',
+    label: 'Upcoming',
+    color: '#0EA5E9',
+    bg: 'rgba(14,165,233,0.10)',
   },
   planned: {
     label: 'Planned',

@@ -9,6 +9,11 @@ import {
   broadcastExecutionResult,
   subscribeToExecutionResults,
 } from '@/components/editor/editor-client'
+import { getWebContainerStatus } from '@/lib/webcontainer'
+import { buildRunCommand, normalizeNpxCommand } from '@/lib/webcontainer-run'
+import { runInTerminal } from '@/components/editor/terminal-panel'
+
+const WEBCONTAINER_RUN_LANGUAGES = new Set(['javascript', 'typescript'])
 
 type Status = 'idle' | 'running' | 'success' | 'error' | 'timeout' | 'offline'
 
@@ -72,8 +77,29 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
   }, [setOpen])
 
   async function handleRun() {
+    // JS/TS rooms with a booted container run locally in the terminal —
+    // per-browser, not broadcast, no execution_logs row (unlike OneCompiler)
+    if (
+      WEBCONTAINER_RUN_LANGUAGES.has(language.toLowerCase()) &&
+      getWebContainerStatus() === 'ready'
+    ) {
+      const { files: storeFiles, activeFileId } = useEditorStore.getState()
+      const activeName =
+        storeFiles.find((f) => f.id === activeFileId)?.name ?? null
+      const command = await buildRunCommand(activeName)
+      if (command) {
+        posthog?.capture('code_executed', {
+          language,
+          runtime: 'webcontainer',
+        })
+        runInTerminal(normalizeNpxCommand(command))
+        return
+      }
+      // No runnable command (e.g. bare .ts file) — fall through to OneCompiler
+    }
+
     const files = getAllFilesContent()
-    posthog?.capture('code_executed', { language })
+    posthog?.capture('code_executed', { language, runtime: 'onecompiler' })
     setOpen(true)
     setStatus('running')
     setResult(null)
@@ -173,7 +199,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
 
       {/* Bottom drawer */}
       {open && (
-        <div className="fixed right-0 bottom-0 left-0 z-40 flex h-[280px] flex-col border-t border-[var(--coder-border)] bg-[var(--coder-bg-surface)] max-md:bottom-[calc(3rem+env(safe-area-inset-bottom))] max-md:h-[42vh]">
+        <div className="fixed right-0 bottom-6 left-0 z-40 flex h-[280px] flex-col border-t border-[var(--coder-border)] bg-[var(--coder-bg-surface)] max-md:bottom-[calc(3rem+env(safe-area-inset-bottom))] max-md:h-[42vh]">
           <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--coder-border)] px-4">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-[var(--coder-text-secondary)]">

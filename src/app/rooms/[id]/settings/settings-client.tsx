@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { LANGUAGES } from '@/lib/editor-options'
+import { ProjectFolderPanel } from '@/components/rooms/project-folder-panel'
 
 export type RoomWithRelations = Room & {
   owner: Pick<PrismaUser, 'id' | 'name' | 'image' | 'email'>
@@ -296,6 +297,13 @@ export function RoomSettingsClient({
               </Button>
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Project Folder</h3>
+        <div className="rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-4">
+          <ProjectFolderPanel roomId={room.id} roomName={room.name} />
         </div>
       </div>
 

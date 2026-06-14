@@ -1,7 +1,7 @@
 import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 
-const csp = [
+const baseCspDirectives = [
   "default-src 'self'",
   // Monaco editor requires unsafe-eval (web workers) and unsafe-inline (theme injection)
   // cdn.jsdelivr.net required: @monaco-editor/react loads Monaco loader from jsDelivr CDN
@@ -14,7 +14,24 @@ const csp = [
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-].join('; ')
+]
+
+const csp = baseCspDirectives.join('; ')
+
+// WebContainer boots a hidden cross-origin iframe from StackBlitz infrastructure.
+// The headless boot page is framed from https://stackblitz.com itself (confirmed
+// via CSP violation on first boot); previews/workers come from the other origins.
+const webContainerOrigins =
+  'https://*.webcontainer-api.io https://*.staticblitz.com'
+
+const roomCsp = baseCspDirectives
+  .map((directive) =>
+    directive.startsWith('connect-src')
+      ? `${directive} ${webContainerOrigins} wss://*.webcontainer-api.io`
+      : directive
+  )
+  .concat(`frame-src ${webContainerOrigins} https://stackblitz.com`)
+  .join('; ')
 
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -30,6 +47,16 @@ const securityHeaders = [
     value: 'camera=(), microphone=(), geolocation=(), payment=()',
   },
   { key: 'Content-Security-Policy', value: csp },
+]
+
+// WebContainer requires SharedArrayBuffer → cross-origin isolation via COOP/COEP.
+// Scoped to /rooms only — COEP require-corp blocks cross-origin subresources
+// lacking CORP headers, too risky to apply site-wide.
+const roomHeaders = [
+  ...securityHeaders.filter((h) => h.key !== 'Content-Security-Policy'),
+  { key: 'Content-Security-Policy', value: roomCsp },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
 ]
 
 const nextConfig: NextConfig = {
@@ -55,7 +82,12 @@ const nextConfig: NextConfig = {
     ]
   },
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }]
+    // Browsers enforce the intersection of ALL CSP headers on a response, so
+    // the room CSP can't relax the global one — the matchers must be disjoint.
+    return [
+      { source: '/((?!rooms).*)', headers: securityHeaders },
+      { source: '/rooms/:path*', headers: roomHeaders },
+    ]
   },
 }
 

@@ -13,9 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { LANGUAGES } from '@/lib/editor-options'
 
 interface CreateRoomDialogProps {
   open: boolean
@@ -23,7 +21,6 @@ interface CreateRoomDialogProps {
   onSubmit: (data: {
     name: string
     description?: string
-    language: string
     isPublic: boolean
   }) => Promise<void>
 }
@@ -35,7 +32,6 @@ export function CreateRoomDialog({
 }: CreateRoomDialogProps) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [language, setLanguage] = useState('javascript')
   const [isPublic, setIsPublic] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<{ name?: string }>({})
@@ -55,12 +51,10 @@ export function CreateRoomDialog({
       await onSubmit({
         name: name.trim(),
         description: description.trim() || undefined,
-        language,
         isPublic,
       })
       setName('')
       setDescription('')
-      setLanguage('javascript')
       setIsPublic(false)
       onOpenChange(false)
     } finally {
@@ -72,7 +66,6 @@ export function CreateRoomDialog({
     if (!open) {
       setName('')
       setDescription('')
-      setLanguage('javascript')
       setIsPublic(false)
       setErrors({})
     }
@@ -132,26 +125,6 @@ export function CreateRoomDialog({
               placeholder="A brief description of what this room is for..."
               rows={3}
             />
-          </div>
-
-          <div className="space-y-2">
-            <label
-              htmlFor="language"
-              className="text-sm font-medium text-[var(--coder-text-primary)]"
-            >
-              Language
-            </label>
-            <Select
-              id="language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            >
-              {LANGUAGES.map((lang) => (
-                <option key={lang.value} value={lang.value}>
-                  {lang.label}
-                </option>
-              ))}
-            </Select>
           </div>
 
           <div className="flex items-center gap-2">

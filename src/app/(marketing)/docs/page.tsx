@@ -45,6 +45,7 @@ const KEYBOARD_SHORTCUTS = [
   { keys: ['F1'], description: 'Command palette' },
   { keys: ['Tab'], description: 'Accept AI suggestion (when visible)' },
   { keys: ['Escape'], description: 'Dismiss AI suggestion' },
+  { keys: ['Ctrl', '`'], description: 'Toggle terminal (JS/TS rooms)' },
 ]
 
 function SectionAnchor({ id }: { id: string }) {
@@ -208,6 +209,7 @@ const navItems = [
   { href: '#multi-file', label: 'Multi-File Workspace' },
   { href: '#collaboration', label: 'Collaboration' },
   { href: '#sharing', label: 'Sharing' },
+  { href: '#runtime', label: 'In-Browser Runtime' },
   { href: '#keyboard-shortcuts', label: 'Keyboard Shortcuts' },
   { href: '#languages', label: 'Supported Languages' },
   { href: '#mobile', label: 'Mobile' },
@@ -397,9 +399,10 @@ export default function DocsPage() {
             <strong style={{ color: 'var(--coder-text-primary)' }}>
               + New Room
             </strong>
-            . Give it a name, choose a primary language, and set visibility
+            . Give it a name, an optional description, and set visibility
             (private or public). Rooms are private by default — only invited
-            members can join.
+            members can join. No need to pick a language: codeR detects each
+            file&apos;s language automatically, so a room can hold many at once.
           </Prose>
 
           <Heading3>3. Invite collaborators</Heading3>
@@ -499,10 +502,19 @@ export default function DocsPage() {
 
           <Heading3>Room settings</Heading3>
           <Prose>
-            Open settings from inside the room (gear icon or{' '}
-            <InlineCode>⌘</InlineCode>, in the top bar). You can rename the
-            room, change the primary language, manage members, and rotate the
-            share link.
+            Open settings from inside the room (gear icon in the top bar). You
+            can rename the room, manage members, rotate the share link, and link
+            a project folder on your machine (see{' '}
+            <a
+              href="#runtime"
+              style={{
+                color: 'var(--coder-accent)',
+                textDecoration: 'underline',
+              }}
+            >
+              Saving to disk
+            </a>
+            ).
           </Prose>
 
           <Callout type="info">
@@ -520,11 +532,14 @@ export default function DocsPage() {
             standard VS Code keyboard shortcuts work out of the box.
           </Prose>
 
-          <Heading3>Language selection</Heading3>
+          <Heading3>Language detection</Heading3>
           <Prose>
-            The primary language is set per room and controls syntax
-            highlighting. You can switch it any time from the language selector
-            in the top bar. 29 languages are supported.
+            Rooms are polyglot — each file&apos;s language is detected
+            automatically from its extension (<InlineCode>utils.ts</InlineCode>{' '}
+            → TypeScript), so one room can mix many languages. There is no
+            room-wide language selector. A GitHub-style breakdown bar in the
+            toolbar shows the language composition of the workspace; 29
+            languages are recognized for highlighting.
           </Prose>
 
           <Heading3>Auto-save</Heading3>
@@ -608,11 +623,38 @@ export default function DocsPage() {
 
           <Heading3>Deleting files</Heading3>
           <Prose>
-            Right-click a file in the explorer and choose{' '}
+            Right-click a file in the explorer (or a tab) and choose{' '}
             <strong style={{ color: 'var(--coder-text-primary)' }}>
               Delete
             </strong>
-            . The last remaining file cannot be deleted.
+            . The last remaining file cannot be deleted. If a project folder is
+            linked, deleting here removes the file from disk too.
+          </Prose>
+
+          <Heading3>Folders, tabs &amp; file menus</Heading3>
+          <Prose>
+            Name a file with a path (<InlineCode>src/utils.ts</InlineCode>) and
+            the explorer renders it inside a real, collapsible folder tree.
+            Collapse the explorer to a slim rail to reclaim space. Open files
+            appear as VS Code-style tabs: closing a tab keeps the file in the
+            workspace (middle-click also closes), and right-clicking a tab or a
+            file offers{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Duplicate
+            </strong>
+            ,{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Copy path
+            </strong>
+            ,{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Download
+            </strong>
+            , and{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Delete
+            </strong>
+            .
           </Prose>
 
           <Heading3>Per-file content sync</Heading3>
@@ -699,6 +741,114 @@ export default function DocsPage() {
           </Prose>
         </section>
 
+        {/* In-Browser Runtime */}
+        <section style={{ marginBottom: '48px' }}>
+          <Heading2 id="runtime">In-Browser Runtime</Heading2>
+          <Prose>
+            JavaScript and TypeScript rooms boot a full Node.js runtime inside
+            your browser (StackBlitz WebContainers). Nothing is sent to a server
+            — installs, builds, and dev servers all run locally on your machine,
+            with no queue and no cold starts.
+          </Prose>
+          <Prose>
+            The status bar shows the runtime state:{' '}
+            <InlineCode>booting</InlineCode> → <InlineCode>ready</InlineCode>.
+            On unsupported browsers it reads{' '}
+            <InlineCode>Runtime: unavailable</InlineCode> and everything falls
+            back to remote execution.
+          </Prose>
+
+          <Heading3>Terminal</Heading3>
+          <Prose>
+            Click the <InlineCode>Runtime: ready</InlineCode> chip in the status
+            bar (or press <InlineCode>Ctrl+`</InlineCode>) to open an
+            interactive shell. It&apos;s a real terminal — run{' '}
+            <InlineCode>npm install</InlineCode>,{' '}
+            <InlineCode>node index.js</InlineCode>, or any command. Your
+            workspace files are synced into the container continuously,
+            including collaborators&apos; edits, so the shell always sees the
+            latest code. Drag the top edge to resize; closing the panel keeps
+            the session alive.
+          </Prose>
+
+          <Heading3>Running code</Heading3>
+          <Prose>
+            In a JS/TS room with the runtime ready, the Run button executes
+            locally in the terminal. With a{' '}
+            <InlineCode>package.json</InlineCode>, codeR runs{' '}
+            <InlineCode>npm install</InlineCode> (first run only) followed by
+            your <InlineCode>dev</InlineCode> or <InlineCode>start</InlineCode>{' '}
+            script. Single files run with <InlineCode>node</InlineCode>. All
+            other languages — and TypeScript files without a runner — use the
+            remote sandbox as before.
+          </Prose>
+          <Callout type="info">
+            Local runs are private to your browser — each collaborator has their
+            own container. Remote (sandbox) runs are still shared with the whole
+            room.
+          </Callout>
+
+          <Heading3>Live preview</Heading3>
+          <Prose>
+            Start a dev server (Vite, Express, anything that listens on a port)
+            and a preview pane opens automatically beside the editor with the
+            running app. Hot reload works — edit a file and watch the preview
+            update. Use the header controls to reload or maximize the preview to
+            fullscreen; stopping the server closes the pane. On mobile the
+            preview always opens fullscreen. (Preview URLs can&apos;t open in a
+            separate browser tab — the isolated runtime is only reachable from
+            the room page.)
+          </Prose>
+
+          <Heading3>Saving to disk</Heading3>
+          <Prose>
+            The runtime&apos;s filesystem lives in browser memory, so installs
+            and build output normally vanish on reload. Link a folder to fix
+            that — from the folder button in the room header or the{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Project Folder
+            </strong>{' '}
+            section in Room Settings. The project auto-saves there as it changes
+            (everything except <InlineCode>node_modules</InlineCode>), and the
+            sync runs both ways: files you create in the container — or edits
+            you make to the files on disk in your own editor — flow straight
+            back into codeR and out to collaborators. Deleting a file in the
+            editor removes it from the folder too. When you return to the room,
+            lockfiles and build artifacts are restored into the container
+            automatically — re-running <InlineCode>npm install</InlineCode> with
+            a restored lockfile is fast. You can also customize the container
+            folder name your terminal shows. Saving to disk requires Chrome or
+            Edge.
+          </Prose>
+
+          <Heading3>Scaffolded projects in the editor</Heading3>
+          <Prose>
+            Files created inside the container show up in the editor on their
+            own. Scaffold a project in the terminal (
+            <InlineCode>npm create vite@7 myapp</InlineCode>) and a few seconds
+            later its source files appear in the file explorer — editable in
+            Monaco and shared with collaborators like any other file. Lockfiles,
+            build output, and binaries stay container-side (and on disk if a
+            folder is linked) without cluttering the editor.
+          </Prose>
+          <Callout type="warning">
+            Pin Vite scaffolds to version 7 (
+            <InlineCode>npm create vite@7</InlineCode>). The current{' '}
+            <InlineCode>npm create vite@latest</InlineCode> scaffolds Vite 8,
+            whose rolldown bundler can&apos;t run in the in-browser runtime yet.
+            If a project already has Vite 8, run{' '}
+            <InlineCode>npm install -D vite@7</InlineCode> before{' '}
+            <InlineCode>npm run dev</InlineCode>.
+          </Callout>
+
+          <Callout type="warning">
+            Browser support: Chrome, Edge, and Firefox. Safari doesn&apos;t
+            support the required isolation APIs — JS/TS rooms there
+            automatically fall back to remote execution. Saving to disk (File
+            System Access API) is Chrome/Edge only.
+          </Callout>
+        </section>
+
         {/* Keyboard Shortcuts */}
         <section style={{ marginBottom: '48px' }}>
           <Heading2 id="keyboard-shortcuts">Keyboard Shortcuts</Heading2>
@@ -772,8 +922,19 @@ export default function DocsPage() {
           <Heading2 id="languages">Supported Languages</Heading2>
           <Prose>
             29 languages are available in the language selector. Syntax
-            highlighting is provided by Monaco; code execution runs via
-            OneCompiler — click Run in the top bar to execute.
+            highlighting is provided by Monaco. JavaScript and TypeScript
+            execute locally via the{' '}
+            <a
+              href="#runtime"
+              style={{
+                color: 'var(--coder-accent)',
+                textDecoration: 'underline',
+              }}
+            >
+              in-browser runtime
+            </a>
+            ; all other languages run via the OneCompiler sandbox — click Run in
+            the top bar to execute.
           </Prose>
           <div
             style={{

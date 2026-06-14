@@ -1,9 +1,122 @@
 const releases = [
   {
+    phase: '11.2',
+    title: 'Local Folder Sync — Save to Disk & Two-Way Mirror',
+    date: 'Jun 14, 2026',
+    status: 'latest',
+    accentColor: '#32D74B',
+    summary:
+      'The in-browser runtime now mirrors to real disk. Link a folder to a room — from the header button or Room Settings — and your project auto-saves there as you type, files created in the container or by collaborators flow back into the editor, and deleting a file in codeR removes it from the folder too. A true two-way bridge between the editor and your machine.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Link a local folder to a room from either the header folder button or the new Project Folder section in Room Settings — both drive the same linked folder',
+          'Auto-save to disk: the project is written to the linked folder as you edit, excluding node_modules (Chrome/Edge)',
+          'Two-way sync: files created in the container (scaffolds, generated code) or edited by collaborators appear in the editor; edits made in your own OS editor flow back into codeR live',
+          'Editor deletions now mirror to disk — delete a file in the explorer or a tab and it is removed from the linked folder, with emptied parent folders cleaned up',
+          'Per-room subfolders: linking two rooms to the same folder no longer mixes their files',
+          'On returning to a room, build output and lockfiles are restored into the container automatically — npm installs survive reloads',
+          'Customizable container folder name — sets the working directory your terminal shows',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'Project folder dialog rendered too low and off-center, pushing the Choose folder button below the fold — now centered and fully reachable (a stray position class was overriding the dialog layout)',
+          'Folder-picker failures were swallowed silently — real errors now surface as a toast; only dismissing the picker stays quiet',
+        ],
+      },
+      {
+        type: 'security',
+        items: [
+          'All paths written to disk are sanitized against directory traversal',
+          'Auto-save re-prompts for folder permission with a single click when the browser drops the grant — no silent failures',
+        ],
+      },
+    ],
+  },
+  {
+    phase: '11.1',
+    title: 'Polyglot Rooms & Editor Quality-of-Life',
+    date: 'Jun 13, 2026',
+    status: 'shipped',
+    accentColor: '#BF5AF2',
+    summary:
+      'Rooms are now polyglot — language is detected per file instead of being fixed room-wide — with a GitHub-style language breakdown bar. Plus a wave of VS Code-style editor ergonomics: a real folder tree, smarter tabs and file menus, and a collapsible explorer.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Polyglot rooms: each file’s language auto-detects from its extension — the room-wide language selector is gone',
+          'GitHub-style language breakdown bar in the editor toolbar and on dashboard room cards',
+          'VS Code-style tabs: closing a tab keeps the file in the workspace, middle-click to close, plus close-others',
+          'File menus (tab + explorer right-click): duplicate, copy path, download, delete',
+          'Real nested folder tree in the file explorer — scaffolded projects show collapsible directories instead of flat slash-names',
+          'Collapsible file explorer with a slim rail state, remembered per session',
+          'Deleting a room can optionally delete the contents of its linked local folder too',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'Escape now closes every dialog',
+          'Clicking the editor no longer steals keyboard focus from the terminal',
+          'Bottom drawer spacing corrected so it no longer sits flush against the window edge',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'Vite scaffolds pinned to v7 — Vite 8’s rolldown bundler crashes under the in-browser runtime’s Node 22 (documented in the runtime guide)',
+        ],
+      },
+    ],
+  },
+  {
+    phase: '11',
+    title: 'WebContainers — In-Browser Runtime, Terminal & Live Preview',
+    date: 'Jun 12, 2026',
+    status: 'shipped',
+    accentColor: '#0EA5E9',
+    summary:
+      'Node.js now runs entirely in your browser. JavaScript and TypeScript rooms boot a WebContainer on load: the Run button executes locally in an interactive terminal, dev servers open a live preview pane with hot reload, and your code never leaves the machine.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'In-browser Node.js runtime (StackBlitz WebContainers) boots automatically in JavaScript/TypeScript rooms — zero server infrastructure, no queue, instant execution',
+          'Interactive terminal: full jsh shell rendered with xterm.js in a resizable bottom panel — run npm install, node, or any command; session survives closing the panel; toggle via the status bar or Ctrl+`',
+          'Run button executes locally when the runtime is ready: projects with a package.json get npm install plus their dev/start script automatically, single files run with node — all other languages keep using the remote sandbox',
+          'Live preview: when a dev server starts (Vite, Express, …) a side-by-side preview pane auto-opens with the running app and hot reload; reload and fullscreen-maximize controls; disappears when the server stops',
+          'Workspace files sync continuously into the container — including collaborators’ edits — so the terminal always sees the latest code',
+          'Runtime status indicator in the status bar: booting, ready, error, or unavailable',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'Cross-origin isolation headers (COOP/COEP, required for SharedArrayBuffer) scoped to room routes only — auth, dashboard, and marketing pages unaffected',
+          'Container lifecycle: boot singleton per room with teardown chaining, so switching rooms always gets a clean instance',
+          'Each collaborator runs their own private container — local runs are not broadcast; shared remote execution (OneCompiler) is unchanged',
+          'Browser support: Chrome, Edge, and Firefox. Safari lacks the required isolation APIs — rooms there fall back to remote execution automatically',
+        ],
+      },
+      {
+        type: 'security',
+        items: [
+          'Room Content-Security-Policy extended with an explicit allowlist for the WebContainer boot iframe — nothing else may be framed',
+          'All file paths synced into the container are sanitized against directory traversal',
+          'Preview runs in a sandboxed iframe on an isolated origin',
+        ],
+      },
+    ],
+  },
+  {
     phase: '10.7',
     title: 'Visual Redesign — Editorial Noir v2',
     date: 'Jun 11, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: 'var(--coder-accent)',
     summary:
       'Complete visual overhaul of every surface — marketing site, auth, dashboard, editor, and all shared components — with zero functional changes. A single token-driven design system now powers both themes: a deep-zinc dark mode with a refined rose accent, and a new warm-paper light mode that is softer, calmer, and fully accessible.',
@@ -1106,7 +1219,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 11 — WebContainers + Live Preview
+          Phase 12 — AI Project Scaffolding
         </h3>
         <p
           style={{
@@ -1116,12 +1229,12 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Run Node.js projects entirely in-browser via WebContainers. Live
-          preview pane, integrated terminal, and npm install — no server
-          round-trip.
+          Describe a project in a prompt and get a full, runnable file tree —
+          code, install, and start commands generated and booted in the
+          in-browser runtime.
         </p>
         <a
-          href="/features#phase-06"
+          href="/features"
           style={{
             display: 'inline-flex',
             alignItems: 'center',

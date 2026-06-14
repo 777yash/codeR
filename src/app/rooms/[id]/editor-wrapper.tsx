@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
@@ -14,6 +14,15 @@ import {
   type CollabMember,
 } from '@/components/editor/collab-panel'
 import { StatusBar } from '@/components/editor/status-bar'
+import { TerminalPanel } from '@/components/editor/terminal-panel'
+import { PreviewPanel } from '@/components/editor/preview-panel'
+import {
+  getWebContainer,
+  teardownWebContainer,
+  subscribeWebContainerStatus,
+  getWebContainerStatus,
+  slugifyWorkdirName,
+} from '@/lib/webcontainer'
 
 function EditorSkeleton() {
   return (
@@ -60,10 +69,49 @@ export function EditorWrapper({
   const router = useRouter()
   const posthog = usePostHog()
   const [mobilePane, setMobilePane] = useState<MobilePane>('editor')
+  const webContainerStatus = useSyncExternalStore(
+    subscribeWebContainerStatus,
+    getWebContainerStatus,
+    () => null
+  )
+
+  useEffect(() => {
+    // COOP/COEP headers only apply on document load — client-side navigation
+    // into a room keeps the previous (non-isolated) document and the runtime
+    // can never boot. One hard reload picks the headers up; the flag stops a
+    // loop on browsers that never become isolated.
+    if (window.crossOriginIsolated) {
+      sessionStorage.removeItem('coder-coi-reload')
+      return
+    }
+    if (sessionStorage.getItem('coder-coi-reload')) return
+    sessionStorage.setItem('coder-coi-reload', '1')
+    window.location.reload()
+  }, [])
 
   useEffect(() => {
     posthog?.capture('room_joined', { room_id: roomId, read_only: readOnly })
   }, [posthog, roomId, readOnly])
+
+  useEffect(() => {
+    // Rooms are polyglot — the container boots everywhere it can: the
+    // terminal is useful regardless of language, Run branches per file
+    const workdir =
+      localStorage.getItem(`coder-workdir:${roomId}`) ||
+      slugifyWorkdirName(roomName ?? roomId)
+    getWebContainer(slugifyWorkdirName(workdir)).catch(() => {
+      // 'unsupported' (Safari / missing isolation) is expected — only real boot
+      // failures warrant a toast
+      if (getWebContainerStatus() === 'error') {
+        toast.error(
+          'In-browser runtime failed to boot — Run falls back to remote execution'
+        )
+      }
+    })
+    return () => {
+      void teardownWebContainer()
+    }
+  }, [roomId, roomName])
 
   useEffect(() => {
     const check = async () => {
@@ -112,14 +160,17 @@ export function EditorWrapper({
         {/* Center: file tabs + editor — always mounted (unmount drops WS) */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <FileTabs />
-          <div className="flex-1 overflow-hidden">
-            <EditorClient
-              roomId={roomId}
-              userId={currentUserId ?? ''}
-              userName={currentUserName}
-              initialLanguage={initialLanguage}
-              readOnly={readOnly}
-            />
+          <div className="flex flex-1 overflow-hidden">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <EditorClient
+                roomId={roomId}
+                userId={currentUserId ?? ''}
+                userName={currentUserName}
+                initialLanguage={initialLanguage}
+                readOnly={readOnly}
+              />
+            </div>
+            {webContainerStatus !== null && <PreviewPanel />}
           </div>
         </div>
 
@@ -134,7 +185,9 @@ export function EditorWrapper({
         />
       </div>
 
-      <StatusBar />
+      <StatusBar webContainerStatus={webContainerStatus} />
+
+      {webContainerStatus !== null && <TerminalPanel />}
 
       {/* Mobile pane switcher */}
       <div

@@ -17,6 +17,8 @@ import {
   Clock,
   Trash2,
   RotateCcw,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { editor } from 'monaco-editor'
@@ -151,6 +153,8 @@ export function CollabPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const editorLanguage = useEditorStore((s) => s.language)
+  const collabCollapsed = useEditorStore((s) => s.collabCollapsed)
+  const setCollabCollapsed = useEditorStore((s) => s.setCollabCollapsed)
 
   // ── History state ─────────────────────────────────────────────────────────
   const [histSnapshots, setHistSnapshots] = useState<Snapshot[]>([])
@@ -397,41 +401,71 @@ export function CollabPanel({
 
   // ── Tab definitions ───────────────────────────────────────────────────────
 
-  const tabs: { id: Tab; icon: React.ReactNode }[] = [
-    { id: 'users', icon: <Users className="h-3 w-3" /> },
-    { id: 'chat', icon: <MessageSquare className="h-3 w-3" /> },
-    { id: 'history', icon: <History className="h-3 w-3" /> },
+  const tabs: { id: Tab; icon: React.ReactNode; label: string }[] = [
+    { id: 'users', icon: <Users className="h-3 w-3" />, label: 'Users' },
+    { id: 'chat', icon: <MessageSquare className="h-3 w-3" />, label: 'Chat' },
+    { id: 'history', icon: <History className="h-3 w-3" />, label: 'History' },
   ]
+
+  const activateTab = (id: Tab) => {
+    if (id === 'chat') setLastRead(messages.length)
+    if (id === 'history') void fetchHistList()
+    setTab(id)
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <>
+      {/* Collapsed rail — desktop only */}
+      {collabCollapsed && (
+        <div className="border-app bg-app-surface hidden w-10 shrink-0 flex-col items-center gap-1 border-l py-2 md:flex">
+          <button
+            onClick={() => setCollabCollapsed(false)}
+            title="Show collaboration panel"
+            className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
+          >
+            <PanelRightOpen className="h-4 w-4" />
+          </button>
+          <div className="border-app my-1 w-5 border-t" />
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => {
+                activateTab(t.id)
+                setCollabCollapsed(false)
+              }}
+              title={t.label}
+              className="text-app-dim hover:text-app-muted relative flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
+            >
+              {t.icon}
+              {t.id === 'chat' && unreadCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-[var(--coder-accent)]" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div
-        className={`border-app bg-app-surface flex-col overflow-hidden border-l max-md:absolute max-md:inset-y-0 max-md:right-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[320px] max-md:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[280px] md:shrink-0 ${
-          mobileOpen ? 'max-md:flex' : 'max-md:hidden'
-        }`}
+        className={`border-app bg-app-surface flex-col overflow-hidden border-l max-md:absolute max-md:inset-y-0 max-md:right-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[320px] max-md:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] md:w-[280px] md:shrink-0 ${
+          collabCollapsed ? 'md:hidden' : 'md:flex'
+        } ${mobileOpen ? 'max-md:flex' : 'max-md:hidden'}`}
       >
         {/* Tab bar */}
         <div className="border-app flex h-10 shrink-0 items-stretch border-b">
           {tabs.map((t) => (
             <button
               key={t.id}
-              onClick={() => {
-                if (t.id === 'chat') setLastRead(messages.length)
-                if (t.id === 'history') void fetchHistList()
-                setTab(t.id)
-              }}
-              className={`relative flex flex-1 items-center justify-center gap-1 text-xs font-medium capitalize transition-colors ${
+              onClick={() => activateTab(t.id)}
+              className={`relative flex flex-1 items-center justify-center gap-1 text-xs font-medium transition-colors ${
                 tab === t.id
                   ? 'text-app border-b-2 border-[var(--coder-accent)]'
                   : 'text-app-dim hover:text-app-muted'
               }`}
             >
               {t.icon}
-              {t.id === 'users'
-                ? `Users (${onlineMembers.length})`
-                : t.id.charAt(0).toUpperCase() + t.id.slice(1)}
+              {t.id === 'users' ? `Users (${onlineMembers.length})` : t.label}
               {t.id === 'chat' && unreadCount > 0 && (
                 <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--coder-accent)] px-1 text-[9px] font-bold text-white">
                   {unreadCount > 99 ? '99+' : unreadCount}
@@ -439,6 +473,13 @@ export function CollabPanel({
               )}
             </button>
           ))}
+          <button
+            onClick={() => setCollabCollapsed(true)}
+            title="Hide collaboration panel"
+            className="border-app text-app-dim hover:text-app-muted flex w-9 shrink-0 items-center justify-center border-l transition-colors hover:bg-[var(--coder-bg-card-hover)] max-md:hidden"
+          >
+            <PanelRightClose className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         {/* Content */}

@@ -13,7 +13,7 @@ import type {
   RoomMember,
 } from '@/generated/prisma/client'
 
-type RoomWithRelations = Room & {
+type RoomWithRelations = Omit<Room, 'contentSnapshot'> & {
   owner: Pick<PrismaUser, 'id' | 'name' | 'image'>
   members: (RoomMember & {
     user: Pick<PrismaUser, 'id' | 'name' | 'image'>
@@ -24,9 +24,14 @@ type RoomWithRelations = Room & {
 interface RoomListProps {
   initialRooms: RoomWithRelations[]
   view?: string
+  currentUserId?: string
 }
 
-export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
+export function RoomList({
+  initialRooms,
+  view = 'my-rooms',
+  currentUserId,
+}: RoomListProps) {
   const router = useRouter()
   const posthog = usePostHog()
   const [rooms, setRooms] = useState(initialRooms)
@@ -50,12 +55,7 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
     view === 'starred' ? rooms.filter((r) => starredIds.includes(r.id)) : rooms
 
   const handleCreateRoom = useCallback(
-    async (data: {
-      name: string
-      description?: string
-      language: string
-      isPublic: boolean
-    }) => {
+    async (data: { name: string; description?: string; isPublic: boolean }) => {
       setIsLoading(true)
       try {
         const res = await fetch('/api/rooms', {
@@ -71,7 +71,6 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
 
         const newRoom = await res.json()
         posthog?.capture('room_created', {
-          language: data.language,
           is_public: data.isPublic,
         })
         setRooms((prev) => [newRoom, ...prev])
@@ -109,7 +108,15 @@ export function RoomList({ initialRooms, view = 'my-rooms' }: RoomListProps) {
         </button>
 
         {filteredRooms.map((room) => (
-          <RoomCard key={room.id} room={room} />
+          <RoomCard
+            key={room.id}
+            room={room}
+            currentUserId={currentUserId}
+            onDeleted={(roomId) => {
+              setRooms((prev) => prev.filter((r) => r.id !== roomId))
+              router.refresh()
+            }}
+          />
         ))}
       </div>
 

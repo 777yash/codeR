@@ -81,7 +81,7 @@ export default async function DashboardPage({
     .toUpperCase()
     .slice(0, 2)
 
-  const [rooms, initialInvitations] = await Promise.all([
+  const [rawRooms, initialInvitations] = await Promise.all([
     getRooms(user.id!, safeView),
     prisma.invitation.findMany({
       where: { inviteeId: user.id! },
@@ -92,6 +92,11 @@ export default async function DashboardPage({
       orderBy: { createdAt: 'desc' },
     }),
   ])
+  // Snapshot bytes stay out of the client payload
+  const rooms = rawRooms.map(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    ({ contentSnapshot, ...room }) => room
+  )
   const { title, subtitle } = viewMeta[safeView]
 
   return (
@@ -111,7 +116,12 @@ export default async function DashboardPage({
           inviter: inv.inviter,
         }))}
       >
-        <RoomList key={safeView} initialRooms={rooms} view={safeView} />
+        <RoomList
+          key={safeView}
+          initialRooms={rooms}
+          view={safeView}
+          currentUserId={user.id}
+        />
       </DashboardShell>
     </>
   )

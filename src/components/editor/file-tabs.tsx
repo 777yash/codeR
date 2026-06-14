@@ -52,14 +52,25 @@ export function FileTabs() {
   const {
     files: rawFiles,
     activeFileId,
+    openFileIds,
     setActiveFile,
+    closeFile,
+    closeOtherFiles,
     addFile,
     removeFile,
     language,
   } = useEditorStore()
   const files = Array.from(new Map(rawFiles.map((f) => [f.id, f])).values())
+  const openFiles = openFileIds
+    .map((id) => files.find((f) => f.id === id))
+    .filter((f): f is EditorFile => f !== undefined)
   const [showInput, setShowInput] = useState(false)
   const [newFileName, setNewFileName] = useState('')
+  const [tabMenu, setTabMenu] = useState<{
+    fileId: string
+    x: number
+    y: number
+  } | null>(null)
 
   function handleAdd() {
     const name = newFileName.trim()
@@ -78,22 +89,32 @@ export function FileTabs() {
     setShowInput(false)
   }
 
-  function handleClose(e: React.MouseEvent, fileId: string) {
-    e.stopPropagation()
+  function handleDeleteFile(fileId: string) {
+    setTabMenu(null)
     removeSharedFile(fileId)
     removeFile(fileId)
   }
 
   return (
     <div className="border-app bg-app-surface flex h-9 shrink-0 items-stretch border-b">
-      {/* Tabs */}
+      {/* Tabs — open files only; closing a tab keeps the file in the workspace */}
       <div className="flex flex-1 items-stretch overflow-x-auto">
-        {files.map((file) => {
+        {openFiles.map((file) => {
           const isActive = activeFileId === file.id
           return (
             <div
               key={file.id}
               onClick={() => setActiveFile(file.id)}
+              onAuxClick={(e) => {
+                if (e.button === 1) {
+                  e.preventDefault()
+                  closeFile(file.id)
+                }
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                setTabMenu({ fileId: file.id, x: e.clientX, y: e.clientY })
+              }}
               className={`group border-app relative flex max-w-[180px] min-w-[100px] cursor-pointer items-center gap-1.5 border-r px-3 text-xs transition-colors ${
                 isActive
                   ? 'bg-app text-app'
@@ -105,10 +126,15 @@ export function FileTabs() {
                 <div className="absolute inset-x-0 top-0 h-[2px] bg-[var(--coder-accent)]" />
               )}
               <FileCode className="h-3 w-3 shrink-0 opacity-70" />
-              <span className="truncate">{file.name}</span>
-              {files.length > 1 && (
+              <span className="truncate" title={file.name}>
+                {file.name.slice(file.name.lastIndexOf('/') + 1)}
+              </span>
+              {openFiles.length > 1 && (
                 <button
-                  onClick={(e) => handleClose(e, file.id)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    closeFile(file.id)
+                  }}
                   className="hover:text-app ml-auto shrink-0 rounded p-px opacity-0 transition-opacity group-hover:opacity-100"
                 >
                   <X className="h-3 w-3" />
@@ -118,6 +144,61 @@ export function FileTabs() {
           )
         })}
       </div>
+
+      {/* Tab context menu */}
+      {tabMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-[199]"
+            onClick={() => setTabMenu(null)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              setTabMenu(null)
+            }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: tabMenu.y,
+              left: tabMenu.x,
+              zIndex: 200,
+            }}
+            className="border-app-mid bg-app-surface min-w-[150px] rounded-md border py-1 shadow-[var(--coder-shadow-md)]"
+          >
+            <button
+              onClick={() => {
+                setTabMenu(null)
+                closeFile(tabMenu.fileId)
+              }}
+              disabled={openFiles.length <= 1}
+              className="text-app hover-app-card flex w-full items-center px-3 py-1.5 text-xs disabled:opacity-40"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => {
+                setTabMenu(null)
+                closeOtherFiles(tabMenu.fileId)
+              }}
+              disabled={openFiles.length <= 1}
+              className="text-app hover-app-card flex w-full items-center px-3 py-1.5 text-xs disabled:opacity-40"
+            >
+              Close others
+            </button>
+            {files.length > 1 && (
+              <>
+                <div className="border-app my-1 border-t" />
+                <button
+                  onClick={() => handleDeleteFile(tabMenu.fileId)}
+                  className="flex w-full items-center px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
+                >
+                  Delete file
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
 
       {/* New file */}
       {showInput ? (

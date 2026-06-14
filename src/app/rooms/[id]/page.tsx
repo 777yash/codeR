@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { ArrowLeft } from 'lucide-react'
 import { ShareButton } from '@/components/rooms/share-button'
 import { GistExportButton } from '@/components/rooms/gist-export-button'
+import { ProjectFolderButton } from '@/components/rooms/project-folder-button'
 import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import type { Metadata } from 'next'
 import { EditorWrapper } from './editor-wrapper'
@@ -233,6 +234,8 @@ export default async function RoomPage({ params }: RoomPageProps) {
           <ShareButton roomId={id} userRole={userRole ?? null} />
 
           <GistExportButton roomId={id} githubLinked={githubLinked} />
+
+          <ProjectFolderButton roomId={id} roomName={room.name} />
 
           {userRole !== 'VIEWER' && <SaveVersionDialog roomId={id} />}
 

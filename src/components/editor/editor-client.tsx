@@ -7,6 +7,25 @@ import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import { toast } from 'sonner'
 import { colorFromUserId } from '@/lib/color'
 import { useIsMobile } from '@/hooks/use-is-mobile'
+import { getBootedWebContainer } from '@/lib/webcontainer'
+import {
+  mountAllFiles,
+  writeContainerFile,
+  removeContainerFile,
+  sanitizeFilePath,
+} from '@/lib/webcontainer-fs'
+import {
+  autoRestoreLinkedFolder,
+  deleteFromLinkedFolder,
+} from '@/lib/webcontainer-export'
+import {
+  startProjectWatcher,
+  stopProjectWatcher,
+} from '@/lib/webcontainer-watch'
+import {
+  startLocalFolderWatcher,
+  stopLocalFolderWatcher,
+} from '@/lib/local-folder-watch'
 
 loader.config({
   paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs' },
@@ -103,8 +122,11 @@ interface YMap {
 
 interface YText {
   insert(index: number, content: string): void
+  delete(index: number, length: number): void
   toString(): string
   readonly length: number
+  observe(fn: () => void): void
+  unobserve(fn: () => void): void
 }
 
 interface YArray<T> {
@@ -235,7 +257,147 @@ export function renameSharedFile(id: string, name: string): void {
   const raw = fileList.get(id)
   if (!raw) return
   const meta = JSON.parse(raw) as FileMetadata
-  fileList.set(id, JSON.stringify({ ...meta, name }))
+  const language = languageFromFileName(name) ?? meta.language
+  fileList.set(id, JSON.stringify({ ...meta, name, language }))
+}
+
+const EXT_LANG: Record<string, string> = {
+  ts: 'typescript',
+  tsx: 'typescript',
+  mts: 'typescript',
+  js: 'javascript',
+  jsx: 'javascript',
+  mjs: 'javascript',
+  cjs: 'javascript',
+  json: 'json',
+  css: 'css',
+  scss: 'css',
+  html: 'html',
+  svg: 'html',
+  md: 'markdown',
+  yml: 'yaml',
+  yaml: 'yaml',
+  py: 'python',
+  java: 'java',
+  cpp: 'cpp',
+  cc: 'cpp',
+  hpp: 'cpp',
+  c: 'c',
+  h: 'c',
+  cs: 'csharp',
+  go: 'go',
+  rs: 'rust',
+  rb: 'ruby',
+  php: 'php',
+  swift: 'swift',
+  kt: 'kotlin',
+  scala: 'scala',
+  r: 'r',
+  sql: 'sql',
+  sh: 'bash',
+  bash: 'bash',
+  lua: 'lua',
+  pl: 'perl',
+  hs: 'haskell',
+  ex: 'elixir',
+  exs: 'elixir',
+  clj: 'clojure',
+  dart: 'dart',
+  jl: 'julia',
+}
+
+export function languageFromFileName(name: string): string | null {
+  const dot = name.lastIndexOf('.')
+  if (dot === -1) return null
+  return EXT_LANG[name.slice(dot + 1).toLowerCase()] ?? null
+}
+
+export function getLanguageStats(): { language: string; bytes: number }[] {
+  const { files } = useEditorStore.getState()
+  const totals = new Map<string, number>()
+  for (const file of files) {
+    const bytes = _ydoc
+      ? _ydoc.getText(`file:${file.id}`).length
+      : file.content.length
+    if (bytes === 0) continue
+    totals.set(file.language, (totals.get(file.language) ?? 0) + bytes)
+  }
+  return Array.from(totals, ([language, bytes]) => ({ language, bytes })).sort(
+    (a, b) => b.bytes - a.bytes
+  )
+}
+
+export function importFilesToWorkspace(
+  files: { name: string; content: string }[]
+): number {
+  const ydoc = _ydoc
+  if (!ydoc) return 0
+  const fileList = ydoc.getMap('file-list')
+  const existingNames = new Set<string>()
+  let maxOrder = -1
+  fileList.forEach((val) => {
+    try {
+      const meta = JSON.parse(val) as FileMetadata
+      existingNames.add(meta.name)
+      if ((meta.order ?? 0) > maxOrder) maxOrder = meta.order ?? 0
+    } catch {}
+  })
+
+  let added = 0
+  ydoc.transact(() => {
+    for (const file of files) {
+      if (existingNames.has(file.name)) continue
+      const id = crypto.randomUUID()
+      fileList.set(
+        id,
+        JSON.stringify({
+          id,
+          name: file.name,
+          language: languageFromFileName(file.name) ?? 'plaintext',
+          order: ++maxOrder,
+        })
+      )
+      const ytext = ydoc.getText(`file:${id}`)
+      if (ytext.length === 0) ytext.insert(0, file.content)
+      added++
+    }
+  })
+  return added
+}
+
+export function applyExternalFileContents(
+  files: { name: string; content: string }[]
+): { updated: number; added: number } {
+  const ydoc = _ydoc
+  if (!ydoc) return { updated: 0, added: 0 }
+  const fileList = ydoc.getMap('file-list')
+  const idsByName = new Map<string, string>()
+  fileList.forEach((val) => {
+    try {
+      const meta = JSON.parse(val) as FileMetadata
+      const path = sanitizeFilePath(meta.name)
+      if (path) idsByName.set(path, meta.id)
+    } catch {}
+  })
+
+  let updated = 0
+  const toAdd: { name: string; content: string }[] = []
+  ydoc.transact(() => {
+    for (const file of files) {
+      const id = idsByName.get(file.name)
+      if (!id) {
+        toAdd.push(file)
+        continue
+      }
+      const ytext = ydoc.getText(`file:${id}`)
+      if (ytext.toString() === file.content) continue
+      ytext.delete(0, ytext.length)
+      ytext.insert(0, file.content)
+      updated++
+    }
+  })
+  const added = toAdd.length > 0 ? importFilesToWorkspace(toAdd) : 0
+  return { updated, added }
 }
 
 export function EditorClient({
@@ -377,6 +539,12 @@ export function EditorClient({
       editorRef.current = editor
       monacoApiRef.current = monaco
       _editor = editor as typeof _editor
+
+      // Clicking the editor doesn't always steal focus back from xterm —
+      // keystrokes kept landing in the terminal's stdin
+      editor.onMouseDown(() => {
+        if (!editor.hasTextFocus()) editor.focus()
+      })
 
       completionProviderRef.current =
         monaco.languages.registerInlineCompletionsProvider('*', {
@@ -575,6 +743,13 @@ export function EditorClient({
         if (status === 'connected') setLastSaved(new Date())
       })
 
+      // WebContainer VFS sync state — maps live in mount scope so cleanup can reach them
+      const vfsRegistry = new Map<
+        string,
+        { name: string; observer: () => void }
+      >()
+      const vfsTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
       // Initialize file list after Yjs doc syncs with server
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(provider as any).once('sync', (synced: boolean) => {
@@ -660,6 +835,19 @@ export function EditorClient({
             if (!newIds.has(f.id)) {
               const model = modelsRef.current.get(f.id)
               if (model) {
+                // Removing the ACTIVE file: y-monaco auto-destroys the binding
+                // via model.onWillDispose — record that destroy in our guards
+                // BEFORE dispose, or the later activateFile() destroys it a
+                // second time ("[yjs] Tried to remove event handler…")
+                if (f.id === currentActiveId) {
+                  editorRef.current?.setModel(null)
+                  const prevBinding = activeBindingRef.current
+                  activeBindingRef.current = null
+                  if (prevBinding) {
+                    _destroyedBindings.add(prevBinding as object)
+                    bindingDestroyedRef.current = true
+                  }
+                }
                 try {
                   if (!model.isDisposed()) model.dispose()
                 } catch {}
@@ -693,6 +881,113 @@ export function EditorClient({
         }
 
         fileList.observe(handleFileListChange)
+
+        // --- WebContainer VFS sync (no-op unless editor-wrapper booted a container) ---
+        const dedupedEntries = () =>
+          Array.from(new Map(parseEntries().map((e) => [e.id, e])).values())
+
+        const scheduleContentSync = (id: string) => {
+          const pending = vfsTimers.get(id)
+          if (pending) clearTimeout(pending)
+          vfsTimers.set(
+            id,
+            setTimeout(() => {
+              vfsTimers.delete(id)
+              const tracked = vfsRegistry.get(id)
+              if (!tracked) return
+              void writeContainerFile(
+                tracked.name,
+                ydoc.getText(`file:${id}`).toString()
+              )
+            }, 500)
+          )
+        }
+
+        const attachContentObserver = (id: string, name: string) => {
+          const observer = () => scheduleContentSync(id)
+          ydoc.getText(`file:${id}`).observe(observer)
+          vfsRegistry.set(id, { name, observer })
+        }
+
+        const syncFileStructure = () => {
+          const entries = dedupedEntries()
+          const seen = new Set<string>()
+          entries.forEach((entry) => {
+            seen.add(entry.id)
+            const tracked = vfsRegistry.get(entry.id)
+            if (!tracked) {
+              attachContentObserver(entry.id, entry.name)
+              void writeContainerFile(
+                entry.name,
+                ydoc.getText(`file:${entry.id}`).toString()
+              )
+            } else if (tracked.name !== entry.name) {
+              void removeContainerFile(tracked.name)
+              tracked.name = entry.name
+              void writeContainerFile(
+                entry.name,
+                ydoc.getText(`file:${entry.id}`).toString()
+              )
+            }
+          })
+          vfsRegistry.forEach((tracked, id) => {
+            if (seen.has(id)) return
+            ydoc.getText(`file:${id}`).unobserve(tracked.observer)
+            vfsRegistry.delete(id)
+            const pending = vfsTimers.get(id)
+            if (pending) clearTimeout(pending)
+            vfsTimers.delete(id)
+            void removeContainerFile(tracked.name)
+            void deleteFromLinkedFolder(roomId, tracked.name)
+          })
+        }
+
+        getBootedWebContainer()
+          ?.then((container) => {
+            const entries = dedupedEntries()
+            void mountAllFiles(
+              entries.map((e) => ({
+                name: e.name,
+                content: ydoc.getText(`file:${e.id}`).toString(),
+              }))
+            )
+            entries.forEach((e) => attachContentObserver(e.id, e.name))
+            fileList.observe(syncFileStructure)
+            autoRestoreLinkedFolder(roomId).catch(() => undefined)
+            const getEditorFileNames = () =>
+              new Set(
+                useEditorStore
+                  .getState()
+                  .files.map((f) => sanitizeFilePath(f.name))
+                  .filter((name): name is string => name !== null)
+              )
+            startProjectWatcher(roomId, {
+              applyFiles: (files) => {
+                const { added } = applyExternalFileContents(files)
+                if (added > 0) {
+                  toast.info(
+                    `${added} file${added === 1 ? '' : 's'} added from the container`
+                  )
+                }
+              },
+              getEditorFileNames,
+            })
+            startLocalFolderWatcher(roomId, {
+              applyDiskFiles: (files) => {
+                const { added } = applyExternalFileContents(files)
+                if (added > 0) {
+                  toast.info(
+                    `${added} file${added === 1 ? '' : 's'} added from the local folder`
+                  )
+                }
+              },
+              getEditorFileNames,
+            })
+            if (process.env.NODE_ENV === 'development') {
+              ;(window as unknown as { __wc?: unknown }).__wc = container
+            }
+          })
+          .catch(() => undefined)
 
         // Activate the current file now that everything is ready
         const { activeFileId: initialActiveId } = useEditorStore.getState()
@@ -731,6 +1026,11 @@ export function EditorClient({
         modelsRef.current.clear()
         completionProviderRef.current?.dispose()
         completionProviderRef.current = null
+        stopProjectWatcher()
+        stopLocalFolderWatcher()
+        vfsTimers.forEach((timer) => clearTimeout(timer))
+        vfsTimers.clear()
+        vfsRegistry.clear()
         execResultsMap.unobserve(execResultsObserver)
         chatArray.unobserve(chatObserver)
         provider.awareness.off('change', handleAwarenessChange)

@@ -1,71 +1,20 @@
 'use client'
 
 import { useEditorStore } from '@/stores/editor-store'
-import { Settings, Save, Check, ChevronDown } from 'lucide-react'
+import { Settings, Save, Check } from 'lucide-react'
 import { EditorSettings } from './editor-settings'
-import { LanguageIcon } from './language-icon'
-import { useState, useRef, useEffect } from 'react'
-import { LANGUAGES } from '@/lib/editor-options'
+import { LanguageStatsBar } from './language-stats-bar'
+import { useState } from 'react'
 
 export function EditorToolbar() {
-  const { language, setLanguage, isSaving, lastSaved, theme, setTheme } =
-    useEditorStore()
+  const { isSaving, lastSaved, theme, setTheme } = useEditorStore()
   const [showSettings, setShowSettings] = useState(false)
-  const [showLang, setShowLang] = useState(false)
-  const langRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) {
-        setShowLang(false)
-      }
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [])
-
-  const currentLang = LANGUAGES.find((l) => l.value === language)
 
   return (
     <div className="border-app bg-app-surface relative flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
       <div className="flex items-center gap-2">
-        {/* Language pill */}
-        <div ref={langRef} className="relative">
-          <button
-            onClick={() => setShowLang((v) => !v)}
-            className="border-app-mid bg-app-card text-app hover:border-app-mid hover:bg-app-card-hover flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs transition-colors"
-          >
-            <LanguageIcon language={language} size={14} />
-            <span className="font-medium">
-              {currentLang?.label ?? language}
-            </span>
-            <ChevronDown
-              className={`text-app-dim h-3 w-3 transition-transform ${showLang ? 'rotate-180' : ''}`}
-            />
-          </button>
-
-          {showLang && (
-            <div className="border-app-mid bg-app-surface absolute top-8 left-0 z-50 max-h-56 w-44 overflow-y-auto rounded-md border py-1 shadow-[var(--coder-shadow-md)]">
-              {LANGUAGES.map((lang) => (
-                <button
-                  key={lang.value}
-                  onClick={() => {
-                    setLanguage(lang.value)
-                    setShowLang(false)
-                  }}
-                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
-                    lang.value === language
-                      ? 'bg-app-card-hover text-[var(--coder-accent)]'
-                      : 'text-app-muted hover-app-card hover:text-app'
-                  }`}
-                >
-                  <LanguageIcon language={lang.value} size={14} />
-                  {lang.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Language breakdown — auto-detected per file, GitHub-style */}
+        <LanguageStatsBar />
 
         {/* Theme selector */}
         <select
