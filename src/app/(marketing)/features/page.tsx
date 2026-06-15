@@ -224,28 +224,43 @@ const phases = [
       { name: 'Polyglot rooms — per-file language detection', done: true },
       { name: 'GitHub-style language breakdown bar', done: true },
       { name: 'VS Code-style tabs, file menus & nested tree', done: true },
+      { name: 'Delete any file — even the last (reseeds a blank)', done: true },
       { name: 'Cross-browser verification pass', done: false },
     ],
   },
   {
     number: '12',
-    title: 'AI Project Scaffolding',
-    status: 'planned',
-    date: 'Planned',
+    title: 'AI Assistant & Scaffolding',
+    status: 'shipped',
+    date: 'Jun 2026',
     icon: <Bot className="h-5 w-5" />,
     accentColor: '#A855F7',
     features: [
       {
-        name: 'Prompt → full runnable project in seconds (Gemini)',
-        done: false,
+        name: 'Ask questions — explain & debug code, discuss, research',
+        done: true,
       },
       {
-        name: 'AI generates file tree, code, install & start commands',
-        done: false,
+        name: 'Build mode: prompt → full runnable project (GitHub Models)',
+        done: true,
       },
-      { name: 'Multi-file AI editing with diff preview', done: false },
-      { name: 'Context-aware edits across all open files', done: false },
-      { name: 'Accept / reject per-file before applying', done: false },
+      {
+        name: 'Generates the file tree, code, install & start commands',
+        done: true,
+      },
+      {
+        name: 'Auto-applies to the shared workspace and runs in the runtime',
+        done: true,
+      },
+      {
+        name: 'Edits existing files in place + deletes on request',
+        done: true,
+      },
+      {
+        name: 'Project-aware: reads open files + multi-turn context',
+        done: true,
+      },
+      { name: 'Stop, regenerate & clear (/clear) controls', done: true },
     ],
   },
   {

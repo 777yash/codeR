@@ -210,6 +210,7 @@ const navItems = [
   { href: '#collaboration', label: 'Collaboration' },
   { href: '#sharing', label: 'Sharing' },
   { href: '#runtime', label: 'In-Browser Runtime' },
+  { href: '#ai-assistant', label: 'AI Assistant' },
   { href: '#keyboard-shortcuts', label: 'Keyboard Shortcuts' },
   { href: '#languages', label: 'Supported Languages' },
   { href: '#mobile', label: 'Mobile' },
@@ -627,8 +628,9 @@ export default function DocsPage() {
             <strong style={{ color: 'var(--coder-text-primary)' }}>
               Delete
             </strong>
-            . The last remaining file cannot be deleted. If a project folder is
-            linked, deleting here removes the file from disk too.
+            . Deleting the last remaining file is allowed — it&apos;s replaced
+            with a fresh empty file so the room is never empty. If a project
+            folder is linked, deleting here removes the file from disk too.
           </Prose>
 
           <Heading3>Folders, tabs &amp; file menus</Heading3>
@@ -849,6 +851,71 @@ export default function DocsPage() {
           </Callout>
         </section>
 
+        {/* AI Assistant */}
+        <section style={{ marginBottom: '48px' }}>
+          <Heading2 id="ai-assistant">AI Assistant</Heading2>
+          <Prose>
+            Open the{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>AI</strong>{' '}
+            tab in the right panel to chat with an assistant that knows your
+            project. Ask it to explain or debug code, talk through an approach,
+            research an idea — or ask it to build something. It reads your open
+            files and the recent conversation, then either answers inline or
+            scaffolds a project; it decides which based on what you asked.
+          </Prose>
+
+          <Heading3>Asking questions</Heading3>
+          <Prose>
+            &quot;What does this code do?&quot;, &quot;Why is this
+            throwing?&quot;, &quot;How would I add WebSocket support?&quot; —
+            the assistant replies in the conversation. Nothing is written to
+            your workspace for a question; your files are sent as context but
+            only read.
+          </Prose>
+
+          <Heading3>Building projects</Heading3>
+          <Prose>
+            Ask it to build, create, or add something — &quot;Express API with a
+            /hello route&quot;, &quot;add a /health route&quot; — and it returns
+            a full file tree with install and start commands. codeR applies the
+            files to the shared workspace (every collaborator sees them via
+            CRDT), flushes them into the in-browser runtime, and runs them
+            automatically; the live preview opens on its own when a dev server
+            starts. Follow-ups like &quot;now add a login page&quot; build on
+            what already exists.
+          </Prose>
+
+          <Heading3>Editing existing files</Heading3>
+          <Prose>
+            Ask it to change a file — &quot;add a /health route to
+            server.js&quot;, &quot;refactor App.jsx to use hooks&quot; — and it
+            rewrites that file in place (same filename = update), synced to
+            every collaborator. It can also delete files when you ask. Edits
+            apply directly; undo with <InlineCode>Ctrl+Z</InlineCode> or restore
+            from Version History.
+          </Prose>
+
+          <Heading3>Controls</Heading3>
+          <Prose>
+            Stop a generation mid-flight, regenerate the last message, or clear
+            the conversation — use the Clear button or type{' '}
+            <InlineCode>/clear</InlineCode>. History is kept per room. Viewers
+            can&apos;t use the assistant (the tab is role-gated to Editors and
+            Owners).
+          </Prose>
+
+          <Callout type="info">
+            AI scaffolding needs a server-side GitHub Models token. If the
+            server isn&apos;t configured, the tab shows &quot;not
+            configured&quot; and the rest of codeR is unaffected.
+          </Callout>
+          <Callout type="tip">
+            Generated Vite projects are pinned to version 7 so they run in the
+            in-browser runtime. The model keeps projects minimal to fit the
+            free-tier output budget — ask for one focused thing at a time.
+          </Callout>
+        </section>
+
         {/* Keyboard Shortcuts */}
         <section style={{ marginBottom: '48px' }}>
           <Heading2 id="keyboard-shortcuts">Keyboard Shortcuts</Heading2>
@@ -1052,6 +1119,12 @@ export default function DocsPage() {
               path: '/api/rooms/[id]',
               auth: true,
               desc: 'Get room details and member list.',
+            },
+            {
+              method: 'POST',
+              path: '/api/ai/scaffold',
+              auth: true,
+              desc: 'Generate a runnable project from a prompt (GitHub Models). Body: { prompt, existingFiles?, history? }. Returns { text, files[], buildCommand, startCommand, actions }. 503 when no token is configured.',
             },
             {
               method: 'GET',

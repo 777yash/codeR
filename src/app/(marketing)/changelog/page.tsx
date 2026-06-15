@@ -1,9 +1,59 @@
 const releases = [
   {
+    phase: '12',
+    title: 'AI Assistant & Project Scaffolding',
+    date: 'Jun 15, 2026',
+    status: 'latest',
+    accentColor: '#A855F7',
+    summary:
+      'The AI tab is now a project-aware assistant. Ask it to explain or debug code, talk through an approach, or research an idea and it answers inline; ask it to build something and it generates a full runnable file tree with install and start commands, applies the files to the shared workspace (every collaborator sees them via CRDT), flushes them into the in-browser runtime, and auto-runs — with the live preview opening on its own. It reads your open files and the conversation so far, and decides whether to answer or build based on what you asked.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'AI tab is a general assistant — ask about your code, debugging, approaches, or research and get an answer inline; questions read your files as context but never modify them',
+          'Build mode: ask it to create or change a project and it generates a full runnable file tree, applies it to the workspace, and boots it in the in-browser runtime with the live preview opening automatically',
+          'The model decides per message whether to answer (chat) or scaffold (build) — one input, no mode switch',
+          'Generated files sync to every collaborator via CRDT; install + dev/start commands are injected into the terminal and run on their own',
+          'Project-aware and incremental — your open files plus the last few turns are sent as context, so “now add a login page” understands what came before',
+          'Stop mid-generation, regenerate the last message, clear the conversation (or type /clear) — history persists per room; the tab is role-gated to Editors and Owners',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'POST /api/ai/scaffold — GitHub Models (openai/gpt-4o-mini), OpenAI-compatible REST via native fetch with no SDK dependency; strict json_schema structured output',
+          'GITHUB_MODELS_TOKEN optional (fine-grained PAT, models: read) — absent disables the tab gracefully; GITHUB_MODELS_MODEL overrides the model id without a code change',
+          'In-memory rate limit (10/user/min), 55s server abort, output capped for the free tier; client AbortController powers Stop',
+          'Unit + route tests cover response parsing, command formatting, the apply/fresh logic, and the 401/400/429/502/503 guards',
+        ],
+      },
+      {
+        type: 'security',
+        items: [
+          'The model token is server-only — never sent to the browser or stored in the JWT; the route is CSRF + auth guarded',
+          'Secret-bearing files (.env, *.key, *.pem, secret/credential names) are stripped from the model context',
+          'Generated code is untrusted but runs only inside the per-user sandboxed runtime — no host access; telemetry records categories only, never prompt or code text',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'Asking the AI to edit one file no longer deletes the rest of the project — the empty-room check read stale state and wiped files the edit didn’t regenerate',
+          'package.json (and other JSON) the model double-escaped is auto-repaired so npm can parse it instead of failing with EJSONPARSE',
+          'Generated Vite projects set server.host + allowedHosts so the live preview loads instead of staying blank',
+          'Asking the AI to delete the project no longer fires a stray npm install && npm run dev afterward',
+          'Run re-installs dependencies when node_modules is empty instead of skipping it (fixes “command not found: vite”)',
+          'Deleting the last file in a room is now allowed — it’s replaced with a fresh blank file so the workspace is never empty',
+        ],
+      },
+    ],
+  },
+  {
     phase: '11.2',
     title: 'Local Folder Sync — Save to Disk & Two-Way Mirror',
     date: 'Jun 14, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#32D74B',
     summary:
       'The in-browser runtime now mirrors to real disk. Link a folder to a room — from the header button or Room Settings — and your project auto-saves there as you type, files created in the container or by collaborators flow back into the editor, and deleting a file in codeR removes it from the folder too. A true two-way bridge between the editor and your machine.',
@@ -1219,7 +1269,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 12 — AI Project Scaffolding
+          Phase 13 — @ai Chat Commands
         </h3>
         <p
           style={{
@@ -1229,9 +1279,9 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Describe a project in a prompt and get a full, runnable file tree —
-          code, install, and start commands generated and booted in the
-          in-browser runtime.
+          Summon the AI straight from room chat with @ai — fix, explain,
+          refactor, or scaffold, with the response shared across every
+          collaborator in the room.
         </p>
         <a
           href="/features"

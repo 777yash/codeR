@@ -4,6 +4,7 @@ import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import {
   addSharedFile,
   removeSharedFile,
+  deleteSharedFile,
   renameSharedFile,
   importFilesToWorkspace,
   getAllFilesContent,
@@ -200,9 +201,7 @@ export function FileExplorer({
 
   function handleDelete(fileId: string) {
     setContextMenu(null)
-    if (files.length <= 1) return
-    removeSharedFile(fileId)
-    removeFile(fileId)
+    deleteSharedFile(fileId)
   }
 
   function nextCopyName(name: string): string {
@@ -477,18 +476,14 @@ export function FileExplorer({
                     <Download className="h-3 w-3 opacity-60" />
                     Download
                   </button>
-                  {files.length > 1 && (
-                    <>
-                      <div className="border-app my-1 border-t" />
-                      <button
-                        onClick={() => handleDelete(contextMenu.fileId)}
-                        className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </button>
-                    </>
-                  )}
+                  <div className="border-app my-1 border-t" />
+                  <button
+                    onClick={() => handleDelete(contextMenu.fileId)}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Delete
+                  </button>
                 </>
               ) : (
                 <>

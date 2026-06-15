@@ -38,10 +38,12 @@ export async function buildRunCommand(
         ? `node ${activePath}`
         : null
     if (!run) return null
+    // An empty node_modules dir (interrupted/never-run install) must NOT count
+    // as installed, or the run skips `npm install` and the bin is missing.
     let hasNodeModules = false
     try {
-      await container.fs.readdir('node_modules')
-      hasNodeModules = true
+      const entries = await container.fs.readdir('node_modules')
+      hasNodeModules = entries.some((e) => e !== '.package-lock.json')
     } catch {
       hasNodeModules = false
     }

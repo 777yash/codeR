@@ -27,6 +27,12 @@ const envSchema = z.object({
 
   // AI completions
   CODESTRAL_API_KEY: z.string().min(1).optional(),
+
+  // AI scaffolding (GitHub Models) — optional: absent disables the AI tab (503), app runs normally
+  // GitHub PAT (fine-grained) with `models: read` permission
+  GITHUB_MODELS_TOKEN: z.string().min(1).optional(),
+  // Override the scaffolding model — survives model deprecations without a code change
+  GITHUB_MODELS_MODEL: z.string().min(1).optional(),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),

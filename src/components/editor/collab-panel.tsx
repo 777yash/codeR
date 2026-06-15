@@ -19,6 +19,7 @@ import {
   RotateCcw,
   PanelRightClose,
   PanelRightOpen,
+  Sparkles,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { editor } from 'monaco-editor'
@@ -37,6 +38,7 @@ import { toast } from 'sonner'
 import { usePostHog } from 'posthog-js/react'
 import { usePresence } from '@/hooks/use-presence'
 import { useEditorStore } from '@/stores/editor-store'
+import { AiPanel } from '@/components/editor/ai-panel'
 import { colorFromUserId } from '@/lib/color'
 import {
   sendChatMessage,
@@ -76,7 +78,7 @@ interface SnapshotDetail extends Snapshot {
   content: string
 }
 
-type Tab = 'users' | 'chat' | 'history'
+type Tab = 'users' | 'chat' | 'ai' | 'history'
 type HistorySubTab = 'named' | 'auto'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -404,6 +406,7 @@ export function CollabPanel({
   const tabs: { id: Tab; icon: React.ReactNode; label: string }[] = [
     { id: 'users', icon: <Users className="h-3 w-3" />, label: 'Users' },
     { id: 'chat', icon: <MessageSquare className="h-3 w-3" />, label: 'Chat' },
+    { id: 'ai', icon: <Sparkles className="h-3 w-3" />, label: 'AI' },
     { id: 'history', icon: <History className="h-3 w-3" />, label: 'History' },
   ]
 
@@ -849,6 +852,9 @@ export function CollabPanel({
               </div>
             </div>
           )}
+
+          {/* ── AI tab ───────────────────────────────────────────────────── */}
+          {tab === 'ai' && <AiPanel roomId={roomId} canScaffold={canSave} />}
 
           {/* ── History tab ───────────────────────────────────────────────── */}
           {tab === 'history' && (

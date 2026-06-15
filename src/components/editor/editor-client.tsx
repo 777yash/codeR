@@ -251,6 +251,32 @@ export function removeSharedFile(id: string): void {
   _ydoc.getMap('file-list').delete(id)
 }
 
+/**
+ * Deletes a file, but never empties the room: when removing the last remaining
+ * file it first seeds a fresh blank file (a non-colliding `main.js`) so the
+ * workspace always has ≥1 file — Monaco always has a model and the file-list
+ * never hits the empty state that would otherwise leave the editor broken.
+ */
+export function deleteSharedFile(id: string): void {
+  const store = useEditorStore.getState()
+  if (store.files.length <= 1) {
+    const taken = new Set(store.files.map((f) => f.name))
+    let name = 'main.js'
+    for (let n = 1; taken.has(name); n++) name = `main${n}.js`
+    const seed: EditorFile = {
+      id: crypto.randomUUID(),
+      name,
+      content: '',
+      language: 'javascript',
+    }
+    addSharedFile(seed)
+    store.addFile(seed)
+    store.setActiveFile(seed.id)
+  }
+  removeSharedFile(id)
+  store.removeFile(id)
+}
+
 export function renameSharedFile(id: string, name: string): void {
   if (!_ydoc) return
   const fileList = _ydoc.getMap('file-list')

@@ -3,7 +3,7 @@
 import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import {
   addSharedFile,
-  removeSharedFile,
+  deleteSharedFile,
 } from '@/components/editor/editor-client'
 import { X, Plus, FileCode } from 'lucide-react'
 import { useState } from 'react'
@@ -57,7 +57,6 @@ export function FileTabs() {
     closeFile,
     closeOtherFiles,
     addFile,
-    removeFile,
     language,
   } = useEditorStore()
   const files = Array.from(new Map(rawFiles.map((f) => [f.id, f])).values())
@@ -91,8 +90,7 @@ export function FileTabs() {
 
   function handleDeleteFile(fileId: string) {
     setTabMenu(null)
-    removeSharedFile(fileId)
-    removeFile(fileId)
+    deleteSharedFile(fileId)
   }
 
   return (
@@ -185,17 +183,13 @@ export function FileTabs() {
             >
               Close others
             </button>
-            {files.length > 1 && (
-              <>
-                <div className="border-app my-1 border-t" />
-                <button
-                  onClick={() => handleDeleteFile(tabMenu.fileId)}
-                  className="flex w-full items-center px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
-                >
-                  Delete file
-                </button>
-              </>
-            )}
+            <div className="border-app my-1 border-t" />
+            <button
+              onClick={() => handleDeleteFile(tabMenu.fileId)}
+              className="flex w-full items-center px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
+            >
+              Delete file
+            </button>
           </div>
         </>
       )}
