@@ -3,13 +3,27 @@ import { NextRequest } from 'next/server'
 
 vi.mock('@/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/csrf', () => ({ verifyCsrfOrigin: vi.fn(() => null) }))
+vi.mock('@/lib/api/room-access', () => ({ getUserRoomRole: vi.fn() }))
+vi.mock('@/lib/rate-limit-redis', () => ({
+  checkRoomAiRateLimit: vi.fn(async () => true),
+}))
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    room: { findUnique: vi.fn(async () => ({ aiChatEnabled: true })) },
+    aiActionLog: { create: vi.fn(async () => ({})) },
+  },
+}))
 
 import { POST, parseAiResponse } from '@/app/api/ai/scaffold/route'
 import { auth } from '@/auth'
+import { getUserRoomRole } from '@/lib/api/room-access'
+import { checkRoomAiRateLimit } from '@/lib/rate-limit-redis'
+import { prisma } from '@/lib/prisma'
 
 const ORIGINAL_TOKEN = process.env.GITHUB_MODELS_TOKEN
 
 const okScaffold = {
+  mode: 'scaffold',
   text: 'ok',
   files: [{ filename: 'index.js', contents: 'console.log(1)' }],
   buildCommand: { mainItem: 'npm', commands: ['install'] },
@@ -17,11 +31,11 @@ const okScaffold = {
   actions: [],
 }
 
-function makeReq(body: unknown): NextRequest {
+function makeReq(body: Record<string, unknown>): NextRequest {
   return new NextRequest('http://localhost/api/ai/scaffold', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ roomId: 'r1', ...body }),
   })
 }
 
@@ -35,6 +49,11 @@ function mockFetch(impl: () => unknown) {
 
 beforeEach(() => {
   process.env.GITHUB_MODELS_TOKEN = 'test-token'
+  vi.mocked(getUserRoomRole).mockResolvedValue('OWNER')
+  vi.mocked(checkRoomAiRateLimit).mockResolvedValue(true)
+  vi.mocked(prisma.room.findUnique).mockResolvedValue({
+    aiChatEnabled: true,
+  } as never)
   mockFetch(() => ({
     ok: true,
     json: async () => ({
@@ -72,6 +91,47 @@ describe('POST /api/ai/scaffold', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 when roomId is missing', async () => {
+    asUser('u-noroom')
+    const req = new NextRequest('http://localhost/api/ai/scaffold', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'build an app' }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 403 when the caller is not a room member', async () => {
+    asUser('u-stranger')
+    vi.mocked(getUserRoomRole).mockResolvedValue(null)
+    const res = await POST(makeReq({ prompt: 'build an app' }))
+    expect(res.status).toBe(403)
+  })
+
+  it('returns 403 for a VIEWER', async () => {
+    asUser('u-viewer')
+    vi.mocked(getUserRoomRole).mockResolvedValue('VIEWER')
+    const res = await POST(makeReq({ prompt: 'build an app' }))
+    expect(res.status).toBe(403)
+  })
+
+  it('returns 403 when AI is disabled for the room', async () => {
+    asUser('u-disabled')
+    vi.mocked(prisma.room.findUnique).mockResolvedValue({
+      aiChatEnabled: false,
+    } as never)
+    const res = await POST(makeReq({ prompt: 'build an app' }))
+    expect(res.status).toBe(403)
+  })
+
+  it('returns 429 once the per-room limit is exceeded', async () => {
+    asUser('u-roomlimit')
+    vi.mocked(checkRoomAiRateLimit).mockResolvedValue(false)
+    const res = await POST(makeReq({ prompt: 'build an app' }))
+    expect(res.status).toBe(429)
+  })
+
   it('returns 502 when the upstream call fails', async () => {
     asUser('u-502')
     mockFetch(() => ({ ok: false, status: 401, text: async () => 'bad token' }))
@@ -96,6 +156,20 @@ describe('POST /api/ai/scaffold', () => {
     const res = await POST(makeReq({ prompt: 'build an app' }))
     expect(res.status).toBe(200)
     expect(await res.json()).toMatchObject({ files: okScaffold.files })
+  })
+
+  it('audit-logs @ai chat actions (source=chat) but not panel calls', async () => {
+    asUser('u-log')
+    await POST(makeReq({ prompt: 'build an app', source: 'chat' }))
+    expect(prisma.aiActionLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ roomId: 'r1', actionType: 'scaffold' }),
+      })
+    )
+
+    vi.mocked(prisma.aiActionLog.create).mockClear()
+    await POST(makeReq({ prompt: 'build an app', source: 'panel' }))
+    expect(prisma.aiActionLog.create).not.toHaveBeenCalled()
   })
 })
 

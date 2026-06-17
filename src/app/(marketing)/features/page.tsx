@@ -198,6 +198,13 @@ const phases = [
       { name: 'Mobile-responsive layout', done: true },
       { name: 'PostHog analytics', done: true },
       { name: 'Export to GitHub Gist', done: true },
+      {
+        name: 'Animated slide-in profile / settings / help panels',
+        done: true,
+      },
+      { name: 'In-app help centre with quick start & shortcuts', done: true },
+      { name: 'Animated WebGL dashboard backdrop (theme-aware)', done: true },
+      { name: 'Theme-matched scrollbars (dark / light)', done: true },
     ],
   },
   {
@@ -266,16 +273,33 @@ const phases = [
   {
     number: '13',
     title: '@ai Chat Commands',
-    status: 'planned',
-    date: 'Planned',
+    status: 'shipped',
+    date: 'Jun 2026',
     icon: <AtSign className="h-5 w-5" />,
     accentColor: '#F59E0B',
     features: [
-      { name: '@ai trigger visible to all room collaborators', done: false },
-      { name: 'Fix, explain, refactor, scaffold commands', done: false },
-      { name: 'AI-proposed edits applied with one click', done: false },
-      { name: 'Rate limited per room (Redis counter)', done: false },
-      { name: 'Owner can enable/disable @ai per room', done: false },
+      {
+        name: '@ai in chat triggers AI visible to all collaborators',
+        done: true,
+      },
+      {
+        name: 'Explain, fix, refactor & build — the model decides',
+        done: true,
+      },
+      {
+        name: '@ai run <command> executes in the in-browser terminal',
+        done: true,
+      },
+      {
+        name: 'Generated files sync via CRDT; “Run here” per collaborator',
+        done: true,
+      },
+      {
+        name: 'Live “thinking” indicator + attribution; Stop in-flight',
+        done: true,
+      },
+      { name: 'Per-room rate limit (Redis) + audit log', done: true },
+      { name: 'Owner can enable/disable AI per room', done: true },
     ],
   },
 ]
@@ -591,7 +615,7 @@ export default function FeaturesPage() {
             marginBottom: '8px',
           }}
         >
-          Start building with Phase 1–10 today
+          Start building RIGHT NOW!
         </h2>
         <p
           style={{

@@ -110,13 +110,13 @@ interface FileMetadata {
   order: number
 }
 
-interface YMap {
-  set(key: string, value: string): void
-  get(key: string): string | undefined
+interface YMap<V = string> {
+  set(key: string, value: V): void
+  get(key: string): V | undefined
   delete(key: string): void
-  forEach(fn: (val: string, key: string) => void): void
-  observe(fn: () => void): void
-  unobserve(fn: () => void): void
+  forEach(fn: (val: V, key: string) => void): void
+  observe(fn: (event: { keysChanged: Set<string> }) => void): void
+  unobserve(fn: (event: { keysChanged: Set<string> }) => void): void
   readonly size: number
 }
 
@@ -131,6 +131,8 @@ interface YText {
 
 interface YArray<T> {
   push(content: T[]): void
+  insert(index: number, content: T[]): void
+  delete(index: number, length: number): void
   toArray(): T[]
   observe(fn: () => void): void
   unobserve(fn: () => void): void
@@ -138,7 +140,7 @@ interface YArray<T> {
 
 interface YDoc {
   clientID: number
-  getMap(name: string): YMap
+  getMap<V = string>(name: string): YMap<V>
   getText(name: string): YText
   getArray<T>(name: string): YArray<T>
   transact(fn: () => void): void
@@ -163,6 +165,16 @@ export function getYjsStateBytes(): Uint8Array | null {
 // Module-level registry — subscriptions registered before ydoc is ready still work
 const executionResultSubscribers = new Set<(result: unknown) => void>()
 
+export interface AiChatMeta {
+  status: 'generating' | 'done' | 'error'
+  kind?: 'chat' | 'scaffold'
+  triggeredBy: string
+  reqId: string
+  files?: string[]
+  buildCommand?: string
+  startCommand?: string
+}
+
 export interface ChatMessageData {
   id: string
   userId: string
@@ -171,6 +183,9 @@ export interface ChatMessageData {
   timestamp: number
   type?: 'text' | 'code'
   language?: string
+  // Present only on AI replies (userId === 'ai'). Mutated solely by the client
+  // that triggered the @ai action (single-writer — see ai-chat-agent).
+  ai?: AiChatMeta
 }
 
 // Chat subscribers — same pattern as execution results
@@ -191,6 +206,52 @@ export function subscribeToChatMessages(
 ): () => void {
   chatMessageSubscribers.add(callback)
   return () => chatMessageSubscribers.delete(callback)
+}
+
+/**
+ * Replace a chat message in place by id (Yjs arrays have no in-place update —
+ * delete + reinsert at the same index). Only the client that owns the message
+ * (the @ai trigger) calls this, so there's no concurrent-write race.
+ */
+export function updateChatMessage(
+  id: string,
+  patch: Partial<ChatMessageData>
+): void {
+  if (!_ydoc) return
+  const arr = _ydoc.getArray<ChatMessageData>('chat-messages')
+  const items = arr.toArray()
+  const idx = items.findIndex((m) => m.id === id)
+  if (idx === -1) return
+  _ydoc.transact(() => {
+    arr.delete(idx, 1)
+    arr.insert(idx, [{ ...items[idx], ...patch }])
+  })
+}
+
+// ── @ai control channel (owner abort) ───────────────────────────────────────
+// Shared map keyed by reqId; the room owner sets a flag, the triggering client
+// observes it and aborts its in-flight fetch.
+
+export function signalAiAbort(reqId: string): void {
+  _ydoc?.getMap<boolean>('ai-control').set(reqId, true)
+}
+
+export function clearAiControl(reqId: string): void {
+  _ydoc?.getMap<boolean>('ai-control').delete(reqId)
+}
+
+export function subscribeAiControl(
+  callback: (abortedReqId: string) => void
+): () => void {
+  if (!_ydoc) return () => {}
+  const map = _ydoc.getMap<boolean>('ai-control')
+  const handler = (e: { keysChanged: Set<string> }) => {
+    for (const reqId of e.keysChanged) {
+      if (map.get(reqId) === true) callback(reqId)
+    }
+  }
+  map.observe(handler)
+  return () => map.unobserve(handler)
 }
 
 // Guard against double-destroy on MonacoBinding (yjs throws if handler already removed)

@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { LANGUAGES } from '@/lib/editor-options'
 import { ProjectFolderPanel } from '@/components/rooms/project-folder-panel'
 
 export type RoomWithRelations = Room & {
@@ -37,8 +36,8 @@ export function RoomSettingsClient({
   const router = useRouter()
   const [name, setName] = useState(room.name)
   const [description, setDescription] = useState(room.description || '')
-  const [language, setLanguage] = useState<string>(room.language)
   const [isPublic, setIsPublic] = useState(room.isPublic)
+  const [aiChatEnabled, setAiChatEnabled] = useState(room.aiChatEnabled)
   const [isSaving, setIsSaving] = useState(false)
 
   const [inviteEmail, setInviteEmail] = useState('')
@@ -63,8 +62,8 @@ export function RoomSettingsClient({
         body: JSON.stringify({
           name,
           description: description || null,
-          language,
           isPublic,
+          aiChatEnabled,
         }),
       })
 
@@ -246,21 +245,6 @@ export function RoomSettingsClient({
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Language</label>
-            <Select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              disabled={!isOwner && userRole !== 'EDITOR'}
-            >
-              {LANGUAGES.map((lang) => (
-                <option key={lang.value} value={lang.value}>
-                  {lang.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -284,6 +268,33 @@ export function RoomSettingsClient({
               {isPublic ? 'Public room' : 'Private room'}
             </label>
           </div>
+
+          {isOwner && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={aiChatEnabled}
+                onClick={() => setAiChatEnabled(!aiChatEnabled)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  aiChatEnabled
+                    ? 'bg-[var(--coder-accent)]'
+                    : 'bg-[var(--coder-text-tertiary)]'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                    aiChatEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+              <label className="text-sm text-[var(--coder-text-secondary)]">
+                {aiChatEnabled
+                  ? 'AI assistant enabled'
+                  : 'AI assistant disabled'}
+              </label>
+            </div>
+          )}
 
           {(isOwner || userRole === 'EDITOR') && (
             <div className="flex justify-end">

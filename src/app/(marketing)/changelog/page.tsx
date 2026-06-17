@@ -1,9 +1,80 @@
 const releases = [
   {
+    phase: '13.1',
+    title: 'Dashboard Polish & Animated Backdrop',
+    date: 'Jun 17, 2026',
+    status: 'latest',
+    accentColor: '#14B8A6',
+    summary:
+      'A round of dashboard polish. Profile, Settings and Help now glide in from the right as animated panels, there’s a proper in-app Help centre, scrollbars finally match the active theme, and the dashboard sits on a subtle animated backdrop — brand rose on dark, a complementary teal on light.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Profile, Settings and Help open as smooth slide-in panels (gsap) instead of appearing instantly',
+          'New in-app Help centre: quick-start steps, an AI assistant guide, keyboard shortcuts, and links to the docs',
+          'Animated WebGL backdrop behind the dashboard — brand rose on dark, complementary teal on light, kept faint so content stays readable and follows the theme live',
+          'Scrollbars now match the active theme (dark/light) across the app',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'Added gsap (panel animation) and ogl (WebGL backdrop) — both pinned to exact versions, zero install scripts, verified clean before install',
+          'The backdrop is client-only (loaded without SSR) and non-interactive so it never intercepts clicks',
+        ],
+      },
+    ],
+  },
+  {
+    phase: '13',
+    title: '@ai Chat Commands — Collaborative AI in Chat',
+    date: 'Jun 16, 2026',
+    status: 'shipped',
+    accentColor: '#F43F5E',
+    summary:
+      'Type @ai in a room’s chat to trigger AI that every collaborator sees in real time. Ask it to explain or fix code, refactor, or build a project and the answer (or the generated files) lands in the shared chat for the whole room — with a live “AI is thinking…” indicator and attribution showing who triggered it. @ai run executes a shell command in the in-browser terminal directly. Only the person who typed @ai runs the model, so the action happens once and the result is broadcast to everyone.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Type @ai in room chat to trigger AI visible to all collaborators — the reply lands in the shared chat with a live “thinking” indicator and shows who triggered it',
+          '@ai explain / fix / refactor / build — the model answers inline or generates a project; generated files sync to every collaborator via CRDT',
+          '@ai run <command> — run a shell command straight in the in-browser terminal, no model call',
+          '“Run here” on a scaffold reply runs the generated files in your own container; Stop cancels an in-flight action (the owner or the person who triggered it)',
+          'Owners can switch the AI assistant on or off per room in Settings',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          '@ai runs client-side, sender-elected — the browser that typed it is the sole executor, so the model is called once and the result is broadcast through the CRDT chat (no duplicate calls)',
+          'Reuses the existing /api/ai/scaffold route, now passing the room id; per-room rate limit of 20/hour via Upstash Redis REST over native fetch (no SDK) — fails open and falls back to in-memory without Redis',
+          'AI actions are audit-logged per room (action type, prompt, files-changed count)',
+        ],
+      },
+      {
+        type: 'security',
+        items: [
+          'The AI route now verifies the caller is a room member who can edit before sending any room files to the model — closes a gap where any signed-in user could read another room’s code',
+          'Viewers can chat but can’t trigger AI; owners can disable AI for a room entirely',
+          'Only @ai chat actions are written to the room audit log — the private AI tab’s prompts are not',
+        ],
+      },
+      {
+        type: 'fix',
+        items: [
+          'In-browser terminal now actually runs injected commands — Run, scaffold auto-run, and @ai run submit with a carriage return (the byte the shell executes on) instead of a newline, and wait for the shell’s first prompt before sending, so the cold-shell first run no longer needs a restart',
+          'Removed the stale language dropdown from room settings — rooms are polyglot and language is auto-detected per file',
+        ],
+      },
+    ],
+  },
+  {
     phase: '12',
     title: 'AI Assistant & Project Scaffolding',
     date: 'Jun 15, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#A855F7',
     summary:
       'The AI tab is now a project-aware assistant. Ask it to explain or debug code, talk through an approach, or research an idea and it answers inline; ask it to build something and it generates a full runnable file tree with install and start commands, applies the files to the shared workspace (every collaborator sees them via CRDT), flushes them into the in-browser runtime, and auto-runs — with the live preview opening on its own. It reads your open files and the conversation so far, and decides whether to answer or build based on what you asked.',

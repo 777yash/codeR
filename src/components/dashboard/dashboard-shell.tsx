@@ -1,14 +1,19 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { AppLogo } from '@/components/app-logo'
+
+const DashboardBackground = dynamic(
+  () => import('@/components/dashboard/dashboard-background'),
+  { ssr: false }
+)
 import {
   LayoutDashboard,
   Users,
   Clock,
   Star,
-  HelpCircle,
   Search,
   LogOut,
   Menu,
@@ -18,6 +23,7 @@ import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import { InviteNotifications } from '@/components/notifications/invite-notifications'
 import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-settings-panel'
 import { DashboardProfilePanel } from '@/components/dashboard/dashboard-profile-panel'
+import { DashboardHelpPanel } from '@/components/dashboard/dashboard-help-panel'
 
 interface Invitation {
   id: string
@@ -112,10 +118,7 @@ function SidebarContent({
       <div className="border-app space-y-0.5 border-t p-3">
         <DashboardProfilePanel />
         <DashboardSettingsPanel />
-        <button className="text-app-muted hover-app-row flex h-9 w-full items-center gap-2.5 rounded px-2 text-sm transition-colors">
-          <HelpCircle className="h-4 w-4" />
-          Help
-        </button>
+        <DashboardHelpPanel />
         <form action={signOutAction}>
           <button
             type="submit"
@@ -142,9 +145,12 @@ export function DashboardShell({
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
-    <div className="bg-app text-app flex h-dvh flex-col">
+    <div className="bg-app text-app relative flex h-dvh flex-col overflow-hidden">
+      {/* Animated WebGL backdrop, behind all content */}
+      <DashboardBackground />
+
       {/* Header */}
-      <header className="border-app bg-app flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
+      <header className="border-app bg-app relative z-10 flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
         <div className="flex items-center gap-2">
           {/* Hamburger — mobile only */}
           <button
@@ -183,7 +189,7 @@ export function DashboardShell({
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative z-10 flex flex-1 overflow-hidden">
         {/* Sidebar — desktop static */}
         <aside className="border-app bg-app-surface hidden w-[220px] shrink-0 flex-col border-r md:flex">
           <SidebarContent safeView={safeView} signOutAction={signOutAction} />
@@ -216,8 +222,8 @@ export function DashboardShell({
           </>
         )}
 
-        {/* Main */}
-        <main className="bg-app flex-1 overflow-y-auto p-4 md:p-8">
+        {/* Main — transparent so the backdrop shows behind the content */}
+        <main className="flex-1 overflow-y-auto bg-transparent p-4 md:p-8">
           <h1 className="text-app mb-1 text-3xl font-semibold">{title}</h1>
           <p className="text-app-muted mb-6 text-sm">{subtitle}</p>
           {children}

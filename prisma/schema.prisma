@@ -31,6 +31,7 @@ model User {
 
   executionLogs     ExecutionLog[]
   documentSnapshots DocumentSnapshot[]
+  aiActionLogs      AiActionLog[]
 
   @@map("users")
 }
@@ -121,6 +122,7 @@ model Room {
   description String?
   language    Language  @default(javascript)
   isPublic    Boolean   @default(false)
+  aiChatEnabled Boolean @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -132,6 +134,7 @@ model Room {
   invitations Invitation[]
   executionLogs     ExecutionLog[]
   documentSnapshots DocumentSnapshot[]
+  aiActionLogs      AiActionLog[]
   content         String?  @db.Text
   contentSnapshot Bytes?
 
@@ -203,6 +206,23 @@ model ExecutionLog {
 
   @@index([roomId, createdAt])
   @@map("execution_logs")
+}
+
+model AiActionLog {
+  id           String   @id @default(cuid())
+  actionType   String   // "chat" | "scaffold" | "run"
+  prompt       String   @db.Text
+  filesChanged Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@map("ai_action_logs")
 }
 
 model DocumentSnapshot {
