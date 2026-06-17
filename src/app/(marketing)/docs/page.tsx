@@ -428,6 +428,24 @@ export default function DocsPage() {
             Yjs snapshot on the server — the document is restored exactly as you
             left it when you rejoin.
           </Callout>
+
+          <Heading3>Around the dashboard</Heading3>
+          <Prose>
+            The left sidebar is home base. The footer holds{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Profile
+            </strong>
+            ,{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Settings
+            </strong>{' '}
+            and{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>Help</strong>{' '}
+            — each opens as an animated panel that slides in from the right.
+            Settings covers editor preferences (AI completions, minimap, word
+            wrap, line numbers, font size); Help has a quick-start guide,
+            keyboard shortcuts, and links back to these docs.
+          </Prose>
         </section>
 
         {/* Rooms */}
@@ -895,6 +913,30 @@ export default function DocsPage() {
             from Version History.
           </Prose>
 
+          <Heading3>@ai in chat</Heading3>
+          <Prose>
+            Anything the AI tab does, you can trigger from the room chat so the
+            whole team sees it. Type <InlineCode>@ai</InlineCode> followed by a
+            request — &quot;@ai explain this file&quot;, &quot;@ai add a /health
+            route&quot;, &quot;@ai build a todo app&quot; — and the reply lands
+            in the shared chat with a live &quot;thinking&quot; indicator and
+            the name of whoever triggered it. Generated files sync to every
+            collaborator via CRDT; a scaffold reply shows a{' '}
+            <strong style={{ color: 'var(--coder-text-primary)' }}>
+              Run here
+            </strong>{' '}
+            button so each person can run it in their own runtime.
+          </Prose>
+          <Prose>
+            <InlineCode>@ai run &lt;command&gt;</InlineCode> runs a shell
+            command straight in the terminal — e.g.{' '}
+            <InlineCode>@ai run npm test</InlineCode> — with no model call. Only
+            the person who types <InlineCode>@ai</InlineCode> runs the request,
+            so it executes once for the whole room. The owner or the person who
+            triggered it can Stop an in-flight action, and owners can switch the
+            assistant off per room in Settings.
+          </Prose>
+
           <Heading3>Controls</Heading3>
           <Prose>
             Stop a generation mid-flight, regenerate the last message, or clear
@@ -1124,7 +1166,7 @@ export default function DocsPage() {
               method: 'POST',
               path: '/api/ai/scaffold',
               auth: true,
-              desc: 'Generate a runnable project from a prompt (GitHub Models). Body: { prompt, existingFiles?, history? }. Returns { text, files[], buildCommand, startCommand, actions }. 503 when no token is configured.',
+              desc: 'AI chat/scaffold for a room (GitHub Models). Body: { prompt, roomId, source?, existingFiles?, history? }. Verifies room membership + edit role; 403 for non-members, viewers, or rooms with AI disabled. Per-room rate limit (20/hr). Returns { mode, text, files[], buildCommand, startCommand, actions }. 503 when no token is configured.',
             },
             {
               method: 'GET',

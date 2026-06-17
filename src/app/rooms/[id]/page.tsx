@@ -262,6 +262,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
         }
         roomLanguage={room.language}
         canSave={userRole !== 'VIEWER'}
+        aiChatEnabled={room.aiChatEnabled}
       />
     </div>
   )

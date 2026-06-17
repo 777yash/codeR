@@ -12,6 +12,7 @@ const updateRoomSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   language: z.string().optional(),
   isPublic: z.boolean().optional(),
+  aiChatEnabled: z.boolean().optional(),
 })
 
 export async function GET(
@@ -102,13 +103,16 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
   }
 
-  const { language, ...rest } = parsed.data
+  const { language, aiChatEnabled, ...rest } = parsed.data
 
   const room = await prisma.room.update({
     where: { id },
     data: {
       ...rest,
       ...(language && { language: language as Language }),
+      // Owner-only: editors can change name/description/language but not the
+      // room's AI policy.
+      ...(aiChatEnabled !== undefined && role === 'OWNER' && { aiChatEnabled }),
     },
     include: {
       owner: { select: { id: true, name: true, image: true } },

@@ -3,6 +3,9 @@ export const maxDuration = 60 // Vercel max for Hobby plan — model calls can b
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/auth'
+import { prisma } from '@/lib/prisma'
+import { getUserRoomRole } from '@/lib/api/room-access'
+import { checkRoomAiRateLimit } from '@/lib/rate-limit-redis'
 import { verifyCsrfOrigin } from '@/lib/csrf'
 
 const ENDPOINT = 'https://models.github.ai/inference/chat/completions'
@@ -57,6 +60,10 @@ Rules:
 
 const requestSchema = z.object({
   prompt: z.string().min(1).max(2_000),
+  roomId: z.string().min(1),
+  // 'chat' = typed into the shared room chat (@ai) → audit-logged; 'panel' =
+  // the private AI tab → not logged (it's one user's scratchpad). Default panel.
+  source: z.enum(['chat', 'panel']).optional(),
   existingFiles: z
     .array(z.object({ name: z.string(), content: z.string() }))
     .optional(),
@@ -194,7 +201,31 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
-  const { prompt, existingFiles, history } = parsed.data
+  const { prompt, roomId, source, existingFiles, history } = parsed.data
+
+  // Room access: the request ships the room's files to the model, so the caller
+  // MUST be a member who can edit. Closes the gap where any authed user could
+  // read another room's code via this route.
+  const role = await getUserRoomRole(roomId, session.user.id)
+  if (!role || role === 'VIEWER') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    select: { aiChatEnabled: true },
+  })
+  if (!room?.aiChatEnabled) {
+    return NextResponse.json(
+      { error: 'AI is disabled for this room' },
+      { status: 403 }
+    )
+  }
+  if (!(await checkRoomAiRateLimit(roomId))) {
+    return NextResponse.json(
+      { error: 'Room AI limit reached — try again later' },
+      { status: 429 }
+    )
+  }
 
   const userContent =
     existingFiles && existingFiles.length > 0
@@ -285,6 +316,25 @@ export async function POST(req: NextRequest) {
         },
         { status: 502 }
       )
+    }
+
+    // Audit log @ai chat actions only (shared/public surface). The private AI
+    // panel is a per-user scratchpad — don't write its prompts to a room log.
+    if (source === 'chat') {
+      const s = scaffold as { mode?: string; files?: unknown[] }
+      try {
+        await prisma.aiActionLog.create({
+          data: {
+            roomId,
+            userId: session.user.id,
+            actionType: s.mode === 'scaffold' ? 'scaffold' : 'chat',
+            prompt: prompt.slice(0, 2_000),
+            filesChanged: Array.isArray(s.files) ? s.files.length : 0,
+          },
+        })
+      } catch (logErr) {
+        console.error('[scaffold] audit log failed', logErr)
+      }
     }
 
     return NextResponse.json(scaffold)

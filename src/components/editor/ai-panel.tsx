@@ -135,6 +135,8 @@ export function AiPanel({ roomId, canScaffold }: AiPanelProps) {
           signal: controller.signal,
           body: JSON.stringify({
             prompt,
+            roomId,
+            source: 'panel',
             existingFiles: getAllFilesContent(),
             history,
           }),
@@ -194,7 +196,7 @@ export function AiPanel({ roomId, canScaffold }: AiPanelProps) {
         setBusy(false)
       }
     },
-    [posthog]
+    [posthog, roomId]
   )
 
   const clearConversation = useCallback(() => {

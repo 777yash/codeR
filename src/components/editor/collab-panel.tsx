@@ -20,6 +20,10 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Sparkles,
+  Square,
+  FileCode,
+  Play,
+  AlertCircle,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { editor } from 'monaco-editor'
@@ -47,6 +51,13 @@ import {
   getEditorContent,
   type ChatMessageData,
 } from '@/components/editor/editor-client'
+import {
+  messageTriggersAi,
+  extractAiPrompt,
+  handleAiChatTrigger,
+  requestAiAbort,
+  runScaffoldHere,
+} from '@/lib/ai-chat-agent'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +75,7 @@ interface CollabPanelProps {
   currentUserName?: string
   roomLanguage?: string
   canSave?: boolean
+  aiChatEnabled?: boolean
   mobileOpen?: boolean
 }
 
@@ -122,6 +134,92 @@ function renderWithMentions(text: string): React.ReactNode {
   )
 }
 
+// ─── AI chat message ────────────────────────────────────────────────────────
+
+function AiChatMessage({
+  msg,
+  canAbort,
+}: {
+  msg: ChatMessageData
+  canAbort: boolean
+}) {
+  const ai = msg.ai
+  if (!ai) return null
+  const scaffold =
+    ai.status === 'done' &&
+    ai.kind === 'scaffold' &&
+    ai.files &&
+    ai.files.length > 0
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <div className="flex items-center gap-1.5">
+        <Sparkles className="h-3 w-3 text-[var(--coder-accent)]" />
+        <span className="text-[10px] font-semibold text-[var(--coder-accent)]">
+          AI
+        </span>
+        <span className="text-app-dim text-[10px]">· {ai.triggeredBy}</span>
+      </div>
+
+      {ai.status === 'generating' && (
+        <div className="text-app-dim flex items-center gap-2 text-xs">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Thinking…
+          {canAbort && (
+            <button
+              onClick={() => requestAiAbort(ai.reqId)}
+              className="flex items-center gap-1 text-[10px] text-[#FF453A] transition-opacity hover:opacity-80"
+              title="Stop generation"
+            >
+              <Square className="h-2.5 w-2.5 fill-current" />
+              Stop
+            </button>
+          )}
+        </div>
+      )}
+
+      {ai.status === 'error' && (
+        <div className="flex items-start gap-1.5 text-xs text-[#FF453A]">
+          <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+          <span className="break-words">{msg.content}</span>
+        </div>
+      )}
+
+      {ai.status === 'done' && (
+        <div className="max-w-[230px] rounded-lg bg-[var(--coder-bg-card-hover)] px-2.5 py-1.5 text-xs break-words whitespace-pre-wrap text-[var(--coder-text-primary)]">
+          {msg.content}
+        </div>
+      )}
+
+      {scaffold && (
+        <>
+          <div className="flex flex-col gap-1">
+            {ai.files!.map((name) => (
+              <div
+                key={name}
+                className="text-app-muted flex items-center gap-1.5 rounded bg-[var(--coder-bg-card-hover)] px-2 py-1 font-mono text-[10px]"
+              >
+                <FileCode className="h-3 w-3 shrink-0" />
+                <span className="truncate">{name}</span>
+              </div>
+            ))}
+          </div>
+          {(ai.buildCommand || ai.startCommand) && (
+            <button
+              onClick={() => runScaffoldHere(ai.buildCommand, ai.startCommand)}
+              className="border-app-mid text-app-muted flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] transition-colors hover:border-[var(--coder-border-accent)] hover:text-[var(--coder-accent)]"
+              title="Run these files in your in-browser container"
+            >
+              <Play className="h-2.5 w-2.5" />
+              Run here
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function CollabPanel({
@@ -131,6 +229,7 @@ export function CollabPanel({
   currentUserName,
   roomLanguage = 'javascript',
   canSave = false,
+  aiChatEnabled = true,
   mobileOpen = false,
 }: CollabPanelProps) {
   // ── Tab ────────────────────────────────────────────────────────────────────
@@ -336,6 +435,21 @@ export function CollabPanel({
         : {}),
     })
     posthog?.capture('chat_message_sent', { has_code: isCodeMode })
+
+    // @ai trigger — only the sender's browser runs the AI (single-executor);
+    // the reply is written back into the shared chat for all collaborators.
+    if (!isCodeMode && canSave && aiChatEnabled && messageTriggersAi(content)) {
+      const prompt = extractAiPrompt(content)
+      if (prompt) {
+        void handleAiChatTrigger({
+          roomId,
+          triggeredBy: currentUserName ?? currentUserId,
+          prompt,
+          capture: (event, props) => posthog?.capture(event, props),
+        })
+      }
+    }
+
     setChatInput('')
     setMentionQuery(null)
   }, [
@@ -345,6 +459,9 @@ export function CollabPanel({
     isCodeMode,
     editorLanguage,
     posthog,
+    roomId,
+    canSave,
+    aiChatEnabled,
   ])
 
   const handleCopy = useCallback((content: string, id: string) => {
@@ -371,6 +488,7 @@ export function CollabPanel({
 
   const myRole = members.find((m) => m.id === currentUserId)?.role
   const canInvite = myRole === 'OWNER'
+  const isOwner = myRole === 'OWNER'
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
@@ -670,6 +788,17 @@ export function CollabPanel({
                   </div>
                 )}
                 {messages.map((msg) => {
+                  if (msg.userId === 'ai' && msg.ai) {
+                    return (
+                      <AiChatMessage
+                        key={msg.id}
+                        msg={msg}
+                        canAbort={
+                          isOwner || msg.ai.triggeredBy === currentUserName
+                        }
+                      />
+                    )
+                  }
                   const isMe = msg.userId === currentUserId
                   const color = colorFromUserId(msg.userId)
                   const time = new Date(msg.timestamp).toLocaleTimeString([], {

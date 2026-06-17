@@ -23,21 +23,28 @@ const SHELL_DOT: Record<ShellState, string> = {
 // editor-client's sendChatMessage. Only one TerminalPanel exists per page.
 let _shellWriter: WritableStreamDefaultWriter<string> | null = null
 let _pendingCommand: string | null = null
+// jsh accepts input only after it prints its first prompt. Set true on the
+// shell's first output chunk; until then, commands are queued not injected.
+let _shellReady = false
 
 function injectCommand(
   writer: WritableStreamDefaultWriter<string>,
   command: string
 ) {
   void writer.write('\x03').catch(() => undefined)
-  // Give jsh a beat to interrupt any running process before the command lands
+  // Give jsh a beat to interrupt any running process before the command lands.
+  // Submit with '\r' (carriage return) — jsh runs the line on CR, the same byte
+  // xterm sends on Enter. '\n' only echoes the text without executing it.
   setTimeout(() => {
-    void writer.write(command + '\n').catch(() => undefined)
+    void writer.write(command + '\r').catch(() => undefined)
   }, 150)
 }
 
 export function runInTerminal(command: string): void {
   useEditorStore.getState().setTerminalOpen(true)
-  if (_shellWriter) injectCommand(_shellWriter, command)
+  // Only inject once the shell is ready; otherwise queue and let the
+  // first-output handler flush it (covers the cold-shell first run).
+  if (_shellWriter && _shellReady) injectCommand(_shellWriter, command)
   else _pendingCommand = command
 }
 
@@ -76,6 +83,20 @@ export function TerminalPanel() {
           new WritableStream<string>({
             write: (data) => {
               termRef.current?.write(data)
+              // First output = jsh's prompt is up and ready for input. Flush a
+              // queued command now (fresh shell → nothing to interrupt, so no
+              // Ctrl+C, just submit). Injecting before this races the boot and
+              // the line gets swallowed.
+              if (!_shellReady) {
+                _shellReady = true
+                if (_pendingCommand) {
+                  const cmd = _pendingCommand
+                  _pendingCommand = null
+                  setTimeout(() => {
+                    void writer.write(cmd + '\r').catch(() => undefined)
+                  }, 80)
+                }
+              }
             },
           })
         )
@@ -84,10 +105,6 @@ export function TerminalPanel() {
         void writer.write(data).catch(() => undefined)
       })
       _shellWriter = writer
-      if (_pendingCommand) {
-        injectCommand(writer, _pendingCommand)
-        _pendingCommand = null
-      }
       setShellState('running')
       void proc.exit.then(() => {
         if (processRef.current !== proc) return
@@ -95,6 +112,7 @@ export function TerminalPanel() {
         dataDisposableRef.current = null
         writerRef.current = null
         _shellWriter = null
+        _shellReady = false
         processRef.current = null
         setShellState('exited')
       })

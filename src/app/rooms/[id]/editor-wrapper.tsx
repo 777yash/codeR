@@ -53,6 +53,7 @@ interface EditorWrapperProps {
   currentUserName?: string
   roomLanguage?: string
   canSave?: boolean
+  aiChatEnabled?: boolean
 }
 
 export function EditorWrapper({
@@ -65,6 +66,7 @@ export function EditorWrapper({
   currentUserName,
   roomLanguage,
   canSave = false,
+  aiChatEnabled = true,
 }: EditorWrapperProps) {
   const router = useRouter()
   const posthog = usePostHog()
@@ -181,6 +183,7 @@ export function EditorWrapper({
           currentUserName={currentUserName}
           roomLanguage={roomLanguage}
           canSave={canSave}
+          aiChatEnabled={aiChatEnabled}
           mobileOpen={mobilePane === 'collab'}
         />
       </div>
