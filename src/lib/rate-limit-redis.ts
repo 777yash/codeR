@@ -1,5 +1,4 @@
 import 'server-only'
-import { env } from '@/lib/env'
 
 const ROOM_LIMIT = 20
 const WINDOW_SECONDS = 3600
@@ -34,8 +33,11 @@ function checkMemory(key: string, bucket: number): boolean {
  */
 export async function checkRoomAiRateLimit(roomId: string): Promise<boolean> {
   const { key, bucket } = bucketKey(roomId)
-  const url = env.UPSTASH_REDIS_REST_URL
-  const token = env.UPSTASH_REDIS_REST_TOKEN
+  // Read process.env directly (vars are optional) — avoid importing the strict
+  // env validator, which would run during `next build` page-data collection
+  // and fail when build-time DB/secret vars aren't set.
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
   if (!url || !token) return checkMemory(key, bucket)
 
   try {

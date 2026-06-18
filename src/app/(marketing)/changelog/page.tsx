@@ -1,9 +1,36 @@
 const releases = [
   {
+    phase: '13.2',
+    title: 'Room Search & Sliding Side Panels',
+    date: 'Jun 18, 2026',
+    status: 'latest',
+    accentColor: '#F43F5E',
+    summary:
+      'The dashboard search box now actually filters your rooms as you type, wrapped in a playful “gooey” control that expands on click. And the editor’s file explorer and collaboration panel now slide open and closed with the same smooth motion as the profile panels, instead of snapping.',
+    changes: [
+      {
+        type: 'feature',
+        items: [
+          'Dashboard search filters your rooms live by name as you type, with a clear message when nothing matches',
+          'New animated “gooey” search control — expands when you click it, collapses when left empty',
+          'File explorer and collaboration panel now slide open and closed with a smooth animation instead of an instant snap',
+          'Search control uses an off-white pill in dark mode for better contrast',
+        ],
+      },
+      {
+        type: 'infra',
+        items: [
+          'Added motion (Framer Motion) for the search control — verified publisher, installed with scripts disabled',
+          'Panel slides reuse the existing gsap animation; fixed a flexbox min-width clamp that made the editor panels snap instead of glide',
+        ],
+      },
+    ],
+  },
+  {
     phase: '13.1',
     title: 'Dashboard Polish & Animated Backdrop',
     date: 'Jun 17, 2026',
-    status: 'latest',
+    status: 'shipped',
     accentColor: '#14B8A6',
     summary:
       'A round of dashboard polish. Profile, Settings and Help now glide in from the right as animated panels, there’s a proper in-app Help centre, scrollbars finally match the active theme, and the dashboard sits on a subtle animated backdrop — brand rose on dark, a complementary teal on light.',
@@ -1330,7 +1357,7 @@ export default function ChangelogPage() {
             marginBottom: '12px',
           }}
         >
-          Up next
+          Still on the list
         </div>
         <h3
           style={{
@@ -1340,7 +1367,7 @@ export default function ChangelogPage() {
             marginBottom: '8px',
           }}
         >
-          Phase 13 — @ai Chat Commands
+          Cross-browser QA & password recovery
         </h3>
         <p
           style={{
@@ -1350,9 +1377,8 @@ export default function ChangelogPage() {
             margin: '0 auto 20px',
           }}
         >
-          Summon the AI straight from room chat with @ai — fix, explain,
-          refactor, or scaffold, with the response shared across every
-          collaborator in the room.
+          A couple of loose ends from earlier phases: a full cross-browser pass
+          on the in-browser runtime, and a proper password-reset flow.
         </p>
         <a
           href="/features"
@@ -1365,7 +1391,7 @@ export default function ChangelogPage() {
             textDecoration: 'none',
           }}
         >
-          See planned features →
+          See the full roadmap →
         </a>
       </div>
     </div>

@@ -52,6 +52,8 @@
 :root {
   --background: oklch(0.155 0.004 285);
   --foreground: oklch(0.94 0.003 285);
+  /* Gooey search pill surface — dark theme uses the warm off-white */
+  --gooey-surface: oklch(0.984 0.002 85);
   --card: oklch(0.205 0.005 285);
   --card-foreground: oklch(0.94 0.003 285);
   --popover: oklch(0.205 0.005 285);
@@ -87,6 +89,8 @@
 html.light {
   --background: oklch(0.984 0.002 85);
   --foreground: oklch(0.235 0.006 65);
+  /* Light theme keeps the dark-ink pill */
+  --gooey-surface: var(--foreground);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.235 0.006 65);
   --popover: oklch(1 0 0);
@@ -354,4 +358,71 @@ html.light {
 
 ::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Animated star-border on room cards (hover) — adapted from React Bits
+   StarBorder: two radial-gradient blobs sweep the top/bottom edges. Color is
+   the brand accent (rose), revealed by the 2px gap between the clipping
+   wrapper and the inner card. */
+.room-star-border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 360ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+.group:hover .room-star-border {
+  opacity: 1;
+}
+.room-star-border > span {
+  position: absolute;
+  width: 300%;
+  height: 22px;
+  opacity: 0.85;
+  border-radius: 50%;
+  filter: blur(3px);
+  background: radial-gradient(circle, var(--coder-accent), transparent 65%);
+}
+.room-star-border .star-top {
+  top: -11px;
+  left: -250%;
+}
+.room-star-border .star-bottom {
+  bottom: -11px;
+  right: -250%;
+}
+.group:hover .room-star-border .star-top {
+  animation: room-star-top 5.5s ease-in-out infinite alternate;
+}
+.group:hover .room-star-border .star-bottom {
+  animation: room-star-bottom 5.5s ease-in-out infinite alternate;
+}
+@keyframes room-star-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0;
+  }
+}
+@keyframes room-star-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .room-star-border .star-top,
+  .group:hover .room-star-border .star-bottom {
+    animation: none;
+  }
 }

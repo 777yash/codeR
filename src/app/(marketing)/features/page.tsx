@@ -615,7 +615,7 @@ export default function FeaturesPage() {
             marginBottom: '8px',
           }}
         >
-          Start building RIGHT NOW!
+          Take it for a spin
         </h2>
         <p
           style={{
@@ -625,7 +625,7 @@ export default function FeaturesPage() {
           }}
         >
           CRDT collaboration, AI completions, live code execution, version
-          history, presence, and Monaco Editor — available now, free.
+          history, presence, and Monaco Editor — all built and running.
         </p>
         <a
           href="/signup"
@@ -643,7 +643,7 @@ export default function FeaturesPage() {
             textDecoration: 'none',
           }}
         >
-          Create free account
+          Create an account
         </a>
       </div>
     </div>

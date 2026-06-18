@@ -74,7 +74,7 @@ export default function LandingPage() {
         >
           Code Together.
           <br />
-          Ship Faster<span style={{ color: 'var(--coder-accent)' }}>.</span>
+          In Real Time<span style={{ color: 'var(--coder-accent)' }}>.</span>
         </h1>
 
         {/* Subheadline */}
@@ -88,7 +88,8 @@ export default function LandingPage() {
           }}
         >
           A real-time collaborative code editor with live execution,
-          presence-aware cursors, and AI completions. Zero setup required.
+          presence-aware cursors, and AI completions. A personal project, free
+          to use — no setup, no gimmicks.
         </p>
 
         {/* CTAs */}
@@ -120,7 +121,7 @@ export default function LandingPage() {
               transition: 'background-color 150ms ease, box-shadow 150ms ease',
             }}
           >
-            Start Coding Free <ArrowRight className="h-4 w-4" />
+            Start Coding <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             href="/features"
@@ -144,7 +145,7 @@ export default function LandingPage() {
         </div>
 
         <p style={{ fontSize: '13px', color: 'var(--coder-text-tertiary)' }}>
-          Free · Start Coding Together Now!
+          A personal project · Free to use
         </p>
       </section>
 
@@ -632,10 +633,10 @@ export default function LandingPage() {
           }}
         >
           {[
-            { value: '29', label: 'Languages supported' },
+            { value: '28', label: 'Languages supported' },
             { value: 'CRDT', label: 'Conflict-free sync' },
-            { value: '<50ms', label: 'Collaboration latency' },
-            { value: 'Free', label: 'Forever on solo plan' },
+            { value: 'Real-time', label: 'Live collaboration' },
+            { value: 'Free', label: 'No plans, no paywall' },
           ].map(({ value, label }) => (
             <div key={label}>
               <div
@@ -707,7 +708,7 @@ export default function LandingPage() {
             boxShadow: 'var(--coder-shadow-accent)',
           }}
         >
-          Get started free <ArrowRight className="h-4 w-4" />
+          Get started <ArrowRight className="h-4 w-4" />
         </Link>
       </section>
     </div>

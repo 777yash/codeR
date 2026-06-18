@@ -25,7 +25,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { gsap } from 'gsap'
 import { toast } from 'sonner'
 
 const EXT_TO_LANG: Record<string, string> = {
@@ -153,6 +154,9 @@ export function FileExplorer({
     | null
   >(null)
   const contextMenuRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const tlRef = useRef<gsap.core.Timeline | null>(null)
+  const didMountRef = useRef(false)
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -166,6 +170,80 @@ export function FileExplorer({
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  // gsap slide on show/collapse — mirrors the profile SlidePanel motion.
+  // Desktop only: the mobile drawer is driven by `mobileOpen` + CSS, so we
+  // clear any inline styles there to avoid clobbering the responsive width.
+  useLayoutEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches
+
+    // First paint sets the resting state with no animation (no slide-in on load).
+    if (!didMountRef.current) {
+      didMountRef.current = true
+      if (isDesktop && explorerCollapsed) {
+        gsap.set(panel, { width: 0, opacity: 0, borderRightWidth: 0 })
+      }
+      return
+    }
+
+    if (!isDesktop) {
+      gsap.set(panel, {
+        clearProps: 'width,opacity,borderRightWidth,transform',
+      })
+      return
+    }
+
+    tlRef.current?.kill()
+    const rows = panel.querySelectorAll('[data-explorer-item]')
+
+    if (!explorerCollapsed) {
+      const tl = gsap.timeline()
+      tl.fromTo(
+        panel,
+        { width: 0, opacity: 0, borderRightWidth: 0 },
+        {
+          width: 220,
+          opacity: 1,
+          borderRightWidth: 1,
+          duration: 0.45,
+          ease: 'power4.out',
+        },
+        0
+      )
+      if (rows.length) {
+        tl.fromTo(
+          rows,
+          { x: -16, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.4,
+            ease: 'power3.out',
+            stagger: 0.04,
+          },
+          0.12
+        )
+      }
+      // Hand sizing back to the CSS classes once the slide finishes.
+      tl.set(panel, { clearProps: 'width,opacity,borderRightWidth' })
+      tl.set(rows, { clearProps: 'transform,opacity' })
+      tlRef.current = tl
+    } else {
+      tlRef.current = gsap.timeline().to(
+        panel,
+        {
+          width: 0,
+          opacity: 0,
+          borderRightWidth: 0,
+          duration: 0.3,
+          ease: 'power3.in',
+        },
+        0
+      )
+    }
+  }, [explorerCollapsed])
 
   function startRename(fileId: string, currentName: string) {
     setContextMenu(null)
@@ -268,6 +346,7 @@ export function FileExplorer({
     return (
       <div
         key={file.id}
+        data-explorer-item
         onContextMenu={(e) => {
           e.preventDefault()
           setContextMenu({
@@ -329,6 +408,7 @@ export function FileExplorer({
       nodes.push(
         <button
           key={`dir:${sub.path}`}
+          data-explorer-item
           onClick={() => toggleFolder(sub.path)}
           onContextMenu={(e) => {
             e.preventDefault()
@@ -390,9 +470,10 @@ export function FileExplorer({
       )}
 
       <div
-        className={`border-app bg-app-surface flex-col overflow-hidden border-r max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[300px] max-md:shadow-[4px_0_24px_rgba(0,0,0,0.5)] md:w-[220px] md:shrink-0 ${
-          explorerCollapsed ? 'md:hidden' : 'md:flex'
-        } ${mobileOpen ? 'max-md:flex' : 'max-md:hidden'}`}
+        ref={panelRef}
+        className={`border-app bg-app-surface flex-col overflow-hidden border-r will-change-[width] max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[300px] max-md:shadow-[4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[220px] md:min-w-0 md:shrink-0 ${
+          mobileOpen ? 'max-md:flex' : 'max-md:hidden'
+        }`}
       >
         {/* Header */}
         <div className="border-app flex h-9 shrink-0 items-center justify-between border-b pr-1.5 pl-3">

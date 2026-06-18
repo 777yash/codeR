@@ -7,6 +7,7 @@ import { Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { RoomCard } from './room-card'
 import { CreateRoomDialog } from './create-room-dialog'
+import { useRoomSearch } from '@/components/dashboard/room-search-context'
 import type {
   Room,
   User as PrismaUser,
@@ -51,8 +52,14 @@ export function RoomList({
     return () => window.removeEventListener('storage', read)
   }, [])
 
-  const filteredRooms =
+  const searchQuery = useRoomSearch()
+  const query = searchQuery.trim().toLowerCase()
+
+  const viewRooms =
     view === 'starred' ? rooms.filter((r) => starredIds.includes(r.id)) : rooms
+  const filteredRooms = query
+    ? viewRooms.filter((r) => r.name.toLowerCase().includes(query))
+    : viewRooms
 
   const handleCreateRoom = useCallback(
     async (data: { name: string; description?: string; isPublic: boolean }) => {
@@ -120,13 +127,19 @@ export function RoomList({
         ))}
       </div>
 
-      {view === 'starred' && filteredRooms.length === 0 && (
+      {query && filteredRooms.length === 0 && (
+        <p className="mt-8 text-center text-sm text-[var(--coder-text-tertiary)]">
+          No rooms match &ldquo;{searchQuery.trim()}&rdquo;
+        </p>
+      )}
+
+      {!query && view === 'starred' && filteredRooms.length === 0 && (
         <p className="mt-8 text-center text-sm text-[var(--coder-text-tertiary)]">
           No starred rooms — hover a room card and click ☆ to star it
         </p>
       )}
 
-      {view !== 'starred' && rooms.length === 0 && (
+      {!query && view !== 'starred' && rooms.length === 0 && (
         <p className="mt-8 text-center text-sm text-[var(--coder-text-tertiary)]">
           {view === 'shared'
             ? 'No rooms shared with you yet'

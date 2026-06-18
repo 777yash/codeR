@@ -44,7 +44,7 @@ export default function DashboardBackground() {
     >
       <FaultyTerminal
         className="h-full w-full"
-        tint={isLight ? '#0D9488' : '#F43F5E'}
+        tint={isLight ? '#2BBF0F' : '#F43F5E'}
         scale={1.6}
         gridMul={GRID}
         digitSize={1.2}

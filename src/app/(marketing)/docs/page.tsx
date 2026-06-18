@@ -343,7 +343,7 @@ export default function DocsPage() {
               },
               {
                 icon: <Globe className="h-4 w-4" />,
-                label: '29 languages',
+                label: '28 languages',
                 sub: 'Syntax highlighting + execution',
               },
             ].map(({ icon, label, sub }) => (
@@ -557,8 +557,7 @@ export default function DocsPage() {
             automatically from its extension (<InlineCode>utils.ts</InlineCode>{' '}
             → TypeScript), so one room can mix many languages. There is no
             room-wide language selector. A GitHub-style breakdown bar in the
-            toolbar shows the language composition of the workspace; 29
-            languages are recognized for highlighting.
+            toolbar shows the language composition of the workspace.
           </Prose>
 
           <Heading3>Auto-save</Heading3>
@@ -1030,9 +1029,9 @@ export default function DocsPage() {
         <section style={{ marginBottom: '48px' }}>
           <Heading2 id="languages">Supported Languages</Heading2>
           <Prose>
-            29 languages are available in the language selector. Syntax
-            highlighting is provided by Monaco. JavaScript and TypeScript
-            execute locally via the{' '}
+            These are the 28 languages codeR recognizes. Syntax highlighting is
+            provided by Monaco. JavaScript and TypeScript execute locally via
+            the{' '}
             <a
               href="#runtime"
               style={{
@@ -1280,7 +1279,7 @@ export default function DocsPage() {
             <div
               style={{ fontSize: '13px', color: 'var(--coder-text-secondary)' }}
             >
-              Create a free account and start your first room.
+              Create an account and start your first room.
             </div>
           </div>
           <Link

@@ -1,6 +1,14 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+  useLayoutEffect,
+} from 'react'
+import { gsap } from 'gsap'
 import {
   UserPlus,
   MessageSquare,
@@ -257,6 +265,10 @@ export function CollabPanel({
   const collabCollapsed = useEditorStore((s) => s.collabCollapsed)
   const setCollabCollapsed = useEditorStore((s) => s.setCollabCollapsed)
 
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const slideTlRef = useRef<gsap.core.Timeline | null>(null)
+  const didMountRef = useRef(false)
+
   // ── History state ─────────────────────────────────────────────────────────
   const [histSnapshots, setHistSnapshots] = useState<Snapshot[]>([])
   const [histListLoading, setHistListLoading] = useState(false)
@@ -316,6 +328,78 @@ export function CollabPanel({
       requestAnimationFrame(() => diffEditorRef.current?.layout())
     }
   }, [histSelected, histDiffLoading])
+
+  // gsap slide on show/collapse — mirrors the profile SlidePanel motion, on
+  // the right edge. Desktop only: the mobile drawer uses `mobileOpen` + CSS,
+  // so we clear inline styles there to keep the responsive width intact.
+  useLayoutEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches
+
+    // First paint sets the resting state with no animation (no slide-in on load).
+    if (!didMountRef.current) {
+      didMountRef.current = true
+      if (isDesktop && collabCollapsed) {
+        gsap.set(panel, { width: 0, opacity: 0, borderLeftWidth: 0 })
+      }
+      return
+    }
+
+    if (!isDesktop) {
+      gsap.set(panel, { clearProps: 'width,opacity,borderLeftWidth,transform' })
+      return
+    }
+
+    slideTlRef.current?.kill()
+    const items = panel.querySelectorAll('[data-collab-item]')
+
+    if (!collabCollapsed) {
+      const tl = gsap.timeline()
+      tl.fromTo(
+        panel,
+        { width: 0, opacity: 0, borderLeftWidth: 0 },
+        {
+          width: 280,
+          opacity: 1,
+          borderLeftWidth: 1,
+          duration: 0.45,
+          ease: 'power4.out',
+        },
+        0
+      )
+      if (items.length) {
+        tl.fromTo(
+          items,
+          { x: 16, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.4,
+            ease: 'power3.out',
+            stagger: 0.04,
+          },
+          0.12
+        )
+      }
+      // Hand sizing back to the CSS classes once the slide finishes.
+      tl.set(panel, { clearProps: 'width,opacity,borderLeftWidth' })
+      tl.set(items, { clearProps: 'transform,opacity' })
+      slideTlRef.current = tl
+    } else {
+      slideTlRef.current = gsap.timeline().to(
+        panel,
+        {
+          width: 0,
+          opacity: 0,
+          borderLeftWidth: 0,
+          duration: 0.3,
+          ease: 'power3.in',
+        },
+        0
+      )
+    }
+  }, [collabCollapsed])
 
   // ── History handlers ──────────────────────────────────────────────────────
 
@@ -569,15 +653,17 @@ export function CollabPanel({
       )}
 
       <div
-        className={`border-app bg-app-surface flex-col overflow-hidden border-l max-md:absolute max-md:inset-y-0 max-md:right-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[320px] max-md:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] md:w-[280px] md:shrink-0 ${
-          collabCollapsed ? 'md:hidden' : 'md:flex'
-        } ${mobileOpen ? 'max-md:flex' : 'max-md:hidden'}`}
+        ref={panelRef}
+        className={`border-app bg-app-surface flex-col overflow-hidden border-l will-change-[width] max-md:absolute max-md:inset-y-0 max-md:right-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[320px] max-md:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[280px] md:min-w-0 md:shrink-0 ${
+          mobileOpen ? 'max-md:flex' : 'max-md:hidden'
+        }`}
       >
         {/* Tab bar */}
         <div className="border-app flex h-10 shrink-0 items-stretch border-b">
           {tabs.map((t) => (
             <button
               key={t.id}
+              data-collab-item
               onClick={() => activateTab(t.id)}
               className={`relative flex flex-1 items-center justify-center gap-1 text-xs font-medium transition-colors ${
                 tab === t.id
