@@ -120,7 +120,7 @@ export function LanguageIcon({ language, size = 16 }: LanguageIconProps) {
 
   const hex = HEX_OVERRIDE[lang] ?? icon.hex
   const pathColor = luminance(hex) < 0.12 ? 'white' : `#${hex}`
-  const bgHex = HEX_OVERRIDE[lang] ?? icon.hex
+  const bgHex = hex
 
   return (
     <span

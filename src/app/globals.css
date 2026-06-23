@@ -426,3 +426,26 @@ html.light {
     animation: none;
   }
 }
+
+/* gsap-driven loading skeletons (see components/ui/skeleton.tsx) */
+.skeleton-base {
+  background-color: var(--coder-bg-card-hover);
+}
+.skeleton-sheen {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  pointer-events: none;
+  will-change: transform;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--coder-text-tertiary) 14%, transparent) 50%,
+    transparent 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-sheen {
+    display: none;
+  }
+}
