@@ -21,13 +21,13 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 **Code-R** lets multiple developers edit the same codebase simultaneously in the browser — every keystroke syncs in real time with zero merge conflicts, thanks to a CRDT (Conflict-free Replicated Data Type) data model. Beyond editing, rooms can **run code in-browser** (a full Node.js runtime via WebContainers, plus a 29-language sandboxed executor), spin up **live dev-server previews**, and call an **AI assistant** for inline completions, project scaffolding, and chat commands.
 
 The hard problem it solves: real-time collaboration is fundamentally **stateful** (persistent WebSocket connections, shared mutable document state), but modern serverless platforms like Vercel are **stateless**. Code-R splits the system into a stateless Next.js app and a dedicated stateful WebSocket server, with CRDT snapshots persisted to Postgres so nothing is ever lost.
 
-## ✨ Key Features
+## Key Features
 
 - **Conflict-free real-time editing** — multiple users type in the same file simultaneously; edits merge deterministically via [Yjs](https://yjs.dev) CRDTs (no operational-transform server, no lock contention).
 - **Live presence** — remote cursors, selections, and join/leave awareness, each collaborator color-coded.
@@ -40,7 +40,7 @@ The hard problem it solves: real-time collaboration is fundamentally **stateful*
 - **GitHub Gist export** — one-click export of a room's files to a Gist.
 - **Production hardening** — CSRF protection on every mutation, CSP/COOP/COEP headers, Zod-validated environment, Sentry monitoring, PostHog analytics.
 
-## 🧰 Tech Stack
+## Tech Stack
 
 <table>
 <tr><th>Layer</th><th>Technology</th><th>Why</th></tr>
@@ -75,7 +75,7 @@ The hard problem it solves: real-time collaboration is fundamentally **stateful*
 <tr><td>Vitest · ESLint 9 · Prettier · Husky · GitHub Actions · Sentry · PostHog</td><td>Tests, lint/format gates, pre-commit hooks, CI, error monitoring, product analytics.</td></tr>
 </table>
 
-## 🏗️ Architecture
+## Architecture
 
 Code-R is split into a **stateless web tier** (Next.js on Vercel) and a **stateful realtime tier** (a standalone `y-websocket` server on Render). The browser holds the source of truth as a Yjs document: edits flow through the WebSocket server (which only relays and persists, never transforms), while all auth, persistence, AI, and execution requests hit Next.js API routes. The collab server snapshots each document to Postgres and uses Redis pub/sub to stay consistent across horizontally-scaled instances. Code execution happens **entirely in the user's browser** via WebContainers — there is no server-side compute path for running code.
 
@@ -113,7 +113,7 @@ flowchart TD
 
 > **Realtime tier:** the WebSocket server is a separate service — repo [`777yash/code-r-collab-server`](https://github.com/777yash/code-r-collab-server), live at [code-r-collab-server.onrender.com](https://code-r-collab-server.onrender.com).
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -203,7 +203,7 @@ npm run type-check    # tsc --noEmit
 npm run format:check  # Prettier
 ```
 
-## 🛠️ Engineering Highlights
+## Engineering Highlights
 
 These are the hard problems behind the demo — the parts I'm proud of.
 
@@ -255,7 +255,7 @@ Binding the VS Code editor core to a CRDT across multi-file tab switches surface
 
 </details>
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Token streaming for `@ai` chat responses (currently rendered on completion)
 - [ ] Executor failover when the `@ai`-triggering client disconnects mid-generation
