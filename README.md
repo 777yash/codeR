@@ -261,7 +261,6 @@ Binding the VS Code editor core to a CRDT across multi-file tab switches surface
 - [ ] Executor failover when the `@ai`-triggering client disconnects mid-generation
 - [ ] Password recovery / reset flow
 - [ ] Provider unlinking in account settings (currently disabled to avoid lockout)
-- [ ] Lift AI provider to a billable tier for production-grade rate limits
 - [ ] Broaden WebContainer support / fallbacks for Safari (no `SharedArrayBuffer`)
 
 ---
