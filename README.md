@@ -3,6 +3,10 @@
 > A browser-based, multiplayer code editor with conflict-free live editing, in-browser code execution, and an AI pair-programmer — Google Docs for code.
 
 <p align="center">
+  <img src="assets/demo.gif" alt="Code-R demo: AI chat, generated JavaScript, live preview, and a working to-do app" width="100%">
+</p>
+
+<p align="center">
   <a href="https://code-r-ruby.vercel.app"><img alt="Live Demo" src="https://img.shields.io/badge/Live_Demo-code--r-F43F5E?style=for-the-badge&logo=vercel&logoColor=white"></a>
 </p>
 
