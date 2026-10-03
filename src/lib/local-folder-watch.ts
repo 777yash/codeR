@@ -1,6 +1,7 @@
 import { getFolderHandle, ensureFolderPermission } from '@/lib/local-folder'
 import { isSelfWrite } from '@/lib/webcontainer-export'
 import { isImportable, MAX_IMPORT_SIZE } from '@/lib/webcontainer-watch'
+import { NODE_MODULES_PACK } from '@/lib/webcontainer-deps-pack'
 
 const SCAN_EXCLUDED_DIRS = new Set(['node_modules', '.git', '.npm', '.cache'])
 const POLL_MS = 2000
@@ -33,6 +34,7 @@ async function collectDiskFiles(
     for await (const entry of dir.values()) {
       if (files.size >= MAX_FILES) return
       const path = prefix ? `${prefix}/${entry.name}` : entry.name
+      if (path === NODE_MODULES_PACK) continue
       if (entry.kind === 'directory') {
         if (!SCAN_EXCLUDED_DIRS.has(entry.name)) {
           await walk(entry as FileSystemDirectoryHandle, path)
@@ -85,6 +87,8 @@ async function scan(
   }
 }
 
+let onVisibilityChange: (() => void) | null = null
+
 export function startLocalFolderWatcher(
   roomId: string,
   callbacks: LocalWatcherCallbacks
@@ -93,11 +97,21 @@ export function startLocalFolderWatcher(
   pollTimer = setInterval(() => {
     void scan(roomId, callbacks)
   }, POLL_MS)
+  // Polling skips hidden tabs — scan immediately on refocus instead of
+  // waiting up to POLL_MS for edits made in an external editor
+  onVisibilityChange = () => {
+    if (!document.hidden) void scan(roomId, callbacks)
+  }
+  document.addEventListener('visibilitychange', onVisibilityChange)
 }
 
 export function stopLocalFolderWatcher(): void {
   if (pollTimer) clearInterval(pollTimer)
   pollTimer = null
+  if (onVisibilityChange) {
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+    onVisibilityChange = null
+  }
   knownMtimes = null
   scanning = false
 }

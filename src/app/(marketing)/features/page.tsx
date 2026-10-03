@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { RevealSurface } from '@/components/ui/reveal-surface'
 import {
   CheckCircle2,
   Circle,
@@ -13,6 +15,8 @@ import {
   Bot,
   AtSign,
   Wrench,
+  ChevronDown,
+  ArrowUpRight,
 } from 'lucide-react'
 
 const phases = [
@@ -22,7 +26,6 @@ const phases = [
     status: 'shipped',
     date: 'April 2026',
     icon: <Lock className="h-5 w-5" />,
-    accentColor: 'var(--coder-accent)',
     features: [
       { name: 'GitHub OAuth sign-in', done: true },
       { name: 'Google OAuth sign-in', done: true },
@@ -38,7 +41,6 @@ const phases = [
     status: 'shipped',
     date: 'April 2026',
     icon: <Users className="h-5 w-5" />,
-    accentColor: '#BF5AF2',
     features: [
       { name: 'Create and join coding rooms', done: true },
       { name: 'Role-based access (Owner, Editor, Viewer)', done: true },
@@ -54,7 +56,6 @@ const phases = [
     status: 'shipped',
     date: 'May 2026',
     icon: <Code2 className="h-5 w-5" />,
-    accentColor: '#FF9F0A',
     features: [
       { name: 'Monaco Editor (VS Code engine)', done: true },
       { name: '60+ language syntax highlighting', done: true },
@@ -70,7 +71,6 @@ const phases = [
     status: 'shipped',
     date: 'May 2026',
     icon: <Zap className="h-5 w-5" />,
-    accentColor: '#32D74B',
     features: [
       { name: 'CRDT-based conflict-free sync (Yjs)', done: true },
       { name: 'WebSocket document synchronization', done: true },
@@ -86,7 +86,6 @@ const phases = [
     status: 'shipped',
     date: 'May 2026',
     icon: <Users className="h-5 w-5" />,
-    accentColor: 'var(--coder-accent)',
     features: [
       { name: 'Colored remote cursors per user', done: true },
       { name: 'Cursor name labels', done: true },
@@ -102,7 +101,6 @@ const phases = [
     status: 'shipped',
     date: 'May 2026',
     icon: <Terminal className="h-5 w-5" />,
-    accentColor: '#32D74B',
     features: [
       { name: 'Run code via OneCompiler (28 languages)', done: true },
       {
@@ -131,7 +129,6 @@ const phases = [
     status: 'shipped',
     date: 'May 2026',
     icon: <Clock className="h-5 w-5" />,
-    accentColor: '#FF9F0A',
     features: [
       { name: 'Auto-snapshots every 30s via collab-server', done: true },
       { name: 'Named versions (user-triggered, any time)', done: true },
@@ -151,7 +148,6 @@ const phases = [
     status: 'shipped',
     date: 'Jun 2026',
     icon: <MessageSquare className="h-5 w-5" />,
-    accentColor: '#06B6D4',
     features: [
       { name: 'In-session room chat via Yjs Y.Array', done: true },
       { name: 'Real-time sync', done: true },
@@ -168,7 +164,6 @@ const phases = [
     status: 'shipped',
     date: 'Jun 2026',
     icon: <Sparkles className="h-5 w-5" />,
-    accentColor: '#BF5AF2',
     features: [
       { name: 'Inline suggestions (Mistral Codestral FIM)', done: true },
       { name: 'Tab to accept, Escape to dismiss', done: true },
@@ -186,7 +181,6 @@ const phases = [
     status: 'shipped',
     date: 'Jun 2026',
     icon: <Wrench className="h-5 w-5" />,
-    accentColor: 'var(--coder-accent)',
     features: [
       { name: 'Full security audit (CSP, CSRF, JWT rotation)', done: true },
       { name: 'CSRF enforcement on all mutation endpoints', done: true },
@@ -203,7 +197,10 @@ const phases = [
         done: true,
       },
       { name: 'In-app help centre with quick start & shortcuts', done: true },
-      { name: 'Animated WebGL dashboard backdrop (theme-aware)', done: true },
+      {
+        name: 'Lightweight dashboard surfaces and theme-aware controls',
+        done: true,
+      },
       { name: 'Theme-matched scrollbars (dark / light)', done: true },
     ],
   },
@@ -213,7 +210,6 @@ const phases = [
     status: 'in_progress',
     date: 'Jun 2026',
     icon: <Globe className="h-5 w-5" />,
-    accentColor: '#0EA5E9',
     features: [
       { name: 'In-browser Node.js runtime (zero server infra)', done: true },
       { name: 'Virtual terminal via xterm.js', done: true },
@@ -241,14 +237,13 @@ const phases = [
     status: 'shipped',
     date: 'Jun 2026',
     icon: <Bot className="h-5 w-5" />,
-    accentColor: '#A855F7',
     features: [
       {
         name: 'Ask questions — explain & debug code, discuss, research',
         done: true,
       },
       {
-        name: 'Build mode: prompt → full runnable project (GitHub Models)',
+        name: 'Build mode: prompt → full runnable project (GroqCloud)',
         done: true,
       },
       {
@@ -276,7 +271,6 @@ const phases = [
     status: 'shipped',
     date: 'Jun 2026',
     icon: <AtSign className="h-5 w-5" />,
-    accentColor: '#F59E0B',
     features: [
       {
         name: '@ai in chat triggers AI visible to all collaborators',
@@ -305,346 +299,74 @@ const phases = [
 ]
 
 const statusConfig = {
-  shipped: { label: 'Shipped', color: '#32D74B', bg: 'rgba(50,215,75,0.10)' },
-  in_progress: {
-    label: 'In Progress',
-    color: '#FF9F0A',
-    bg: 'rgba(255,159,10,0.10)',
-  },
-  upcoming: {
-    label: 'Upcoming',
-    color: '#0EA5E9',
-    bg: 'rgba(14,165,233,0.10)',
-  },
-  planned: {
-    label: 'Planned',
-    color: 'var(--coder-text-tertiary)',
-    bg: 'rgba(85,85,85,0.15)',
-  },
+  shipped: 'Shipped',
+  in_progress: 'In progress',
+  upcoming: 'Upcoming',
+  planned: 'Planned',
 }
 
 export default function FeaturesPage() {
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '64px 24px' }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '72px' }}>
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            borderRadius: '9999px',
-            border: '1px solid var(--coder-border-accent)',
-            backgroundColor: 'var(--coder-bg-card)',
-            padding: '6px 16px',
-            marginBottom: '24px',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '12px',
-              fontWeight: 500,
-              color: 'var(--coder-text-accent)',
-            }}
-          >
-            Phase roadmap
-          </span>
-        </div>
-        <h1
-          style={{
-            fontSize: 'clamp(32px, 5vw, 48px)',
-            fontWeight: 700,
-            letterSpacing: '-0.02em',
-            color: 'var(--coder-text-primary)',
-            marginBottom: '16px',
-          }}
-        >
-          Everything in codeR
-        </h1>
-        <p
-          style={{
-            fontSize: '18px',
-            color: 'var(--coder-text-secondary)',
-            maxWidth: '520px',
-            margin: '0 auto',
-          }}
-        >
-          Built phase by phase — every feature designed to work together, not
-          bolted on.
-        </p>
-
-        {/* Legend */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '20px',
-            justifyContent: 'center',
-            marginTop: '32px',
-            flexWrap: 'wrap',
-          }}
-        >
-          {Object.entries(statusConfig).map(([key, { label, color, bg }]) => (
-            <div
-              key={key}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  color,
-                  backgroundColor: bg,
-                  padding: '2px 8px',
-                  borderRadius: '9999px',
-                }}
-              >
-                {label}
-              </span>
-            </div>
+    <div className="product-page">
+      <header className="product-page-heading">
+        <h1>Features</h1>
+        <Link href="/signup" className="action-primary">
+          Open a workspace <ArrowUpRight size={16} />
+        </Link>
+      </header>
+      <div className="feature-layout">
+        <aside className="feature-index" aria-label="Feature navigation">
+          {phases.map((phase) => (
+            <a key={phase.number} href={`#feature-${phase.number}`}>
+              <span>{phase.number}</span>
+              {phase.title}
+            </a>
           ))}
-        </div>
-      </div>
-
-      {/* Phase grid */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {phases.map((phase) => {
-          const sc = statusConfig[phase.status as keyof typeof statusConfig]
-          const doneCount = phase.features.filter((f) => f.done).length
-          const totalCount = phase.features.length
-
-          return (
-            <div
+        </aside>
+        <RevealSurface className="feature-sections">
+          {phases.map((phase, index) => (
+            <details
               key={phase.number}
-              style={{
-                border: '1px solid var(--coder-border)',
-                borderRadius: '10px',
-                backgroundColor: 'var(--coder-bg-surface)',
-                overflow: 'hidden',
-              }}
+              id={`feature-${phase.number}`}
+              className="feature-section"
+              open={index < 2}
+              data-reveal
             >
-              {/* Phase header */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '20px 24px',
-                  borderBottom: '1px solid var(--coder-border)',
-                  backgroundColor: 'var(--coder-bg-card)',
-                  flexWrap: 'wrap',
-                  gap: '12px',
-                }}
-              >
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '16px' }}
+              <summary>
+                <span className="feature-number">{phase.number}</span>
+                <span className="feature-section-icon">{phase.icon}</span>
+                <h2>{phase.title}</h2>
+                <span
+                  className={
+                    phase.status === 'shipped'
+                      ? 'status-tag'
+                      : 'status-tag status-tag-accent'
+                  }
                 >
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '8px',
-                      backgroundColor: `${phase.accentColor}18`,
-                      color: phase.accentColor,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {phase.icon}
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                      }}
+                  {statusConfig[phase.status as keyof typeof statusConfig]}
+                </span>
+                <ChevronDown size={16} className="feature-chevron" />
+              </summary>
+              <div className="feature-section-content">
+                <ul>
+                  {phase.features.map((feature) => (
+                    <li
+                      key={feature.name}
+                      className={feature.done ? undefined : 'is-pending'}
                     >
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 500,
-                          color: 'var(--coder-text-tertiary)',
-                          fontFamily: 'var(--font-jetbrains-mono), monospace',
-                        }}
-                      >
-                        Phase {phase.number}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 500,
-                          color: sc.color,
-                          backgroundColor: sc.bg,
-                          padding: '1px 8px',
-                          borderRadius: '9999px',
-                        }}
-                      >
-                        {sc.label}
-                      </span>
-                    </div>
-                    <h2
-                      style={{
-                        fontSize: '16px',
-                        fontWeight: 600,
-                        color: 'var(--coder-text-primary)',
-                        margin: '2px 0 0',
-                      }}
-                    >
-                      {phase.title}
-                    </h2>
-                  </div>
-                </div>
-
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '16px' }}
-                >
-                  {/* Progress bar */}
-                  {phase.status === 'shipped' && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '80px',
-                          height: '4px',
-                          borderRadius: '9999px',
-                          backgroundColor: 'var(--coder-border-mid)',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: `${(doneCount / totalCount) * 100}%`,
-                            height: '100%',
-                            backgroundColor: sc.color,
-                            borderRadius: '9999px',
-                          }}
-                        />
-                      </div>
-                      <span
-                        style={{
-                          fontSize: '12px',
-                          color: 'var(--coder-text-tertiary)',
-                        }}
-                      >
-                        {doneCount}/{totalCount}
-                      </span>
-                    </div>
-                  )}
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--coder-text-tertiary)',
-                    }}
-                  >
-                    {phase.date}
-                  </span>
-                </div>
+                      {feature.done ? (
+                        <CheckCircle2 size={15} aria-label="Available" />
+                      ) : (
+                        <Circle size={15} aria-label="Planned" />
+                      )}
+                      <span>{feature.name}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              {/* Features list */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                  gap: '0',
-                  padding: '4px 0',
-                }}
-              >
-                {phase.features.map((feature) => (
-                  <div
-                    key={feature.name}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 24px',
-                    }}
-                  >
-                    {feature.done ? (
-                      <CheckCircle2
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: '#32D74B' }}
-                      />
-                    ) : (
-                      <Circle
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: 'var(--coder-text-tertiary)' }}
-                      />
-                    )}
-                    <span
-                      style={{
-                        fontSize: '13px',
-                        color: feature.done
-                          ? 'var(--coder-text-primary)'
-                          : 'var(--coder-text-tertiary)',
-                      }}
-                    >
-                      {feature.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Bottom CTA */}
-      <div
-        style={{
-          textAlign: 'center',
-          marginTop: '72px',
-          padding: '48px 24px',
-          border: '1px solid var(--coder-border)',
-          borderRadius: '10px',
-          backgroundColor: 'var(--coder-bg-card)',
-        }}
-      >
-        <h2
-          style={{
-            fontSize: '24px',
-            fontWeight: 700,
-            color: 'var(--coder-text-primary)',
-            marginBottom: '8px',
-          }}
-        >
-          Take it for a spin
-        </h2>
-        <p
-          style={{
-            fontSize: '15px',
-            color: 'var(--coder-text-secondary)',
-            marginBottom: '24px',
-          }}
-        >
-          CRDT collaboration, AI completions, live code execution, version
-          history, presence, and Monaco Editor — all built and running.
-        </p>
-        <a
-          href="/signup"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            height: '44px',
-            padding: '0 28px',
-            borderRadius: '9999px',
-            backgroundColor: 'var(--coder-accent)',
-            color: '#fff',
-            fontSize: '15px',
-            fontWeight: 500,
-            textDecoration: 'none',
-          }}
-        >
-          Create an account
-        </a>
+            </details>
+          ))}
+        </RevealSurface>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
-import { markPresent, getOnlineUserIds } from '@/lib/presence'
+import { heartbeatPresence } from '@/lib/presence'
+import { getCollabAccess } from '@/lib/collab-auth'
 import { verifyCsrfOrigin } from '@/lib/csrf'
 
 export async function POST(
@@ -16,8 +17,18 @@ export async function POST(
   }
 
   const { id } = await params
-  markPresent(id, session.user.id)
-  const onlineIds = getOnlineUserIds(id)
-
-  return NextResponse.json({ onlineIds })
+  const access = await getCollabAccess(id, session.user.id)
+  if (!access) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  try {
+    const onlineIds = await heartbeatPresence(id, session.user.id, req.signal)
+    return NextResponse.json(
+      { onlineIds },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    )
+  } catch {
+    return NextResponse.json(
+      { error: 'Presence is unavailable' },
+      { status: 503 }
+    )
+  }
 }

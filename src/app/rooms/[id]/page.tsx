@@ -11,11 +11,11 @@ import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import type { Metadata } from 'next'
 import { EditorWrapper } from './editor-wrapper'
 import type { CollabMember } from '@/components/editor/collab-panel'
-import { LanguageIcon } from '@/components/editor/language-icon'
 import { LiveBadge } from '@/components/editor/live-badge'
 import { SettingsDialog } from '@/components/editor/settings-dialog'
 import { ExecutionPanel } from '@/components/editor/execution-panel'
 import { SaveVersionDialog } from '@/components/editor/save-version-dialog'
+import { canPerform } from '@/lib/room-permissions'
 import type { RoomWithRelations } from '@/app/rooms/[id]/settings/settings-client'
 
 interface RoomPageProps {
@@ -71,34 +71,7 @@ async function getRoomWithAccess(roomId: string, userId: string) {
 
   if (!isOwner && !memberRole && !room.isPublic) return null
 
-  return { room, userRole: isOwner ? 'OWNER' : memberRole }
-}
-
-const LANG_LABEL: Record<string, string> = {
-  javascript: 'JavaScript',
-  typescript: 'TypeScript',
-  python: 'Python',
-  go: 'Go',
-  rust: 'Rust',
-  java: 'Java',
-  cpp: 'C++',
-  c: 'C',
-  csharp: 'C#',
-  ruby: 'Ruby',
-  php: 'PHP',
-  swift: 'Swift',
-  kotlin: 'Kotlin',
-  scala: 'Scala',
-  r: 'R',
-  sql: 'SQL',
-  bash: 'Bash',
-  lua: 'Lua',
-  perl: 'Perl',
-  haskell: 'Haskell',
-  elixir: 'Elixir',
-  clojure: 'Clojure',
-  dart: 'Dart',
-  julia: 'Julia',
+  return { room, userRole: isOwner ? 'OWNER' : (memberRole ?? 'VIEWER') }
 }
 
 function getInitials(name: string | null | undefined): string {
@@ -111,8 +84,6 @@ function getInitials(name: string | null | undefined): string {
     .slice(0, 2)
 }
 
-const AVATAR_COLORS = ['var(--coder-accent)', '#BF5AF2', '#FF9F0A', '#32D74B']
-
 export default async function RoomPage({ params }: RoomPageProps) {
   const session = await auth()
   if (!session?.user) redirect('/signin')
@@ -123,6 +94,8 @@ export default async function RoomPage({ params }: RoomPageProps) {
   if (!result) notFound()
 
   const { room, userRole } = result
+  const canEdit = canPerform('edit', userRole)
+  const canRun = canPerform('run', userRole)
 
   const githubLinked = !!(await prisma.account.findFirst({
     where: { userId: session.user.id!, provider: 'github' },
@@ -152,11 +125,11 @@ export default async function RoomPage({ params }: RoomPageProps) {
   const extraCount = Math.max(0, allMembers.length - 3)
 
   return (
-    <div className="bg-app text-app flex h-dvh flex-col">
+    <div className="editor-room bg-app text-app flex h-dvh flex-col">
       {/* Top bar — 44px */}
-      <header className="border-app bg-app flex h-11 shrink-0 items-center justify-between gap-4 border-b px-3">
+      <header className="room-header border-app bg-app flex h-11 shrink-0 items-center justify-between gap-4 border-b px-3">
         {/* Left: back + breadcrumb + lang badge */}
-        <div className="flex items-center gap-2">
+        <div className="room-identity flex min-w-0 items-center gap-2">
           <Link
             href={
               userRole === 'OWNER' ? '/dashboard' : '/dashboard?view=shared'
@@ -168,48 +141,44 @@ export default async function RoomPage({ params }: RoomPageProps) {
           </Link>
 
           {/* Breadcrumb */}
-          <div className="hidden items-center gap-1 text-xs sm:flex">
-            <span className="text-[var(--coder-text-tertiary)]">dashboard</span>
-            <span className="text-[var(--coder-text-tertiary)]">›</span>
-            <span className="text-app flex items-center gap-1 font-medium">
-              <span className="text-app-accent">▊</span>
-              {room.name}
-            </span>
-          </div>
-
-          {/* Room name — mobile only (breadcrumb hidden) */}
-          <span className="text-app max-w-[140px] truncate text-xs font-medium sm:hidden">
+          <Link
+            href="/dashboard"
+            className="room-wordmark hidden shrink-0 text-sm font-semibold sm:block"
+          >
+            code<span className="text-app-accent">R</span>
+          </Link>
+          <span className="room-title-divider" aria-hidden />
+          <span
+            title={room.name}
+            className="room-title text-app truncate text-xs font-medium"
+          >
             {room.name}
           </span>
 
-          <div className="hidden items-center gap-1.5 rounded-full border border-[var(--coder-border)] bg-[var(--coder-bg-card-hover)] px-2 py-0.5 sm:flex">
-            <LanguageIcon language={room.language} size={14} />
-            <span className="text-[11px] font-medium text-[var(--coder-text-secondary)]">
-              {LANG_LABEL[room.language.toLowerCase()] ?? room.language}
-            </span>
-          </div>
+          <span className="room-access-label">
+            {room.isPublic ? 'Public' : 'Private'}
+          </span>
         </div>
 
         {/* Center: live badge + avatar cluster (hidden on mobile — see Collab → Users) */}
-        <div className="hidden items-center gap-3 sm:flex">
+        <div className="room-presence hidden shrink-0 items-center gap-3 lg:flex">
           {/* Live badge — client component, polls presence API */}
           <LiveBadge roomId={id} />
 
           {/* Avatar cluster */}
           <div className="flex items-center">
             {visibleAvatars.map((member, i) => {
-              const color = AVATAR_COLORS[i % AVATAR_COLORS.length]
               return (
                 <div
                   key={member.id}
                   title={member.name ?? 'Unknown'}
                   style={{
-                    backgroundColor: color + '28',
-                    color,
+                    backgroundColor: 'var(--coder-bg-card-active)',
+                    color: 'var(--coder-text-secondary)',
                     marginLeft: i === 0 ? 0 : -6,
                     zIndex: visibleAvatars.length - i,
                   }}
-                  className="flex h-6 w-6 items-center justify-center rounded-full border border-black text-[10px] font-semibold"
+                  className="border-app flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-semibold"
                 >
                   {getInitials(member.name)}
                 </div>
@@ -227,19 +196,19 @@ export default async function RoomPage({ params }: RoomPageProps) {
         </div>
 
         {/* Right: actions */}
-        <div className="flex items-center gap-1.5">
-          <span className="hidden sm:block">
+        <div className="room-actions flex shrink-0 items-center gap-1.5">
+          <span>
             <ThemeToggle />
           </span>
           <ShareButton roomId={id} userRole={userRole ?? null} />
 
           <GistExportButton roomId={id} githubLinked={githubLinked} />
 
-          <ProjectFolderButton roomId={id} roomName={room.name} />
+          {canEdit && <ProjectFolderButton roomId={id} roomName={room.name} />}
 
-          {userRole !== 'VIEWER' && <SaveVersionDialog roomId={id} />}
+          {canEdit && <SaveVersionDialog roomId={id} />}
 
-          <ExecutionPanel roomId={id} canRun={userRole !== 'VIEWER'} />
+          <ExecutionPanel roomId={id} canRun={canRun} />
 
           {userRole === 'OWNER' && (
             <SettingsDialog
@@ -253,7 +222,8 @@ export default async function RoomPage({ params }: RoomPageProps) {
       <EditorWrapper
         roomId={id}
         initialLanguage={room.language}
-        readOnly={userRole === 'VIEWER'}
+        canEdit={canEdit}
+        canRun={canRun}
         roomName={room.name}
         members={allMembers}
         currentUserId={session.user.id!}
@@ -261,7 +231,6 @@ export default async function RoomPage({ params }: RoomPageProps) {
           session.user.name ?? session.user.email ?? session.user.id!
         }
         roomLanguage={room.language}
-        canSave={userRole !== 'VIEWER'}
         aiChatEnabled={room.aiChatEnabled}
       />
     </div>

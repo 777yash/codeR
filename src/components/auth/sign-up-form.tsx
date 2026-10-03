@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { AppLogo } from '@/components/app-logo'
 import { Loader2 } from 'lucide-react'
 import { OAuthButtons, AUTH_INPUT_CLASS } from './auth-shared'
+import { ThemeToggle } from '@/components/marketing/theme-toggle'
 
 interface Props {
   callbackUrl: string
@@ -56,20 +57,19 @@ export function SignUpForm({ callbackUrl }: Props) {
   }
 
   return (
-    <div className="bg-app flex min-h-dvh items-center justify-center px-4">
-      <div
-        className="border-app bg-app-card w-full max-w-[420px] rounded-2xl border px-6 py-8 sm:px-10 sm:py-10"
-        style={{ boxShadow: 'var(--coder-shadow-md)' }}
-      >
+    <div className="auth-surface bg-app flex min-h-dvh items-center justify-center px-4">
+      <div className="auth-theme">
+        <ThemeToggle />
+      </div>
+      <div className="auth-card border-app bg-app-card w-full max-w-[420px] rounded-2xl border px-6 py-8 sm:px-10 sm:py-10">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <AppLogo size="lg" href="/" />
         </div>
 
-        <h1 className="text-app text-2xl font-semibold">Create an account</h1>
-        <p className="text-app-muted mt-1 mb-6 text-sm">
-          Start collaborating in minutes
-        </p>
+        <h1 className="text-app mb-8 text-2xl font-semibold">
+          Create an account
+        </h1>
 
         <OAuthButtons callbackUrl={callbackUrl} />
 

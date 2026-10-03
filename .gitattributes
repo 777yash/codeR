@@ -1,0 +1,6 @@
+# Preserve the registered ThreeUI bytes across Windows checkouts.
+src/shaders/crt/CrtBackground.tsx -text
+src/shaders/crt/crtRenderer.ts -text
+src/shaders/crt/crtShaders.ts -text
+src/shaders/crt/crtScreens.ts -text
+src/shaders/threeui.css -text

@@ -1,32 +1,34 @@
-const TIMEOUT_MS = 30_000
+import 'server-only'
+import { z } from 'zod'
+import { redisCommand } from './redis-rest'
 
-interface Entry {
-  expiresAt: number
-}
+// Use Redis's clock so instances with different local clocks agree on expiry.
+export const PRESENCE_SCRIPT = `
+local time = redis.call('TIME')
+local now = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
+redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', now)
+redis.call('ZADD', KEYS[1], now + 30000, ARGV[1])
+redis.call('EXPIRE', KEYS[1], 60)
+return redis.call('ZRANGE', KEYS[1], 0, -1)
+`
 
-// roomId → userId → Entry
-const store = new Map<string, Map<string, Entry>>()
-
-export function markPresent(roomId: string, userId: string): void {
-  let room = store.get(roomId)
-  if (!room) {
-    room = new Map()
-    store.set(roomId, room)
-  }
-  room.set(userId, { expiresAt: Date.now() + TIMEOUT_MS })
-}
-
-export function getOnlineUserIds(roomId: string): string[] {
-  const room = store.get(roomId)
-  if (!room) return []
-  const now = Date.now()
-  const online: string[] = []
-  for (const [userId, entry] of room.entries()) {
-    if (entry.expiresAt > now) {
-      online.push(userId)
-    } else {
-      room.delete(userId)
-    }
-  }
-  return online
+export async function heartbeatPresence(
+  roomId: string,
+  userId: string,
+  signal: AbortSignal
+) {
+  return z
+    .array(z.string().min(1))
+    .parse(
+      await redisCommand(
+        [
+          'EVAL',
+          PRESENCE_SCRIPT,
+          1,
+          `coder:presence:${encodeURIComponent(roomId)}`,
+          userId,
+        ],
+        signal
+      )
+    )
 }

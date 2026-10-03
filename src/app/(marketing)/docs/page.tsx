@@ -1,5 +1,15 @@
 import Link from 'next/link'
-import { ArrowRight, Globe, Zap, Lock, Users, Code2 } from 'lucide-react'
+import {
+  ArrowRight,
+  Globe,
+  Zap,
+  Lock,
+  Users,
+  Code2,
+  Info,
+  Check,
+  AlertTriangle,
+} from 'lucide-react'
 
 const SUPPORTED_LANGUAGES = [
   'Python',
@@ -48,20 +58,6 @@ const KEYBOARD_SHORTCUTS = [
   { keys: ['Ctrl', '`'], description: 'Toggle terminal (JS/TS rooms)' },
 ]
 
-function SectionAnchor({ id }: { id: string }) {
-  return (
-    <span
-      id={id}
-      style={{
-        scrollMarginTop: '80px',
-        display: 'block',
-        position: 'relative',
-        top: '-80px',
-      }}
-    />
-  )
-}
-
 function Heading2({
   children,
   id,
@@ -70,73 +66,20 @@ function Heading2({
   id?: string
 }) {
   return (
-    <div>
-      {id && <SectionAnchor id={id} />}
-      <h2
-        style={{
-          fontSize: '22px',
-          fontWeight: 700,
-          color: 'var(--coder-text-primary)',
-          marginBottom: '16px',
-          paddingBottom: '12px',
-          borderBottom: '1px solid var(--coder-border)',
-        }}
-      >
-        {children}
-      </h2>
-    </div>
+    <h2 className="docs-heading" id={id}>
+      {children}
+    </h2>
   )
 }
-
 function Heading3({ children }: { children: React.ReactNode }) {
-  return (
-    <h3
-      style={{
-        fontSize: '15px',
-        fontWeight: 600,
-        color: 'var(--coder-text-primary)',
-        marginBottom: '8px',
-        marginTop: '24px',
-      }}
-    >
-      {children}
-    </h3>
-  )
+  return <h3 className="docs-subheading">{children}</h3>
 }
-
 function Prose({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      style={{
-        fontSize: '14px',
-        lineHeight: 1.75,
-        color: 'var(--coder-text-secondary)',
-        marginBottom: '16px',
-      }}
-    >
-      {children}
-    </p>
-  )
+  return <p className="docs-prose">{children}</p>
 }
-
 function InlineCode({ children }: { children: React.ReactNode }) {
-  return (
-    <code
-      style={{
-        fontFamily: 'var(--font-jetbrains-mono), monospace',
-        fontSize: '12px',
-        backgroundColor: 'var(--coder-bg-card)',
-        border: '1px solid var(--coder-border)',
-        borderRadius: '4px',
-        padding: '1px 5px',
-        color: 'var(--coder-accent)',
-      }}
-    >
-      {children}
-    </code>
-  )
+  return <code className="docs-inline-code">{children}</code>
 }
-
 function Callout({
   type,
   children,
@@ -144,59 +87,12 @@ function Callout({
   type: 'info' | 'tip' | 'warning'
   children: React.ReactNode
 }) {
-  const colors = {
-    info: {
-      border: 'rgba(0,117,222,0.30)',
-      bg: 'rgba(0,117,222,0.06)',
-      icon: 'ℹ',
-      color: 'var(--coder-accent)',
-    },
-    tip: {
-      border: 'rgba(50,215,75,0.30)',
-      bg: 'rgba(50,215,75,0.06)',
-      icon: '✦',
-      color: '#32D74B',
-    },
-    warning: {
-      border: 'rgba(255,159,10,0.30)',
-      bg: 'rgba(255,159,10,0.06)',
-      icon: '⚠',
-      color: '#FF9F0A',
-    },
-  }
-  const c = colors[type]
+  const Icon =
+    type === 'warning' ? AlertTriangle : type === 'tip' ? Check : Info
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: '12px',
-        border: `1px solid ${c.border}`,
-        backgroundColor: c.bg,
-        borderRadius: '6px',
-        padding: '12px 16px',
-        marginBottom: '16px',
-      }}
-    >
-      <span
-        style={{
-          fontSize: '14px',
-          color: c.color,
-          flexShrink: 0,
-          marginTop: '1px',
-        }}
-      >
-        {c.icon}
-      </span>
-      <p
-        style={{
-          fontSize: '13px',
-          lineHeight: 1.6,
-          color: 'var(--coder-text-secondary)',
-          margin: 0,
-        }}
-      >
-        {children}
-      </p>
+    <div className={`docs-callout docs-callout-${type}`}>
+      <Icon size={16} aria-label={type} />
+      <p>{children}</p>
     </div>
   )
 }
@@ -219,35 +115,19 @@ const navItems = [
 
 export default function DocsPage() {
   return (
-    <div
-      style={{
-        maxWidth: '1100px',
-        margin: '0 auto',
-        padding: '64px 24px',
-        display: 'grid',
-        gridTemplateColumns: '220px 1fr',
-        gap: '48px',
-        alignItems: 'start',
-      }}
-      className="docs-layout"
-    >
-      <style>{`
-        @media (max-width: 768px) {
-          .docs-layout { grid-template-columns: 1fr !important; }
-          .docs-sidebar { display: none !important; }
-        }
-      `}</style>
-
+    <div className="docs-layout product-page">
+      <details className="docs-mobile-contents">
+        <summary>On this page</summary>
+        <nav aria-label="Documentation sections">
+          {navItems.map(({ href, label }) => (
+            <a key={href} href={href}>
+              {label}
+            </a>
+          ))}
+        </nav>
+      </details>
       {/* Sidebar */}
-      <aside
-        className="docs-sidebar"
-        style={{
-          position: 'sticky',
-          top: '80px',
-          borderRight: '1px solid var(--coder-border)',
-          paddingRight: '24px',
-        }}
-      >
+      <aside className="docs-sidebar">
         <p
           style={{
             fontSize: '11px',
@@ -279,7 +159,7 @@ export default function DocsPage() {
       </aside>
 
       {/* Content */}
-      <article style={{ minWidth: 0 }}>
+      <article className="docs-article">
         {/* Title */}
         <div style={{ marginBottom: '48px' }}>
           <h1
@@ -293,9 +173,6 @@ export default function DocsPage() {
           >
             Documentation
           </h1>
-          <p style={{ fontSize: '16px', color: 'var(--coder-text-secondary)' }}>
-            Everything you need to get started with codeR.
-          </p>
         </div>
 
         {/* Overview */}
@@ -473,7 +350,7 @@ export default function DocsPage() {
               },
               {
                 role: 'Editor',
-                color: '#32D74B',
+                color: 'var(--coder-text-secondary)',
                 perms: 'Edit code, use execution, invite others',
               },
               {
@@ -500,7 +377,7 @@ export default function DocsPage() {
                     color,
                     backgroundColor: `${color}18`,
                     padding: '2px 8px',
-                    borderRadius: '9999px',
+                    borderRadius: '4px',
                     minWidth: '56px',
                     textAlign: 'center',
                   }}
@@ -946,14 +823,14 @@ export default function DocsPage() {
           </Prose>
 
           <Callout type="info">
-            AI scaffolding needs a server-side GitHub Models token. If the
-            server isn&apos;t configured, the tab shows &quot;not
-            configured&quot; and the rest of codeR is unaffected.
+            AI scaffolding needs a server-side GroqCloud API key. If the server
+            isn&apos;t configured, the tab shows &quot;not configured&quot; and
+            the rest of codeR is unaffected.
           </Callout>
           <Callout type="tip">
             Generated Vite projects are pinned to version 7 so they run in the
             in-browser runtime. The model keeps projects minimal to fit the
-            free-tier output budget — ask for one focused thing at a time.
+            per-response output limit — ask for one focused thing at a time.
           </Callout>
         </section>
 
@@ -1165,7 +1042,7 @@ export default function DocsPage() {
               method: 'POST',
               path: '/api/ai/scaffold',
               auth: true,
-              desc: 'AI chat/scaffold for a room (GitHub Models). Body: { prompt, roomId, source?, existingFiles?, history? }. Verifies room membership + edit role; 403 for non-members, viewers, or rooms with AI disabled. Per-room rate limit (20/hr). Returns { mode, text, files[], buildCommand, startCommand, actions }. 503 when no token is configured.',
+              desc: 'AI chat/scaffold for a room (GroqCloud). Body: { prompt, roomId, source?, existingFiles?, history? }. Verifies room membership + edit role; 403 for non-members, viewers, or rooms with AI disabled. Per-room rate limit (20/hr). Returns { mode, text, files[], buildCommand, startCommand, actions }. 503 when no Groq API key is configured.',
             },
             {
               method: 'GET',
@@ -1196,10 +1073,10 @@ export default function DocsPage() {
                   fontWeight: 600,
                   color:
                     method === 'GET'
-                      ? '#32D74B'
+                      ? 'var(--coder-text-secondary)'
                       : method === 'POST'
                         ? 'var(--coder-accent)'
-                        : '#FF9F0A',
+                        : 'var(--coder-text-accent)',
                   fontFamily: 'var(--font-jetbrains-mono), monospace',
                   minWidth: '44px',
                   paddingTop: '1px',
@@ -1221,10 +1098,10 @@ export default function DocsPage() {
                     <span
                       style={{
                         fontSize: '10px',
-                        color: '#FF9F0A',
-                        backgroundColor: 'rgba(255,159,10,0.10)',
+                        color: 'var(--coder-text-accent)',
+                        backgroundColor: 'var(--coder-accent-dim)',
                         padding: '1px 6px',
-                        borderRadius: '9999px',
+                        borderRadius: '4px',
                       }}
                     >
                       no auth
@@ -1289,7 +1166,7 @@ export default function DocsPage() {
               alignItems: 'center',
               gap: '8px',
               padding: '8px 20px',
-              borderRadius: '9999px',
+              borderRadius: '4px',
               backgroundColor: 'var(--coder-accent)',
               color: '#fff',
               fontSize: '14px',

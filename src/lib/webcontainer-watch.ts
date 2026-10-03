@@ -5,8 +5,11 @@ import { sanitizeFilePath, isSelfContainerWrite } from '@/lib/webcontainer-fs'
 import {
   writeDiskFile,
   exportContainerToFolder,
+  reportSyncPermissionNeeded,
+  resetLocalSyncStatus,
 } from '@/lib/webcontainer-export'
 import { getFolderHandle, ensureFolderPermission } from '@/lib/local-folder'
+import { saveNodeModulesToDisk } from '@/lib/webcontainer-deps-pack'
 
 const WATCH_EXCLUDED_DIRS = new Set(['node_modules', '.git', '.npm', '.cache'])
 // Synced to disk but too noisy as editor tabs
@@ -33,6 +36,19 @@ let watcher: { close(): void } | null = null
 let flushTimer: ReturnType<typeof setTimeout> | null = null
 let permissionToastShown = false
 const dirtyPaths = new Set<string>()
+
+// A changed lockfile = an install ran in the terminal — re-pack node_modules
+// to the linked folder once things settle (installs write the lockfile early)
+const PACK_SAVE_DEBOUNCE_MS = 10_000
+let packSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+function schedulePackSave(roomId: string): void {
+  if (packSaveTimer) clearTimeout(packSaveTimer)
+  packSaveTimer = setTimeout(() => {
+    packSaveTimer = null
+    void saveNodeModulesToDisk(roomId)
+  }, PACK_SAVE_DEBOUNCE_MS)
+}
 
 function hasSegmentIn(path: string, segments: Set<string>): boolean {
   return path.split('/').some((segment) => segments.has(segment))
@@ -112,6 +128,10 @@ async function flush(
   const paths = Array.from(dirtyPaths)
   dirtyPaths.clear()
 
+  if (paths.some((path) => IMPORT_EXCLUDED_FILES.has(path))) {
+    schedulePackSave(roomId)
+  }
+
   const editorNames = callbacks.getEditorFileNames()
   const dirtyFiles = await collectDirtyFiles(container, paths)
   const applies: ImportableFile[] = []
@@ -144,7 +164,9 @@ async function flush(
         // folder moved/deleted — manual export will surface the error
       }
     }
-  } else if (!permissionToastShown) {
+  } else {
+    reportSyncPermissionNeeded()
+    if (permissionToastShown) return
     // Browser dropped the persisted permission — re-granting needs a click
     permissionToastShown = true
     toast(`Folder "${handle.name}" needs permission to auto-save`, {
@@ -206,6 +228,9 @@ export function stopProjectWatcher(): void {
   watcher = null
   if (flushTimer) clearTimeout(flushTimer)
   flushTimer = null
+  if (packSaveTimer) clearTimeout(packSaveTimer)
+  packSaveTimer = null
   permissionToastShown = false
   dirtyPaths.clear()
+  resetLocalSyncStatus()
 }

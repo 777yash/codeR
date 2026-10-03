@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { RoomCard } from './room-card'
 import { CreateRoomDialog } from './create-room-dialog'
 import { useRoomSearch } from '@/components/dashboard/room-search-context'
+import { RevealSurface } from '@/components/ui/reveal-surface'
 import type {
   Room,
   User as PrismaUser,
@@ -97,12 +98,17 @@ export function RoomList({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="room-list-meta">
+        <span>
+          {filteredRooms.length} room{filteredRooms.length === 1 ? '' : 's'}
+        </span>
+      </div>
+      <RevealSurface className="room-grid grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="group flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--coder-border-mid)] transition-all duration-150 hover:border-[var(--coder-border-accent)] hover:bg-[var(--coder-accent-dim)]"
+          className="room-create-tile group flex h-56 flex-col border border-dashed border-[var(--coder-border-mid)] transition-all duration-150 hover:border-[var(--coder-border-accent)] hover:bg-[var(--coder-accent-dim)]"
         >
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--coder-border-mid)] transition-colors group-hover:border-[var(--coder-border-accent)]">
+          <div className="room-create-plus flex h-10 w-10 items-center justify-center rounded-full border border-[var(--coder-border-mid)] transition-colors group-hover:border-[var(--coder-border-accent)]">
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-[var(--coder-text-tertiary)]" />
             ) : (
@@ -125,7 +131,7 @@ export function RoomList({
             }}
           />
         ))}
-      </div>
+      </RevealSurface>
 
       {query && filteredRooms.length === 0 && (
         <p className="mt-8 text-center text-sm text-[var(--coder-text-tertiary)]">
@@ -135,7 +141,7 @@ export function RoomList({
 
       {!query && view === 'starred' && filteredRooms.length === 0 && (
         <p className="mt-8 text-center text-sm text-[var(--coder-text-tertiary)]">
-          No starred rooms — hover a room card and click ☆ to star it
+          No starred rooms — click the star on a room card to save it here
         </p>
       )}
 

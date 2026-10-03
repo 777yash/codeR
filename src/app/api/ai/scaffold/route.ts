@@ -7,13 +7,15 @@ import { prisma } from '@/lib/prisma'
 import { getUserRoomRole } from '@/lib/api/room-access'
 import { checkRoomAiRateLimit } from '@/lib/rate-limit-redis'
 import { verifyCsrfOrigin } from '@/lib/csrf'
+import {
+  callGroqModel,
+  DEFAULT_GROQ_MODEL,
+  GroqHttpError,
+  groqModelSchema,
+  type GroqMessage,
+} from '@/lib/groq'
+import { isSensitiveAiFile } from '@/lib/ai-context'
 
-const ENDPOINT = 'https://models.github.ai/inference/chat/completions'
-// gpt-4o-mini: strict json_schema support, non-reasoning (no reasoning tokens
-// eating the free-tier output cap), "Low" tier = higher daily request allowance.
-// Env-overridable so a model deprecation doesn't require a code change.
-const MODEL = process.env.GITHUB_MODELS_MODEL || 'openai/gpt-4o-mini'
-const API_VERSION = '2026-03-10'
 const RATE_LIMIT_MAX = 10
 const RATE_LIMIT_WINDOW_MS = 60_000
 const MAX_CONTEXT_FILES = 4
@@ -36,7 +38,7 @@ function checkRateLimit(userId: string): boolean {
 const SYSTEM_INSTRUCTION = `You are an AI assistant inside a collaborative code editor. You help with the user's project: answering questions, explaining and debugging code, discussing approaches and research, AND scaffolding or modifying runnable projects when asked. The runtime is an in-browser Node.js sandbox (WebContainer).
 
 Choose a "mode" for every request:
-- "chat": the user is asking a question, wants an explanation, debugging help, a recommendation, or general/research discussion. Put your answer in "text" (focused; markdown allowed). Leave "files" empty ([]), "actions" empty ([]), and BOTH commands with an empty "mainItem".
+- "chat": the user is asking a question, wants an explanation, debugging help, a recommendation, or general/research discussion. Put your answer in "text" (focused; markdown allowed). Leave "files" empty ([]), "actions" empty ([]), and set BOTH commands to { "mainItem": "", "commands": [] }.
 - "scaffold": the user asks you to build, create, add, or change a runnable project. Fill "files" and the commands.
 
 For "scaffold" mode:
@@ -55,8 +57,9 @@ Rules:
   - Include "@vitejs/plugin-react" in devDependencies AND a "vite.config.js" that registers it. The dev server runs inside an in-browser sandbox and is previewed through a *.webcontainer-api.io host, so the config MUST allow it: import { defineConfig } from 'vite'; import react from '@vitejs/plugin-react'; export default defineConfig({ plugins: [react()], server: { host: true, allowedHosts: true } }). Without server.host + server.allowedHosts the preview is blocked and stays blank.
   - Include "react" and "react-dom" in dependencies.
 - Every import path MUST resolve to a file you actually generate. Use correct relative paths: a file in "src/" imports a sibling as "./Name", NOT "./src/Name". Re-check each import against your file list before finalizing.
-- Output is capped (~4000 tokens). Keep scaffolds MINIMAL (fewest files, concise code, no boilerplate) and answers focused. Never get cut off mid-file.
-- Always set "text": for "scaffold", a short (1-3 sentence) summary of what you created or changed; for "chat", the full answer.`
+- Output is capped (~4000 tokens per response). Keep scaffolds MINIMAL (fewest files, concise code, no boilerplate) and answers focused. If the request would exceed the cap, CUT optional features/styling — a smaller COMPLETE project always beats a truncated one. Every file you emit must be complete and runnable; never stop mid-file.
+- Always set "text": for "scaffold", a short (1-3 sentence) summary of what you created or changed; for "chat", the full answer.
+- Return ONLY a valid JSON object matching the supplied schema. No markdown fences, introductory prose, or reasoning tags outside the JSON.`
 
 const requestSchema = z.object({
   prompt: z.string().min(1).max(2_000),
@@ -79,95 +82,70 @@ const requestSchema = z.object({
     .optional(),
 })
 
-// Keep secret-bearing files out of the model context (injection + leak surface)
-const SECRET_FILE = /(^|\/)\.env|\.(pem|key)$|secret|credential/i
+const commandSchema = z.strictObject({
+  mainItem: z.string().max(256),
+  commands: z.array(z.string().max(2048)).max(50),
+})
 
-const commandSchema = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    mainItem: { type: 'string' },
-    commands: { type: 'array', items: { type: 'string' } },
-  },
-  required: ['mainItem', 'commands'],
-}
-
-// OpenAI structured outputs (strict): every key must be in `required` and
-// `additionalProperties: false` on every object. `actions` is always present ([] when empty).
-const scaffoldSchema = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    mode: { type: 'string', enum: ['chat', 'scaffold'] },
-    text: { type: 'string' },
-    files: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          filename: { type: 'string' },
-          contents: { type: 'string' },
-        },
-        required: ['filename', 'contents'],
-      },
-    },
+const responseSchema = z
+  .strictObject({
+    mode: z.enum(['chat', 'scaffold']),
+    text: z.string().max(100_000),
+    files: z
+      .array(
+        z.strictObject({
+          filename: z.string().min(1).max(1024),
+          contents: z.string().max(250_000),
+        })
+      )
+      .max(100),
     buildCommand: commandSchema,
     startCommand: commandSchema,
-    actions: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          type: { type: 'string' },
-          filename: { type: 'string' },
-        },
-        required: ['type', 'filename'],
-      },
-    },
-  },
-  required: [
-    'mode',
-    'text',
-    'files',
-    'buildCommand',
-    'startCommand',
-    'actions',
-  ],
-}
+    actions: z
+      .array(
+        z.strictObject({
+          type: z.literal('delete'),
+          filename: z.string().min(1).max(1024),
+        })
+      )
+      .max(100),
+  })
+  .refine(
+    (value) =>
+      value.mode !== 'chat' ||
+      (value.files.length === 0 &&
+        value.actions.length === 0 &&
+        !value.buildCommand.mainItem &&
+        value.buildCommand.commands.length === 0 &&
+        !value.startCommand.mainItem &&
+        value.startCommand.commands.length === 0),
+    { message: 'Chat responses cannot modify files or run commands' }
+  )
 
-// strict json_schema returns valid JSON, but fall back defensively
-export function parseAiResponse(text: string): unknown {
-  try {
-    return JSON.parse(text)
-  } catch {
-    const fenced =
-      text.match(/```json\n([\s\S]*?)\n```/) ??
-      text.match(/```\n([\s\S]*?)\n```/)
-    if (fenced) {
-      try {
-        return JSON.parse(fenced[1])
-      } catch {
-        /* fall through */
-      }
-    }
-    const start = text.indexOf('{')
-    const end = text.lastIndexOf('}')
-    if (start !== -1 && end > start) {
-      try {
-        return JSON.parse(text.substring(start, end + 1))
-      } catch {
-        /* fall through */
-      }
-    }
-    return null
-  }
-}
+// Provider schema uses the portable structural subset. Local validation above
+// additionally enforces size limits and chat-only restrictions.
+const providerCommandSchema = z.strictObject({
+  mainItem: z.string(),
+  commands: z.array(z.string()),
+})
+const scaffoldSchema = z.toJSONSchema(
+  z.strictObject({
+    mode: z.enum(['chat', 'scaffold']),
+    text: z.string(),
+    files: z.array(
+      z.strictObject({ filename: z.string(), contents: z.string() })
+    ),
+    buildCommand: providerCommandSchema,
+    startCommand: providerCommandSchema,
+    actions: z.array(
+      z.strictObject({ type: z.enum(['delete']), filename: z.string() })
+    ),
+  })
+)
 
 function buildContext(files: { name: string; content: string }[]): string {
   return files
-    .filter((f) => f.content.trim().length > 0 && !SECRET_FILE.test(f.name))
+    .filter((f) => f.content.trim().length > 0 && !isSensitiveAiFile(f.name))
     .slice(0, MAX_CONTEXT_FILES)
     .map((f) => `--- ${f.name} ---\n${f.content.slice(0, MAX_CONTEXT_CHARS)}`)
     .join('\n\n')
@@ -182,8 +160,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const token = process.env.GITHUB_MODELS_TOKEN
-  if (!token) {
+  const token = process.env.GROQ_API_KEY?.trim()
+  const model = groqModelSchema.safeParse(
+    process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL
+  )
+  if (!token || !model.success) {
     return NextResponse.json(
       { error: 'AI scaffolding is not configured' },
       { status: 503 }
@@ -197,7 +178,13 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const parsed = requestSchema.safeParse(await req.json())
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+  const parsed = requestSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
@@ -232,57 +219,25 @@ export async function POST(req: NextRequest) {
       ? `Existing project files:\n${buildContext(existingFiles)}\n\nUser request: ${prompt}`
       : prompt
 
-  const messages = [
-    { role: 'system', content: SYSTEM_INSTRUCTION },
+  const messages: GroqMessage[] = [
+    {
+      role: 'system',
+      content: SYSTEM_INSTRUCTION,
+    },
     ...(history ?? []),
     { role: 'user', content: userContent },
   ]
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 55_000)
+  const signal = AbortSignal.any([req.signal, AbortSignal.timeout(55_000)])
 
   try {
-    const res = await fetch(ENDPOINT, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'X-GitHub-Api-Version': API_VERSION,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages,
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'scaffold',
-            strict: true,
-            schema: scaffoldSchema,
-          },
-        },
-        temperature: 0.2,
-        // Free tier caps output ~4000 tokens/request — requesting more 400s
-        max_completion_tokens: 4000,
-      }),
-    })
-
-    if (!res.ok) {
-      const detail = (await res.text()).slice(0, 500)
-      console.error('[scaffold] github models error', res.status, detail)
-      return NextResponse.json(
-        { error: 'AI generation failed', details: `${res.status}: ${detail}` },
-        { status: 502 }
-      )
-    }
-
-    const data = (await res.json()) as {
-      choices?: {
-        message?: { content?: string; refusal?: string }
-        finish_reason?: string
-      }[]
-    }
-    const choice = data.choices?.[0]
+    const choice = await callGroqModel(
+      token,
+      model.data,
+      messages,
+      scaffoldSchema,
+      signal
+    )
     if (choice?.message?.refusal) {
       return NextResponse.json(
         { error: choice.message.refusal, details: choice.message.refusal },
@@ -291,45 +246,45 @@ export async function POST(req: NextRequest) {
     }
     const content = choice?.message?.content ?? ''
     if (!content) {
-      const reason = choice?.finish_reason
-        ? `No output (finish_reason: ${choice.finish_reason})`
-        : 'Model returned an empty response'
-      console.error('[scaffold] empty response:', reason)
+      const reason = 'Model returned an empty response'
+      console.error('[scaffold] empty response')
       return NextResponse.json(
         { error: reason, details: reason },
         { status: 502 }
       )
     }
 
-    const scaffold = parseAiResponse(content)
-    if (
-      !scaffold ||
-      typeof scaffold !== 'object' ||
-      !Array.isArray((scaffold as { files?: unknown }).files)
-    ) {
-      console.error('[scaffold] unparseable response:', content.slice(0, 500))
+    let decoded: unknown
+    try {
+      decoded = JSON.parse(content)
+    } catch {
+      decoded = null
+    }
+    const parsedResponse = responseSchema.safeParse(decoded)
+    if (!parsedResponse.success || choice.finish_reason !== 'stop') {
+      console.error('[scaffold] invalid or truncated Groq response')
       return NextResponse.json(
         {
           error: 'AI returned an unexpected response — try rephrasing',
           details:
-            'Response was not valid scaffold JSON (it may have been truncated)',
+            'Response did not match the required JSON schema or was truncated',
         },
         { status: 502 }
       )
     }
+    const scaffold = parsedResponse.data
 
     // Audit log @ai chat actions only (shared/public surface). The private AI
     // panel is a per-user scratchpad — don't write its prompts to a room log.
     if (source === 'chat') {
-      const s = scaffold as { mode?: string; files?: unknown[] }
       try {
         await prisma.aiActionLog.create({
           data: {
             roomId,
             userId: session.user.id,
-            actionType: s.mode === 'scaffold' ? 'scaffold' : 'chat',
+            actionType: scaffold.mode === 'scaffold' ? 'scaffold' : 'chat',
             prompt: prompt.slice(0, 2_000),
-            filesChanged: Array.isArray(s.files) ? s.files.length : 0,
+            filesChanged: scaffold.files.length,
           },
         })
       } catch (logErr) {
@@ -339,13 +294,32 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(scaffold)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('[scaffold] error:', message)
+    if (err instanceof GroqHttpError && err.status === 429) {
+      return NextResponse.json(
+        {
+          error:
+            'AI provider rate limit reached — try again later or shorten the request',
+        },
+        { status: 429, headers: { 'Retry-After': String(err.retryAfter) } }
+      )
+    }
+    if (signal.aborted) {
+      return NextResponse.json(
+        {
+          error: req.signal.aborted
+            ? 'Request cancelled'
+            : 'AI generation timed out',
+        },
+        { status: req.signal.aborted ? 499 : 504 }
+      )
+    }
+    // Network/SDK errors can echo inputs; log only safe provider status metadata.
+    console.error('[scaffold] generation failed', {
+      upstreamStatus: err instanceof GroqHttpError ? err.status : undefined,
+    })
     return NextResponse.json(
-      { error: 'AI generation failed', details: message },
+      { error: 'AI generation failed — try again later' },
       { status: 502 }
     )
-  } finally {
-    clearTimeout(timeout)
   }
 }

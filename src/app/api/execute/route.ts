@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { canPerform } from '@/lib/room-permissions'
 import { getUserRoomRole } from '@/lib/api/room-access'
 import { verifyCsrfOrigin } from '@/lib/csrf'
+import { normalizeRemoteExecution } from '@/lib/execution-result'
 
 const ONECOMPILER_URL = 'https://onecompiler-apis.p.rapidapi.com/api/v1/run'
 const MAX_CODE_LENGTH = 50_000
@@ -24,13 +25,13 @@ const LANG_MAP: Record<string, { language: string; filename: string }> = {
   cpp: { language: 'cpp', filename: 'index.cpp' },
   c: { language: 'c', filename: 'index.c' },
   csharp: { language: 'csharp', filename: 'index.cs' },
-  go: { language: 'go', filename: 'index.go' },
+  go: { language: 'go', filename: 'main.go' },
   rust: { language: 'rust', filename: 'index.rs' },
   ruby: { language: 'ruby', filename: 'index.rb' },
   php: { language: 'php', filename: 'index.php' },
   swift: { language: 'swift', filename: 'index.swift' },
   kotlin: { language: 'kotlin', filename: 'index.kt' },
-  scala: { language: 'scala', filename: 'index.scala' },
+  scala: { language: 'scala', filename: 'Main.scala' },
   r: { language: 'r', filename: 'index.r' },
   bash: { language: 'bash', filename: 'index.sh' },
   lua: { language: 'lua', filename: 'index.lua' },
@@ -45,6 +46,7 @@ const LANG_MAP: Record<string, { language: string; filename: string }> = {
   cobol: { language: 'cobol', filename: 'index.cob' },
   fortran: { language: 'fortran', filename: 'index.f90' },
   vbnet: { language: 'vb', filename: 'index.vb' },
+  assembly: { language: 'assembly', filename: 'index.asm' },
 }
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -97,7 +99,7 @@ export async function POST(req: Request) {
   }
   const userId = session.user.id
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
   const parsed = executeSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
@@ -150,7 +152,18 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         language: langConfig.language,
         stdin,
-        files: inputFiles.map((f) => ({ name: f.name, content: f.content })),
+        files: inputFiles.map((f) => ({
+          name:
+            language === 'go' && inputFiles.length === 1
+              ? langConfig.filename
+              : language === 'scala' &&
+                  inputFiles.length === 1 &&
+                  ['main.scala', 'index.scala'].includes(f.name) &&
+                  /^\s*object\s+Main\b/m.test(f.content)
+                ? langConfig.filename
+                : f.name,
+          content: f.content,
+        })),
       }),
       signal: abort.signal,
     })
@@ -159,7 +172,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: timedOut
-          ? 'Execution timed out (15s limit)'
+          ? 'Execution timed out (55s limit)'
           : 'Execution service unavailable',
       },
       { status: timedOut ? 408 : 502 }
@@ -176,18 +189,44 @@ export async function POST(req: Request) {
   }
 
   const durationMs = Date.now() - startMs
-  const result = (await execRes.json()) as {
-    status: string // "success" | "error" | "timeout" | "compilation_error"
-    exception: string | null
-    stdout: string | null
-    stderr: string | null
-    executionTime: number | null
+  const resultSchema = z.object({
+    status: z.string(),
+    exception: z.string().nullish(),
+    error: z.string().nullish(),
+    stdout: z.string().nullish(),
+    stderr: z.string().nullish(),
+    executionTime: z.number().nonnegative().nullish(),
+    exitCode: z.number().int().nullish(),
+  })
+  const parsedResult = resultSchema.safeParse(
+    await execRes.json().catch(() => null)
+  )
+  if (!parsedResult.success) {
+    return NextResponse.json(
+      { error: 'Invalid execution service response' },
+      { status: 502 }
+    )
   }
-
-  const stdout = result.stdout ?? ''
-  const stderr = result.stderr ?? result.exception ?? ''
-  const exitCode = result.status === 'success' ? 0 : 1
-  const execDurationMs = result.executionTime ?? durationMs
+  const result = parsedResult.data
+  if (result.error || result.status === 'failed') {
+    const timedOut = /timed?\s*out|timeout/i.test(result.error ?? '')
+    return NextResponse.json(
+      {
+        error: timedOut
+          ? 'Execution service timed out'
+          : 'Execution service rejected the request',
+      },
+      { status: timedOut ? 408 : 502 }
+    )
+  }
+  const normalized = normalizeRemoteExecution(result, durationMs)
+  const {
+    stdout,
+    stderr,
+    exitCode,
+    execStatus,
+    durationMs: execDurationMs,
+  } = normalized
 
   // Fire-and-forget — don't block response on DB write
   prisma.executionLog
@@ -198,7 +237,7 @@ export async function POST(req: Request) {
         stdout: stdout || null,
         stderr: stderr || null,
         exitCode,
-        execStatus: result.status,
+        execStatus,
         durationMs: execDurationMs,
         roomId,
         submittedById: userId,
@@ -212,7 +251,7 @@ export async function POST(req: Request) {
     stdout,
     stderr,
     exitCode,
-    execStatus: result.status,
+    execStatus,
     durationMs: execDurationMs,
     language,
   })

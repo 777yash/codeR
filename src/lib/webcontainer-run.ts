@@ -1,7 +1,25 @@
 import { getBootedWebContainer } from '@/lib/webcontainer'
-import { sanitizeFilePath } from '@/lib/webcontainer-fs'
+import {
+  sanitizeFilePath,
+  flushContainerFiles,
+  type SyncFile,
+} from '@/lib/webcontainer-fs'
 
 const BARE_RUNNABLE = /\.(js|mjs|cjs)$/
+
+export async function prepareRunCommand(
+  activeFileName: string | null,
+  files: SyncFile[]
+) {
+  const runtime = getBootedWebContainer()
+  await flushContainerFiles(files)
+  if (getBootedWebContainer() !== runtime)
+    throw new Error('Runtime changed while preparing Run')
+  const command = await buildRunCommand(activeFileName)
+  if (getBootedWebContainer() !== runtime)
+    throw new Error('Runtime changed while preparing Run')
+  return command
+}
 
 export function normalizeNpxCommand(command: string): string {
   return command.replace(/(^|&&\s*|\|\|\s*|;\s*)npx\s+(?!-y\s)/g, '$1npx -y ')

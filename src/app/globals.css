@@ -95,7 +95,7 @@ html.light {
   --card-foreground: oklch(0.235 0.006 65);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.235 0.006 65);
-  --primary: oklch(0.586 0.222 17.6);
+  --primary: oklch(0.546 0.245 262.9);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.96 0.004 85);
   --secondary-foreground: oklch(0.235 0.006 65);
@@ -106,7 +106,7 @@ html.light {
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.91 0.004 85);
   --input: oklch(0.91 0.004 85);
-  --ring: oklch(0.586 0.222 17.6 / 40%);
+  --ring: oklch(0.546 0.245 262.9 / 40%);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -114,12 +114,12 @@ html.light {
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.235 0.006 65);
-  --sidebar-primary: oklch(0.586 0.222 17.6);
+  --sidebar-primary: oklch(0.546 0.245 262.9);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.96 0.004 85);
   --sidebar-accent-foreground: oklch(0.235 0.006 65);
   --sidebar-border: oklch(0.91 0.004 85);
-  --sidebar-ring: oklch(0.586 0.222 17.6 / 40%);
+  --sidebar-ring: oklch(0.546 0.245 262.9 / 40%);
 }
 
 @layer base {
@@ -145,54 +145,52 @@ html.light {
 
 /* codeR Design Tokens — Editorial Noir v2 (dark, default) */
 :root {
-  --coder-bg-base: #0a0a0c;
-  --coder-bg-surface: #101014;
-  --coder-bg-card: #16161c;
-  --coder-bg-card-hover: #1e1e26;
-  --coder-bg-card-active: #272730;
-  --coder-accent: #f43f5e;
-  --coder-accent-hover: #fb5874;
-  --coder-accent-glow: rgba(244, 63, 94, 0.16);
-  --coder-accent-dim: rgba(244, 63, 94, 0.09);
+  --coder-bg-base: #0b0b0d;
+  --coder-bg-surface: #111114;
+  --coder-bg-card: #17171b;
+  --coder-bg-card-hover: #202025;
+  --coder-bg-card-active: #29292f;
+  --coder-accent: #e5484d;
+  --coder-accent-hover: #f05b60;
+  --coder-accent-glow: rgba(229, 72, 77, 0.16);
+  --coder-accent-dim: rgba(229, 72, 77, 0.09);
   --coder-border: rgba(255, 255, 255, 0.07);
   --coder-border-mid: rgba(255, 255, 255, 0.12);
-  --coder-border-accent: rgba(244, 63, 94, 0.35);
+  --coder-border-accent: rgba(229, 72, 77, 0.35);
   --coder-text-primary: #eeeef2;
   --coder-text-secondary: #9a9aa5;
-  --coder-text-tertiary: #62626e;
-  --coder-text-accent: #fb7185;
+  --coder-text-tertiary: #82828f;
+  --coder-text-accent: #f1787d;
   --coder-shadow-sm:
     0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 8px rgba(0, 0, 0, 0.25);
   --coder-shadow-md:
     0 4px 12px rgba(0, 0, 0, 0.45), 0 12px 32px rgba(0, 0, 0, 0.35);
-  --coder-shadow-accent: 0 0 24px rgba(244, 63, 94, 0.18);
+  --coder-shadow-accent: 0 0 24px rgba(229, 72, 77, 0.18);
   --coder-nav-bg: rgba(10, 10, 12, 0.75);
 }
 
-/* codeR Design Tokens — Soft Paper (light) */
+/* codeR Design Tokens — Clear Paper (light) */
 html.light {
-  --coder-bg-base: #faf9f7;
-  --coder-bg-surface: #f3f1ed;
+  --coder-bg-base: #f8f9fc;
+  --coder-bg-surface: #f1f3f8;
   --coder-bg-card: #ffffff;
-  --coder-bg-card-hover: #f5f3ef;
-  --coder-bg-card-active: #edeae5;
-  --coder-accent: #e11d48;
-  --coder-accent-hover: #be123c;
-  --coder-accent-glow: rgba(225, 29, 72, 0.1);
-  --coder-accent-dim: rgba(225, 29, 72, 0.06);
-  --coder-border: rgba(31, 30, 28, 0.08);
-  --coder-border-mid: rgba(31, 30, 28, 0.14);
-  --coder-border-accent: rgba(225, 29, 72, 0.3);
-  --coder-text-primary: #211f1d;
-  --coder-text-secondary: #6b675f;
-  --coder-text-tertiary: #a39e94;
-  --coder-text-accent: #be123c;
-  --coder-shadow-sm:
-    0 1px 2px rgba(31, 30, 28, 0.05), 0 1px 6px rgba(31, 30, 28, 0.04);
-  --coder-shadow-md:
-    0 2px 8px rgba(31, 30, 28, 0.06), 0 12px 32px rgba(31, 30, 28, 0.08);
-  --coder-shadow-accent: 0 8px 24px rgba(225, 29, 72, 0.12);
-  --coder-nav-bg: rgba(250, 249, 247, 0.8);
+  --coder-bg-card-hover: #f4f6fb;
+  --coder-bg-card-active: #e8edf6;
+  --coder-accent: #2563eb;
+  --coder-accent-hover: #1d4ed8;
+  --coder-accent-glow: rgba(37, 99, 235, 0.1);
+  --coder-accent-dim: rgba(37, 99, 235, 0.05);
+  --coder-border: rgba(21, 26, 35, 0.08);
+  --coder-border-mid: rgba(21, 26, 35, 0.14);
+  --coder-border-accent: rgba(37, 99, 235, 0.3);
+  --coder-text-primary: #151a23;
+  --coder-text-secondary: #5f6877;
+  --coder-text-tertiary: #697588;
+  --coder-text-accent: #1d4ed8;
+  --coder-shadow-sm: 0 1px 3px rgba(21, 26, 35, 0.04);
+  --coder-shadow-md: 0 8px 28px rgba(21, 26, 35, 0.07);
+  --coder-shadow-accent: 0 8px 24px rgba(37, 99, 235, 0.08);
+  --coder-nav-bg: #f8f9fc;
 }
 
 /* App-wide theme-aware utilities — use these instead of hardcoded dark hex values */
@@ -358,73 +356,6 @@ html.light {
 
 ::-webkit-scrollbar-corner {
   background: transparent;
-}
-
-/* Animated star-border on room cards (hover) — adapted from React Bits
-   StarBorder: two radial-gradient blobs sweep the top/bottom edges. Color is
-   the brand accent (rose), revealed by the 2px gap between the clipping
-   wrapper and the inner card. */
-.room-star-border {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity 360ms cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-  z-index: 0;
-}
-.group:hover .room-star-border {
-  opacity: 1;
-}
-.room-star-border > span {
-  position: absolute;
-  width: 300%;
-  height: 22px;
-  opacity: 0.85;
-  border-radius: 50%;
-  filter: blur(3px);
-  background: radial-gradient(circle, var(--coder-accent), transparent 65%);
-}
-.room-star-border .star-top {
-  top: -11px;
-  left: -250%;
-}
-.room-star-border .star-bottom {
-  bottom: -11px;
-  right: -250%;
-}
-.group:hover .room-star-border .star-top {
-  animation: room-star-top 5.5s ease-in-out infinite alternate;
-}
-.group:hover .room-star-border .star-bottom {
-  animation: room-star-bottom 5.5s ease-in-out infinite alternate;
-}
-@keyframes room-star-top {
-  0% {
-    transform: translate(0%, 0%);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(100%, 0%);
-    opacity: 0;
-  }
-}
-@keyframes room-star-bottom {
-  0% {
-    transform: translate(0%, 0%);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-100%, 0%);
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .group:hover .room-star-border .star-top,
-  .group:hover .room-star-border .star-bottom {
-    animation: none;
-  }
 }
 
 /* gsap-driven loading skeletons (see components/ui/skeleton.tsx) */

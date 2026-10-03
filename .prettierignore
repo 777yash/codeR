@@ -2,3 +2,5 @@
 node_modules
 dist
 generated
+# Preserve registered third-party source hashes
+src/shaders/

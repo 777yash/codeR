@@ -51,9 +51,13 @@ const LANG_DISPLAY: Record<string, string> = {
 }
 
 export function StatusBar({
+  connected = false,
   webContainerStatus = null,
+  canRun = false,
 }: {
+  connected?: boolean
   webContainerStatus?: WebContainerStatus | null
+  canRun?: boolean
 }) {
   const {
     language,
@@ -81,7 +85,7 @@ export function StatusBar({
   }
 
   return (
-    <div className="border-app bg-app-surface flex h-6 shrink-0 items-center justify-between border-t px-3">
+    <div className="editor-status-bar border-app bg-app-surface flex h-6 shrink-0 items-center justify-between border-t px-3">
       <div className="text-app-dim flex items-center gap-3 text-[11px]">
         <span>{displayLang}</span>
         <span className="opacity-20">|</span>
@@ -92,7 +96,7 @@ export function StatusBar({
         <span>Spaces: 2</span>
       </div>
       <div className="text-app-dim flex items-center gap-3 text-[11px]">
-        {runtime && (
+        {canRun && runtime && (
           <button
             onClick={() =>
               webContainerStatus === 'ready' && setTerminalOpen(!terminalOpen)
@@ -116,7 +120,7 @@ export function StatusBar({
             <span>{runtime.label}</span>
           </button>
         )}
-        {preview && (
+        {canRun && preview && (
           <button
             onClick={handlePreviewToggle}
             title="Toggle live preview"
@@ -129,8 +133,10 @@ export function StatusBar({
           </button>
         )}
         <div className="flex items-center gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-[#32D74B]" />
-          <span>Connected</span>
+          <div
+            className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-[#32D74B]' : 'bg-[var(--coder-text-tertiary)]'}`}
+          />
+          <span>{connected ? 'Connected' : 'Reconnecting…'}</span>
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ export const authConfig = {
   },
   pages: {
     signIn: '/signin',
-    error: '/signin',
+    error: '/auth-error',
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {

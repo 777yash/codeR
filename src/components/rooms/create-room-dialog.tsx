@@ -131,6 +131,7 @@ export function CreateRoomDialog({
             <button
               type="button"
               role="switch"
+              aria-label="Public room"
               aria-checked={isPublic}
               onClick={() => setIsPublic(!isPublic)}
               className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${

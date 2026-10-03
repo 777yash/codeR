@@ -1,4 +1,5 @@
 import type { FileSystemTree, DirectoryNode } from '@webcontainer/api'
+import type { WebContainer } from '@webcontainer/api'
 import { getBootedWebContainer } from '@/lib/webcontainer'
 
 export interface SyncFile {
@@ -9,6 +10,42 @@ export interface SyncFile {
 // Fingerprints of editor-originated container writes — the fs.watch flush
 // skips these so an editor→container write doesn't echo back into Yjs
 const selfContainerWrites = new Map<string, string>()
+
+// Keep mounts, writes and removals ordered. A delayed old write must finish
+// before Run writes the current workspace, never after it.
+let filesystemQueue: Promise<void> = Promise.resolve()
+function enqueueFilesystem(operation: () => Promise<void>): Promise<void> {
+  const result = filesystemQueue.then(operation)
+  filesystemQueue = result.catch(() => undefined)
+  return result
+}
+
+async function writeFile(
+  container: WebContainer,
+  name: string,
+  content: string
+) {
+  const path = sanitizeFilePath(name)
+  if (!path) throw new Error(`Invalid file path: ${name}`)
+  recordSelfContainerWrite(path, content)
+  const lastSlash = path.lastIndexOf('/')
+  if (lastSlash > 0)
+    await container.fs.mkdir(path.slice(0, lastSlash), { recursive: true })
+  await container.fs.writeFile(path, content)
+}
+
+/** Await earlier work, then write a current snapshot; propagate failures to Run. */
+export function flushContainerFiles(files: SyncFile[]): Promise<void> {
+  const booted = getBootedWebContainer()
+  if (!booted) return Promise.reject(new Error('Runtime is not ready'))
+  return enqueueFilesystem(async () => {
+    const container = await booted
+    if (getBootedWebContainer() !== booted)
+      throw new Error('Runtime changed during sync')
+    for (const file of files)
+      await writeFile(container, file.name, file.content)
+  })
+}
 
 export function contentKey(data: Uint8Array): string {
   let hash = 0x811c9dc5
@@ -58,12 +95,14 @@ export async function mountAllFiles(files: SyncFile[]): Promise<void> {
   const booted = getBootedWebContainer()
   if (!booted) return
   try {
-    const container = await booted
-    for (const { name, content } of files) {
-      const path = sanitizeFilePath(name)
-      if (path) recordSelfContainerWrite(path, content)
-    }
-    await container.mount(toFileTree(files))
+    await enqueueFilesystem(async () => {
+      const container = await booted
+      for (const { name, content } of files) {
+        const path = sanitizeFilePath(name)
+        if (path) recordSelfContainerWrite(path, content)
+      }
+      await container.mount(toFileTree(files))
+    })
   } catch {
     // container tore down mid-mount — sync is fire-and-forget
   }
@@ -78,13 +117,7 @@ export async function writeContainerFile(
   const path = sanitizeFilePath(name)
   if (!path) return
   try {
-    const container = await booted
-    recordSelfContainerWrite(path, content)
-    const lastSlash = path.lastIndexOf('/')
-    if (lastSlash > 0) {
-      await container.fs.mkdir(path.slice(0, lastSlash), { recursive: true })
-    }
-    await container.fs.writeFile(path, content)
+    await enqueueFilesystem(async () => writeFile(await booted, path, content))
   } catch {
     // path collides with a directory or container tore down — skip
   }
@@ -96,8 +129,10 @@ export async function removeContainerFile(name: string): Promise<void> {
   const path = sanitizeFilePath(name)
   if (!path) return
   try {
-    const container = await booted
-    await container.fs.rm(path, { force: true })
+    await enqueueFilesystem(async () => {
+      const container = await booted
+      await container.fs.rm(path, { force: true })
+    })
   } catch {
     // already gone or container tore down
   }

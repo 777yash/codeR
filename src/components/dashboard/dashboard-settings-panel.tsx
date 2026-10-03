@@ -6,16 +6,22 @@ import { useEditorStore } from '@/stores/editor-store'
 import { SlidePanel } from '@/components/dashboard/slide-panel'
 
 function Toggle({
+  label,
   checked,
   onChange,
 }: {
+  label: string
   checked: boolean
   onChange: () => void
 }) {
   return (
     <button
+      type="button"
+      role="switch"
+      aria-label={label}
+      aria-checked={checked}
       onClick={onChange}
-      className={`h-5 w-9 rounded-full transition-colors ${
+      className={`flex h-5 w-9 items-center rounded-full transition-colors ${
         checked
           ? 'bg-[var(--coder-accent)]'
           : 'bg-[var(--coder-bg-card-active)]'
@@ -96,6 +102,7 @@ export function DashboardSettingsPanel() {
             <div className="border-app-mid bg-app rounded-lg border p-4">
               <Row label="Inline Suggestions">
                 <Toggle
+                  label="Inline suggestions"
                   checked={inlineSuggest}
                   onChange={() => setInlineSuggest(!inlineSuggest)}
                 />
@@ -118,6 +125,7 @@ export function DashboardSettingsPanel() {
               <div className="px-4 py-2">
                 <Row label="Minimap">
                   <Toggle
+                    label="Minimap"
                     checked={minimap}
                     onChange={() => setMinimap(!minimap)}
                   />
@@ -126,6 +134,7 @@ export function DashboardSettingsPanel() {
               <div className="px-4 py-2">
                 <Row label="Word Wrap">
                   <Toggle
+                    label="Word wrap"
                     checked={wordWrap === 'on'}
                     onChange={() =>
                       setWordWrap(wordWrap === 'on' ? 'off' : 'on')
@@ -136,6 +145,7 @@ export function DashboardSettingsPanel() {
               <div className="px-4 py-2">
                 <Row label="Line Numbers">
                   <select
+                    aria-label="Line numbers"
                     value={lineNumbers}
                     onChange={(e) =>
                       setLineNumbers(
@@ -156,6 +166,7 @@ export function DashboardSettingsPanel() {
                   <span className="text-app text-xs">{fontSize}px</span>
                 </div>
                 <input
+                  aria-label="Font size"
                   type="range"
                   min={10}
                   max={24}

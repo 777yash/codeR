@@ -23,6 +23,11 @@ import {
   getWebContainerStatus,
   slugifyWorkdirName,
 } from '@/lib/webcontainer'
+import { registerUnloadFlush } from '@/lib/workspace-persist'
+import {
+  WorkspaceNavigation,
+  FileBreadcrumb,
+} from '@/components/editor/workspace-navigation'
 
 function EditorSkeleton() {
   return (
@@ -46,31 +51,36 @@ type MobilePane = 'editor' | 'files' | 'collab'
 interface EditorWrapperProps {
   roomId: string
   initialLanguage?: string
-  readOnly?: boolean
+  canEdit?: boolean
+  canRun?: boolean
   roomName?: string
   members?: CollabMember[]
   currentUserId?: string
   currentUserName?: string
   roomLanguage?: string
-  canSave?: boolean
   aiChatEnabled?: boolean
 }
 
 export function EditorWrapper({
   roomId,
   initialLanguage,
-  readOnly = false,
+  canEdit = false,
+  canRun = false,
   roomName,
   members = [],
   currentUserId,
   currentUserName,
   roomLanguage,
-  canSave = false,
   aiChatEnabled = true,
 }: EditorWrapperProps) {
   const router = useRouter()
   const posthog = usePostHog()
   const [mobilePane, setMobilePane] = useState<MobilePane>('editor')
+  const [connectedCanEdit, setConnectedCanEdit] = useState(false)
+  const [connected, setConnected] = useState(false)
+  const editable = canEdit && connectedCanEdit
+  const runnable = canRun && editable
+  const readOnly = !canEdit
   const webContainerStatus = useSyncExternalStore(
     subscribeWebContainerStatus,
     getWebContainerStatus,
@@ -78,6 +88,7 @@ export function EditorWrapper({
   )
 
   useEffect(() => {
+    if (!canRun) return
     // COOP/COEP headers only apply on document load — client-side navigation
     // into a room keeps the previous (non-isolated) document and the runtime
     // can never boot. One hard reload picks the headers up; the flag stops a
@@ -89,13 +100,21 @@ export function EditorWrapper({
     if (sessionStorage.getItem('coder-coi-reload')) return
     sessionStorage.setItem('coder-coi-reload', '1')
     window.location.reload()
-  }, [])
+  }, [canRun])
 
   useEffect(() => {
     posthog?.capture('room_joined', { room_id: roomId, read_only: readOnly })
   }, [posthog, roomId, readOnly])
 
   useEffect(() => {
+    // Best-effort snapshot beacon on tab close — covers edits the collab-server
+    // hasn't saved yet. Viewers can't write the flush route, skip them.
+    if (!editable) return
+    return registerUnloadFlush(roomId)
+  }, [roomId, editable])
+
+  useEffect(() => {
+    if (!canRun) return
     // Rooms are polyglot — the container boots everywhere it can: the
     // terminal is useful regardless of language, Run branches per file
     const workdir =
@@ -113,7 +132,7 @@ export function EditorWrapper({
     return () => {
       void teardownWebContainer()
     }
-  }, [roomId, roomName])
+  }, [roomId, roomName, canRun])
 
   useEffect(() => {
     const check = async () => {
@@ -140,11 +159,12 @@ export function EditorWrapper({
     ]
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <EditorToolbar />
+    <div className="editor-workspace flex flex-1 flex-col overflow-hidden">
+      <EditorToolbar readOnly={!editable} />
 
       {/* Main area — 3-column on desktop, single-pane + drawers on mobile */}
       <div className="relative flex flex-1 overflow-hidden">
+        <WorkspaceNavigation />
         {/* Mobile drawer backdrop */}
         {mobilePane !== 'editor' && (
           <div
@@ -154,6 +174,7 @@ export function EditorWrapper({
         )}
 
         <FileExplorer
+          canEdit={editable}
           roomName={roomName}
           mobileOpen={mobilePane === 'files'}
           onFileSelect={() => setMobilePane('editor')}
@@ -161,7 +182,8 @@ export function EditorWrapper({
 
         {/* Center: file tabs + editor — always mounted (unmount drops WS) */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <FileTabs />
+          <FileTabs canEdit={editable} />
+          <FileBreadcrumb />
           <div className="flex flex-1 overflow-hidden">
             <div className="min-w-0 flex-1 overflow-hidden">
               <EditorClient
@@ -170,9 +192,11 @@ export function EditorWrapper({
                 userName={currentUserName}
                 initialLanguage={initialLanguage}
                 readOnly={readOnly}
+                onWriteAccessChange={setConnectedCanEdit}
+                onConnectionChange={setConnected}
               />
             </div>
-            {webContainerStatus !== null && <PreviewPanel />}
+            {canRun && webContainerStatus !== null && <PreviewPanel />}
           </div>
         </div>
 
@@ -182,15 +206,21 @@ export function EditorWrapper({
           currentUserId={currentUserId}
           currentUserName={currentUserName}
           roomLanguage={roomLanguage}
-          canSave={canSave}
+          canSave={editable}
           aiChatEnabled={aiChatEnabled}
           mobileOpen={mobilePane === 'collab'}
         />
       </div>
 
-      <StatusBar webContainerStatus={webContainerStatus} />
+      <StatusBar
+        connected={connected}
+        webContainerStatus={runnable ? webContainerStatus : null}
+        canRun={runnable}
+      />
 
-      {webContainerStatus !== null && <TerminalPanel />}
+      {canRun && webContainerStatus !== null && (
+        <TerminalPanel canInteract={runnable} />
+      )}
 
       {/* Mobile pane switcher */}
       <div

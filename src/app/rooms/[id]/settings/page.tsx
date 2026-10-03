@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { ArrowLeft, Settings } from 'lucide-react'
 import type { Metadata } from 'next'
 import { RoomSettingsClient } from './settings-client'
+import { canPerform } from '@/lib/room-permissions'
 
 interface SettingsPageProps {
   params: Promise<{ id: string }>
@@ -59,7 +60,10 @@ async function getRoomForSettings(roomId: string, userId: string) {
   if (!isOwner && !memberRole) return null
 
   return {
-    room,
+    room: {
+      ...room,
+      shareLinks: canPerform('share', memberRole) ? room.shareLinks : [],
+    },
     userRole: isOwner ? 'OWNER' : (memberRole as 'OWNER' | 'EDITOR' | 'VIEWER'),
   }
 }

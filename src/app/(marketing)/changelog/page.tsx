@@ -1,10 +1,38 @@
+import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
+import { RevealSurface } from '@/components/ui/reveal-surface'
 const releases = [
+  {
+    phase: '14',
+    title: 'GroqCloud AI Assistant',
+    date: 'Oct 3, 2026',
+    status: 'latest',
+    summary:
+      'AI chat and project scaffolding now use GroqCloud. The assistant still understands your project files and conversation, shares @ai replies with collaborators, and generates runnable projects. Codestral continues to power inline completions.',
+    changes: [
+      {
+        type: 'infra',
+        items: [
+          'Chat and scaffolding use GroqCloud GPT-OSS 120B with low reasoning effort and strict JSON output',
+          'Configure a server-only GROQ_API_KEY; GROQ_MODEL supports GPT-OSS 120B and 20B',
+          'Preserved room permissions, request quotas, and audit logging; provider rate limits return retry guidance',
+        ],
+      },
+      {
+        type: 'security',
+        items: [
+          'Generated files, commands, and deletion actions are validated against the complete response schema before reaching the editor',
+          'Chat-only replies cannot include file mutations or executable commands; malformed and truncated output returns a controlled error',
+          'Client cancellation propagates to the upstream model request within the existing server deadline',
+        ],
+      },
+    ],
+  },
   {
     phase: '13.2',
     title: 'Room Search & Sliding Side Panels',
     date: 'Jun 18, 2026',
-    status: 'latest',
-    accentColor: '#F43F5E',
+    status: 'shipped',
     summary:
       'The dashboard search box now actually filters your rooms as you type, wrapped in a playful “gooey” control that expands on click. And the editor’s file explorer and collaboration panel now slide open and closed with the same smooth motion as the profile panels, instead of snapping.',
     changes: [
@@ -31,7 +59,6 @@ const releases = [
     title: 'Dashboard Polish & Animated Backdrop',
     date: 'Jun 17, 2026',
     status: 'shipped',
-    accentColor: '#14B8A6',
     summary:
       'A round of dashboard polish. Profile, Settings and Help now glide in from the right as animated panels, there’s a proper in-app Help centre, scrollbars finally match the active theme, and the dashboard sits on a subtle animated backdrop — brand rose on dark, a complementary teal on light.',
     changes: [
@@ -58,7 +85,6 @@ const releases = [
     title: '@ai Chat Commands — Collaborative AI in Chat',
     date: 'Jun 16, 2026',
     status: 'shipped',
-    accentColor: '#F43F5E',
     summary:
       'Type @ai in a room’s chat to trigger AI that every collaborator sees in real time. Ask it to explain or fix code, refactor, or build a project and the answer (or the generated files) lands in the shared chat for the whole room — with a live “AI is thinking…” indicator and attribution showing who triggered it. @ai run executes a shell command in the in-browser terminal directly. Only the person who typed @ai runs the model, so the action happens once and the result is broadcast to everyone.',
     changes: [
@@ -102,7 +128,6 @@ const releases = [
     title: 'AI Assistant & Project Scaffolding',
     date: 'Jun 15, 2026',
     status: 'shipped',
-    accentColor: '#A855F7',
     summary:
       'The AI tab is now a project-aware assistant. Ask it to explain or debug code, talk through an approach, or research an idea and it answers inline; ask it to build something and it generates a full runnable file tree with install and start commands, applies the files to the shared workspace (every collaborator sees them via CRDT), flushes them into the in-browser runtime, and auto-runs — with the live preview opening on its own. It reads your open files and the conversation so far, and decides whether to answer or build based on what you asked.',
     changes: [
@@ -120,8 +145,8 @@ const releases = [
       {
         type: 'infra',
         items: [
-          'POST /api/ai/scaffold — GitHub Models (openai/gpt-4o-mini), OpenAI-compatible REST via native fetch with no SDK dependency; strict json_schema structured output',
-          'GITHUB_MODELS_TOKEN optional (fine-grained PAT, models: read) — absent disables the tab gracefully; GITHUB_MODELS_MODEL overrides the model id without a code change',
+          'POST /api/ai/scaffold — OpenAI-compatible REST via native fetch with no SDK dependency; strict json_schema structured output',
+          'The server-side AI key is optional — absent disables generation gracefully',
           'In-memory rate limit (10/user/min), 55s server abort, output capped for the free tier; client AbortController powers Stop',
           'Unit + route tests cover response parsing, command formatting, the apply/fresh logic, and the 401/400/429/502/503 guards',
         ],
@@ -152,7 +177,6 @@ const releases = [
     title: 'Local Folder Sync — Save to Disk & Two-Way Mirror',
     date: 'Jun 14, 2026',
     status: 'shipped',
-    accentColor: '#32D74B',
     summary:
       'The in-browser runtime now mirrors to real disk. Link a folder to a room — from the header button or Room Settings — and your project auto-saves there as you type, files created in the container or by collaborators flow back into the editor, and deleting a file in codeR removes it from the folder too. A true two-way bridge between the editor and your machine.',
     changes: [
@@ -189,7 +213,6 @@ const releases = [
     title: 'Polyglot Rooms & Editor Quality-of-Life',
     date: 'Jun 13, 2026',
     status: 'shipped',
-    accentColor: '#BF5AF2',
     summary:
       'Rooms are now polyglot — language is detected per file instead of being fixed room-wide — with a GitHub-style language breakdown bar. Plus a wave of VS Code-style editor ergonomics: a real folder tree, smarter tabs and file menus, and a collapsible explorer.',
     changes: [
@@ -226,7 +249,6 @@ const releases = [
     title: 'WebContainers — In-Browser Runtime, Terminal & Live Preview',
     date: 'Jun 12, 2026',
     status: 'shipped',
-    accentColor: '#0EA5E9',
     summary:
       'Node.js now runs entirely in your browser. JavaScript and TypeScript rooms boot a WebContainer on load: the Run button executes locally in an interactive terminal, dev servers open a live preview pane with hot reload, and your code never leaves the machine.',
     changes: [
@@ -265,7 +287,6 @@ const releases = [
     title: 'Visual Redesign — Editorial Noir v2',
     date: 'Jun 11, 2026',
     status: 'shipped',
-    accentColor: 'var(--coder-accent)',
     summary:
       'Complete visual overhaul of every surface — marketing site, auth, dashboard, editor, and all shared components — with zero functional changes. A single token-driven design system now powers both themes: a deep-zinc dark mode with a refined rose accent, and a new warm-paper light mode that is softer, calmer, and fully accessible.',
     changes: [
@@ -300,7 +321,6 @@ const releases = [
     title: 'Export to GitHub Gist',
     date: 'Jun 9, 2026',
     status: 'shipped',
-    accentColor: '#32D74B',
     summary:
       'Export any room workspace to a GitHub Gist in one click. All open files are pushed to a secret (or public) gist under your GitHub account; the link is copied to your clipboard. Closes the last open Phase 10 item.',
     changes: [
@@ -335,7 +355,6 @@ const releases = [
     title: 'Product Analytics',
     date: 'Jun 9, 2026',
     status: 'shipped',
-    accentColor: '#BF5AF2',
     summary:
       'PostHog product analytics — privacy-first, client-only. User funnels from signup through room creation, joining, code execution, and chat are now visible. No source code, output, or message text ever leaves the browser. Analytics are fully optional and disabled when no key is set.',
     changes: [
@@ -372,7 +391,6 @@ const releases = [
     title: 'Performance & Instant UI',
     date: 'Jun 6, 2026',
     status: 'shipped',
-    accentColor: '#0EA5E9',
     summary:
       'Monaco editor and DiffEditor split to lazy chunks, CRDT snapshots compressed with Yjs V2+gzip, idle rooms skip redundant DB writes, and dashboard tabs plus the version history list update instantly without a full-page reload.',
     changes: [
@@ -412,7 +430,6 @@ const releases = [
     title: 'Mobile Responsive Layout',
     date: 'Jun 6, 2026',
     status: 'shipped',
-    accentColor: '#0EA5E9',
     summary:
       'Full mobile responsiveness across marketing, auth, dashboard, editor, and profile pages. Single-pane bottom tab switcher for the editor, overlay drawers, dynamic viewport height, and safe-area insets for notched devices.',
     changes: [
@@ -455,7 +472,6 @@ const releases = [
     title: 'Codebase Cleanup & Security Activation',
     date: 'Jun 5, 2026',
     status: 'shipped',
-    accentColor: 'var(--coder-accent)',
     summary:
       'Dead code audit + full deduplication pass. CSRF and env validation wired in. Dead Prisma model dropped. 8 unused files deleted, 6 duplicate functions unified.',
     changes: [
@@ -501,7 +517,6 @@ const releases = [
     title: 'Security Hardening',
     date: 'Jun 4, 2026',
     status: 'shipped',
-    accentColor: 'var(--coder-accent)',
     summary:
       'Full security audit: Content Security Policy headers, JWT token rotation, and auth gate on the AI completions endpoint.',
     changes: [
@@ -522,7 +537,6 @@ const releases = [
     title: 'AI Completions',
     date: 'Jun 3, 2026',
     status: 'shipped',
-    accentColor: '#BF5AF2',
     summary:
       'Inline AI code completions powered by Mistral Codestral FIM. Multi-line ghost text, context-aware suggestions across all open workspace files, per-user toggle persisted to localStorage.',
     changes: [
@@ -559,7 +573,6 @@ const releases = [
     title: 'Chat — Unread Badge & @Mentions',
     date: 'Jun 2, 2026',
     status: 'shipped',
-    accentColor: '#06B6D4',
     summary:
       'Unread message count badge on the Chat tab, and @mention autocomplete with inline highlighting.',
     changes: [
@@ -588,7 +601,6 @@ const releases = [
     title: 'Chat — Code Snippet Sharing',
     date: 'Jun 1, 2026',
     status: 'shipped',
-    accentColor: '#06B6D4',
     summary:
       'Share code snippets directly in chat — styled code blocks with copy button, language badge, and auto-detected language from the active editor file.',
     changes: [
@@ -617,7 +629,6 @@ const releases = [
     title: 'In-Session Room Chat',
     date: 'Jun 1, 2026',
     status: 'shipped',
-    accentColor: '#06B6D4',
     summary:
       'Real-time chat inside every room — powered by the existing Yjs WebSocket connection. Zero new infrastructure. Messages sync to all collaborators instantly and persist in the Yjs snapshot.',
     changes: [
@@ -646,7 +657,6 @@ const releases = [
     title: 'Version History — One-Click Restore',
     date: 'May 31, 2026',
     status: 'shipped',
-    accentColor: '#FF9F0A',
     summary:
       'Restore any snapshot with one click — all live editors update instantly via Yjs CRDT. No page reload required.',
     changes: [
@@ -673,7 +683,6 @@ const releases = [
     title: 'Version History — Bug Fixes',
     date: 'May 30, 2026',
     status: 'shipped',
-    accentColor: '#FF9F0A',
     summary:
       'Stability fixes for the version history panel: correct snapshot bytes on save, delete snapshots, and Monaco DiffEditor lifecycle fixes.',
     changes: [
@@ -706,7 +715,6 @@ const releases = [
     title: 'Version History',
     date: 'May 29, 2026',
     status: 'shipped',
-    accentColor: '#FF9F0A',
     summary:
       'Persistent document snapshots with visual diff comparison. Auto-saves every 60 seconds via collab-server; users can save named versions at any time. History panel with tabbed Named / Auto-saves views and drag-to-resize.',
     changes: [
@@ -739,7 +747,6 @@ const releases = [
     title: 'Execution Bug Fixes',
     date: 'May 29, 2026',
     status: 'shipped',
-    accentColor: '#32D74B',
     summary:
       'Multi-file execution, terminal toggle for all users, cross-tab result sync, and Monaco lifecycle stability fixes.',
     changes: [
@@ -776,7 +783,6 @@ const releases = [
     title: 'Horizontal Scaling via Redis Pub/Sub',
     date: 'May 28, 2026',
     status: 'shipped',
-    accentColor: 'var(--coder-accent)',
     summary:
       'collab-server now scales horizontally. Yjs updates on one instance are broadcast to all instances via Redis pub/sub — multiple Render replicas share the same real-time document state.',
     changes: [
@@ -800,7 +806,6 @@ const releases = [
     title: 'Multi-File Workspace',
     date: 'May 27, 2026',
     status: 'shipped',
-    accentColor: '#FF9F0A',
     summary:
       'Full multi-file workspace — create, rename, and delete files per room. Each file has its own Yjs text; file list syncs across all collaborators in real-time.',
     changes: [
@@ -832,7 +837,6 @@ const releases = [
     title: 'Code Execution Sandbox',
     date: 'May 24, 2026',
     status: 'shipped',
-    accentColor: '#32D74B',
     summary:
       'Run code in 28 languages via OneCompiler. All collaborators see output simultaneously via Yjs map broadcast.',
     changes: [
@@ -870,7 +874,6 @@ const releases = [
     title: 'Presence & Awareness',
     date: 'May 17, 2026',
     status: 'shipped',
-    accentColor: 'var(--coder-accent)',
     summary:
       'Colored remote cursors, join/leave toasts, and a live collaborator sidebar.',
     changes: [
@@ -905,7 +908,6 @@ const releases = [
     title: 'Real-Time Collaboration (CRDT)',
     date: 'May 8, 2026',
     status: 'shipped',
-    accentColor: '#32D74B',
     summary:
       'Full Yjs CRDT sync via y-websocket, with snapshot persistence to PostgreSQL.',
     changes: [
@@ -943,7 +945,6 @@ const releases = [
     title: 'Code Editor',
     date: 'May 7, 2026',
     status: 'shipped',
-    accentColor: '#FF9F0A',
     summary:
       'Monaco Editor integration with dynamic language selection and the full room editor UI.',
     changes: [
@@ -972,7 +973,6 @@ const releases = [
     title: 'Room Management',
     date: 'April 2026',
     status: 'shipped',
-    accentColor: '#BF5AF2',
     summary:
       'Full room CRUD, role-based membership, and shareable read-only links.',
     changes: [
@@ -1002,7 +1002,6 @@ const releases = [
     title: 'Authentication',
     date: 'April 2026',
     status: 'shipped',
-    accentColor: 'var(--coder-accent)',
     summary:
       'NextAuth v5 with GitHub OAuth, Google OAuth, and email/password credentials.',
     changes: [
@@ -1033,7 +1032,6 @@ const releases = [
     title: 'Foundation',
     date: 'April 2026',
     status: 'shipped',
-    accentColor: 'var(--coder-text-tertiary)',
     summary:
       'Project scaffolding, CI pipeline, database schema, and design system.',
     changes: [
@@ -1061,338 +1059,67 @@ const releases = [
   },
 ]
 
-const typeConfig = {
-  feature: { label: 'Feature', color: '#32D74B', bg: 'rgba(50,215,75,0.10)' },
-  fix: { label: 'Fix', color: '#FF9F0A', bg: 'rgba(255,159,10,0.10)' },
-  infra: {
-    label: 'Infra',
-    color: 'var(--coder-text-secondary)',
-    bg: 'rgba(136,136,136,0.15)',
-  },
-  security: {
-    label: 'Security',
-    color: 'var(--coder-accent)',
-    bg: 'var(--coder-accent-glow)',
-  },
-  refactor: {
-    label: 'Refactor',
-    color: '#0EA5E9',
-    bg: 'rgba(14,165,233,0.12)',
-  },
-  chore: {
-    label: 'Chore',
-    color: 'var(--coder-text-tertiary)',
-    bg: 'rgba(85,85,85,0.15)',
-  },
-}
-
-const statusConfig = {
-  latest: {
-    label: 'Latest',
-    color: 'var(--coder-accent)',
-    bg: 'var(--coder-accent-glow)',
-  },
-  shipped: { label: 'Shipped', color: '#32D74B', bg: 'rgba(50,215,75,0.10)' },
+const typeLabels: Record<string, string> = {
+  feature: 'Features',
+  fix: 'Fixes',
+  infra: 'Infrastructure',
+  security: 'Security',
+  refactor: 'Refactoring',
+  chore: 'Maintenance',
 }
 
 export default function ChangelogPage() {
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '64px 24px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '64px' }}>
-        <h1
-          style={{
-            fontSize: 'clamp(32px, 5vw, 48px)',
-            fontWeight: 700,
-            letterSpacing: '-0.02em',
-            color: 'var(--coder-text-primary)',
-            marginBottom: '12px',
-          }}
-        >
-          Changelog
-        </h1>
-        <p style={{ fontSize: '16px', color: 'var(--coder-text-secondary)' }}>
-          Phase-by-phase history of everything shipped in codeR.
-        </p>
-      </div>
-
-      {/* Timeline */}
-      <div style={{ position: 'relative' }}>
-        {/* Vertical line */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            left: '19px',
-            top: '8px',
-            bottom: '8px',
-            width: '2px',
-            backgroundColor: 'var(--coder-border-mid)',
-            borderRadius: '9999px',
-          }}
-        />
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
-          {releases.map((release) => {
-            const sc = statusConfig[release.status as keyof typeof statusConfig]
-            return (
-              <div
-                key={release.phase}
-                style={{
-                  display: 'flex',
-                  gap: '32px',
-                  alignItems: 'flex-start',
-                }}
+    <div className="product-page changelog-page">
+      <header className="product-page-heading">
+        <h1>Changelog</h1>
+        <Link className="action-outline" href="/features">
+          Features <ArrowUpRight size={15} />
+        </Link>
+      </header>
+      <RevealSurface className="release-list">
+        {releases.map((release) => (
+          <article key={release.phase} className="release" data-reveal>
+            <div className="release-meta">
+              <time>{release.date}</time>
+              <span>v{release.phase}</span>
+              {release.status === 'latest' && (
+                <span className="status-tag status-tag-accent">Latest</span>
+              )}
+            </div>
+            <div className="release-body">
+              <h2>{release.title}</h2>
+              <p>{release.summary}</p>
+              <details
+                className="release-details"
+                open={release.status === 'latest'}
               >
-                {/* Timeline dot */}
-                <div
-                  style={{
-                    width: '40px',
-                    flexShrink: 0,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    paddingTop: '4px',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '9999px',
-                      backgroundColor:
-                        release.status === 'latest'
-                          ? release.accentColor
-                          : 'var(--coder-bg-surface)',
-                      border: `2px solid ${release.status === 'latest' ? release.accentColor : 'var(--coder-border-mid)'}`,
-                      boxShadow:
-                        release.status === 'latest'
-                          ? `0 0 8px ${release.accentColor}60`
-                          : 'none',
-                      position: 'relative',
-                      zIndex: 1,
-                    }}
-                  />
+                <summary>
+                  Changes <span aria-hidden="true">+</span>
+                </summary>
+                <div>
+                  {release.changes.map((group) => (
+                    <section key={group.type}>
+                      <h3>{typeLabels[group.type] ?? group.type}</h3>
+                      <ul>
+                        {group.items.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
                 </div>
-
-                {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {/* Release header */}
-                  <div style={{ marginBottom: '16px' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        marginBottom: '6px',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: 'var(--font-jetbrains-mono), monospace',
-                          fontSize: '11px',
-                          fontWeight: 500,
-                          color: 'var(--coder-text-tertiary)',
-                        }}
-                      >
-                        Phase {release.phase}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 500,
-                          color: sc.color,
-                          backgroundColor: sc.bg,
-                          padding: '1px 8px',
-                          borderRadius: '9999px',
-                        }}
-                      >
-                        {sc.label}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '12px',
-                          color: 'var(--coder-text-tertiary)',
-                        }}
-                      >
-                        {release.date}
-                      </span>
-                    </div>
-                    <h2
-                      style={{
-                        fontSize: '20px',
-                        fontWeight: 700,
-                        color: 'var(--coder-text-primary)',
-                        marginBottom: '6px',
-                      }}
-                    >
-                      {release.title}
-                    </h2>
-                    <p
-                      style={{
-                        fontSize: '14px',
-                        color: 'var(--coder-text-secondary)',
-                        margin: 0,
-                      }}
-                    >
-                      {release.summary}
-                    </p>
-                  </div>
-
-                  {/* Change groups */}
-                  <div
-                    style={{
-                      border: '1px solid var(--coder-border)',
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {release.changes.map((group, gi) => {
-                      const tc =
-                        typeConfig[group.type as keyof typeof typeConfig]
-                      return (
-                        <div
-                          key={group.type}
-                          style={{
-                            borderTop:
-                              gi > 0 ? '1px solid var(--coder-border)' : 'none',
-                          }}
-                        >
-                          <div
-                            style={{
-                              padding: '8px 16px',
-                              backgroundColor: 'var(--coder-bg-card)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: '10px',
-                                fontWeight: 600,
-                                color: tc.color,
-                                backgroundColor: tc.bg,
-                                padding: '1px 8px',
-                                borderRadius: '9999px',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.06em',
-                              }}
-                            >
-                              {tc.label}
-                            </span>
-                          </div>
-                          <ul
-                            style={{
-                              margin: 0,
-                              padding: '8px 16px 12px 16px',
-                              listStyle: 'none',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '6px',
-                              backgroundColor: 'var(--coder-bg-surface)',
-                            }}
-                          >
-                            {group.items.map((item) => (
-                              <li
-                                key={item}
-                                style={{
-                                  display: 'flex',
-                                  gap: '10px',
-                                  alignItems: 'flex-start',
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    color: tc.color,
-                                    fontSize: '12px',
-                                    marginTop: '2px',
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  ›
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: '13px',
-                                    lineHeight: 1.6,
-                                    color: 'var(--coder-text-secondary)',
-                                    fontFamily:
-                                      'var(--font-jetbrains-mono), monospace',
-                                  }}
-                                >
-                                  {item}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Upcoming */}
-      <div
-        style={{
-          marginTop: '64px',
-          border: '1px dashed var(--coder-border-mid)',
-          borderRadius: '10px',
-          padding: '32px',
-          textAlign: 'center',
-        }}
-      >
-        <div
-          style={{
-            fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--coder-text-tertiary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            marginBottom: '12px',
-          }}
-        >
-          Still on the list
-        </div>
-        <h3
-          style={{
-            fontSize: '20px',
-            fontWeight: 700,
-            color: 'var(--coder-text-primary)',
-            marginBottom: '8px',
-          }}
-        >
-          Cross-browser QA & password recovery
-        </h3>
-        <p
-          style={{
-            fontSize: '14px',
-            color: 'var(--coder-text-secondary)',
-            maxWidth: '400px',
-            margin: '0 auto 20px',
-          }}
-        >
-          A couple of loose ends from earlier phases: a full cross-browser pass
-          on the in-browser runtime, and a proper password-reset flow.
-        </p>
-        <a
-          href="/features"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '13px',
-            color: 'var(--coder-text-accent)',
-            textDecoration: 'none',
-          }}
-        >
-          See the full roadmap →
-        </a>
+              </details>
+            </div>
+          </article>
+        ))}
+      </RevealSurface>
+      <div className="release-upcoming">
+        <h2>Still on the list</h2>
+        <p>Cross-browser QA and password recovery.</p>
+        <Link href="/features">
+          See the roadmap <ArrowUpRight size={15} />
+        </Link>
       </div>
     </div>
   )

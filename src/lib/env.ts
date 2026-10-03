@@ -20,24 +20,53 @@ const envSchema = z.object({
   NEXT_PUBLIC_COLLAB_WS_URL: z.string().default('ws://localhost:1234'),
 
   // Analytics (optional — absent disables PostHog, app runs normally)
-  NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_POSTHOG_KEY: z
+    .preprocess(
+      (value) =>
+        typeof value === 'string' ? value.trim() || undefined : value,
+      z.string().min(1).optional()
+    )
+    .optional(),
 
   // Collab server internal auth
-  NEXTJS_INTERNAL_SECRET: z.string().min(1),
+  NEXTJS_INTERNAL_SECRET: z.string().min(32),
 
-  // Upstash Redis REST — optional: absent → AI rate limiting falls back to
-  // in-memory per-instance counters (fine for a single instance / demo)
-  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+  // Required for shared inline AI quotas and HTTP presence; these features
+  // return 503 if missing. Legacy scaffolding keeps its existing fallback.
+  UPSTASH_REDIS_REST_URL: z
+    .preprocess(
+      (value) =>
+        typeof value === 'string' ? value.trim() || undefined : value,
+      z.string().url().optional()
+    )
+    .optional(),
+  UPSTASH_REDIS_REST_TOKEN: z
+    .preprocess(
+      (value) =>
+        typeof value === 'string' ? value.trim() || undefined : value,
+      z.string().min(1).optional()
+    )
+    .optional(),
 
   // AI completions
   CODESTRAL_API_KEY: z.string().min(1).optional(),
 
-  // AI scaffolding (GitHub Models) — optional: absent disables the AI tab (503), app runs normally
-  // GitHub PAT (fine-grained) with `models: read` permission
-  GITHUB_MODELS_TOKEN: z.string().min(1).optional(),
-  // Override the scaffolding model — survives model deprecations without a code change
-  GITHUB_MODELS_MODEL: z.string().min(1).optional(),
+  // GroqCloud chat/scaffolding — server-only; absent returns 503.
+  GROQ_API_KEY: z
+    .preprocess(
+      (value) =>
+        typeof value === 'string' ? value.trim() || undefined : value,
+      z.string().min(1).optional()
+    )
+    .optional(),
+  // Supported strict-output models; default is GPT-OSS 120B.
+  GROQ_MODEL: z
+    .preprocess(
+      (value) =>
+        typeof value === 'string' ? value.trim() || undefined : value,
+      z.enum(['openai/gpt-oss-120b', 'openai/gpt-oss-20b']).optional()
+    )
+    .optional(),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),

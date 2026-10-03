@@ -146,7 +146,7 @@ export async function handleAiChatTrigger(ctx: AiTriggerCtx): Promise<void> {
 
     // Scaffold: files sync to all collaborators via Yjs; the run happens in the
     // triggering browser's container. Other members get a "Run here" button.
-    const count = applyScaffold(result)
+    const count = applyScaffold(result, { roomId })
     const ran = await runScaffold(result)
     updateChatMessage(aiMsgId, {
       content: result.text,

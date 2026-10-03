@@ -7,12 +7,14 @@ import Link from 'next/link'
 import { AppLogo } from '@/components/app-logo'
 import { Loader2 } from 'lucide-react'
 import { OAuthButtons, AUTH_INPUT_CLASS } from './auth-shared'
+import { ThemeToggle } from '@/components/marketing/theme-toggle'
 
 interface Props {
   callbackUrl: string
+  oauthError?: string
 }
 
-export function SignInForm({ callbackUrl }: Props) {
+export function SignInForm({ callbackUrl, oauthError }: Props) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -42,31 +44,31 @@ export function SignInForm({ callbackUrl }: Props) {
   }
 
   return (
-    <div className="bg-app flex min-h-dvh items-center justify-center px-4">
-      <div
-        className="border-app bg-app-card w-full max-w-[420px] rounded-2xl border px-6 py-8 sm:px-10 sm:py-10"
-        style={{ boxShadow: 'var(--coder-shadow-md)' }}
-      >
+    <div className="auth-surface bg-app flex min-h-dvh items-center justify-center px-4">
+      <div className="auth-theme">
+        <ThemeToggle />
+      </div>
+      <div className="auth-card border-app bg-app-card w-full max-w-[420px] rounded-2xl border px-6 py-8 sm:px-10 sm:py-10">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <AppLogo size="lg" href="/" />
         </div>
 
-        <h1 className="text-app text-2xl font-semibold">Welcome back</h1>
-        <p className="text-app-muted mt-1 mb-6 text-sm">
-          Sign in to your workspace
-        </p>
+        <h1 className="text-app mb-8 text-2xl font-semibold">Welcome back</h1>
+
+        {(error ?? oauthError) && (
+          <div
+            role="alert"
+            className="mb-4 rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-400"
+          >
+            {error ?? oauthError}
+          </div>
+        )}
 
         <OAuthButtons callbackUrl={callbackUrl} />
 
         {/* Credentials form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-400">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-app-muted block text-sm">
               Email address

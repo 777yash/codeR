@@ -1,20 +1,26 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Save, Loader2 } from 'lucide-react'
 
 interface ProfileFormProps {
   initialName: string | null
   email: string | null
+  onSaved?: (name: string) => void
 }
 
-export function ProfileForm({ initialName, email }: ProfileFormProps) {
+export function ProfileForm({ initialName, email, onSaved }: ProfileFormProps) {
+  const router = useRouter()
   const [name, setName] = useState(initialName ?? '')
+  const [savedName, setSavedName] = useState(initialName ?? '')
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
-    if (name.trim().length < 2) {
+    if (saving) return
+    const submittedName = name.trim()
+    if (submittedName.length < 2) {
       toast.error('Name must be at least 2 characters')
       return
     }
@@ -23,12 +29,15 @@ export function ProfileForm({ initialName, email }: ProfileFormProps) {
       const res = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ name: submittedName }),
       })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to save')
       }
+      setSavedName(submittedName)
+      onSaved?.(submittedName)
+      router.refresh()
       toast.success('Profile updated')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save')
@@ -54,7 +63,7 @@ export function ProfileForm({ initialName, email }: ProfileFormProps) {
           />
           <button
             onClick={handleSave}
-            disabled={saving || name.trim() === (initialName ?? '')}
+            disabled={saving || name.trim() === savedName}
             className="flex h-9 items-center gap-1.5 rounded-md bg-[var(--coder-accent)] px-3 text-xs font-semibold text-white transition-all hover:bg-[var(--coder-accent)]/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {saving ? (

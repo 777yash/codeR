@@ -6,6 +6,9 @@ const OWNER_ID = 'owner_test_user_id'
 const MEMBER_ID = 'member_test_user_id'
 
 vi.mock('@/auth', () => ({ auth: vi.fn() }))
+vi.mock('@/lib/collab-revocation', () => ({
+  notifyCollabAccessChanged: vi.fn(),
+}))
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     room: { findUnique: vi.fn() },
@@ -15,6 +18,7 @@ vi.mock('@/lib/prisma', () => ({
 
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { notifyCollabAccessChanged } from '@/lib/collab-revocation'
 
 const params = Promise.resolve({ id: ROOM_ID, userId: MEMBER_ID })
 const ownerParams = Promise.resolve({ id: ROOM_ID, userId: OWNER_ID })
@@ -105,6 +109,7 @@ describe('PATCH /api/rooms/[id]/members/[userId]', () => {
 
     const res = await PATCH(makePatch({ role: 'VIEWER' }), { params })
     expect(res.status).toBe(200)
+    expect(notifyCollabAccessChanged).toHaveBeenCalledWith(ROOM_ID, MEMBER_ID)
     expect(await res.json()).toMatchObject({
       role: 'VIEWER',
       userId: MEMBER_ID,
@@ -163,6 +168,7 @@ describe('DELETE /api/rooms/[id]/members/[userId]', () => {
     const res = await DELETE(makeDelete(), { params })
     expect(res.status).toBe(200)
     expect(await res.json()).toMatchObject({ success: true })
+    expect(notifyCollabAccessChanged).toHaveBeenCalledWith(ROOM_ID, MEMBER_ID)
     expect(vi.mocked(prisma.roomMember.delete)).toHaveBeenCalledWith({
       where: { roomId_userId: { roomId: ROOM_ID, userId: MEMBER_ID } },
     })

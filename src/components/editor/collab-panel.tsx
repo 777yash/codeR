@@ -507,7 +507,7 @@ export function CollabPanel({
 
   const handleSendMessage = useCallback(() => {
     const content = chatInput.trim()
-    if (!content || !currentUserId) return
+    if (!canSave || !content || !currentUserId) return
     sendChatMessage({
       id: crypto.randomUUID(),
       userId: currentUserId,
@@ -654,7 +654,7 @@ export function CollabPanel({
 
       <div
         ref={panelRef}
-        className={`border-app bg-app-surface flex-col overflow-hidden border-l will-change-[width] max-md:absolute max-md:inset-y-0 max-md:right-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[320px] max-md:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[280px] md:min-w-0 md:shrink-0 ${
+        className={`editor-collaboration border-app bg-app-surface flex-col overflow-hidden border-l will-change-[width] max-md:absolute max-md:inset-y-0 max-md:right-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[320px] max-md:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[280px] md:min-w-0 md:shrink-0 ${
           mobileOpen ? 'max-md:flex' : 'max-md:hidden'
         }`}
       >
@@ -664,6 +664,7 @@ export function CollabPanel({
             <button
               key={t.id}
               data-collab-item
+              aria-pressed={tab === t.id}
               onClick={() => activateTab(t.id)}
               className={`relative flex flex-1 items-center justify-center gap-1 text-xs font-medium transition-colors ${
                 tab === t.id
@@ -977,6 +978,7 @@ export function CollabPanel({
                 {isCodeMode ? (
                   <div className="border-app-mid bg-app rounded-md border focus-within:border-[var(--coder-accent)]/50">
                     <textarea
+                      disabled={!canSave}
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -1006,7 +1008,7 @@ export function CollabPanel({
                         </button>
                         <button
                           onClick={handleSendMessage}
-                          disabled={!chatInput.trim()}
+                          disabled={!canSave || !chatInput.trim()}
                           className="text-app-dim transition-colors hover:text-[var(--coder-accent)] disabled:opacity-30"
                         >
                           <Send className="h-3.5 w-3.5" />
@@ -1019,6 +1021,7 @@ export function CollabPanel({
                     <input
                       type="text"
                       value={chatInput}
+                      disabled={!canSave}
                       onChange={(e) => handleInputChange(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') {
@@ -1040,7 +1043,9 @@ export function CollabPanel({
                           handleSendMessage()
                         }
                       }}
-                      placeholder="Message… (@ to mention)"
+                      placeholder={
+                        canSave ? 'Message… (@ to mention)' : 'Read-only chat'
+                      }
                       maxLength={500}
                       className="text-app placeholder:text-app-dim min-w-0 flex-1 bg-transparent text-xs outline-none"
                     />
@@ -1052,12 +1057,13 @@ export function CollabPanel({
                       }}
                       className="text-app-dim transition-colors hover:text-[var(--coder-accent)]"
                       title="Share code snippet"
+                      disabled={!canSave}
                     >
                       <Code2 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={handleSendMessage}
-                      disabled={!chatInput.trim()}
+                      disabled={!canSave || !chatInput.trim()}
                       className="text-app-dim transition-colors hover:text-[var(--coder-accent)] disabled:opacity-30"
                     >
                       <Send className="h-3.5 w-3.5" />

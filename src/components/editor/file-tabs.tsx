@@ -5,8 +5,9 @@ import {
   addSharedFile,
   deleteSharedFile,
 } from '@/components/editor/editor-client'
-import { X, Plus, FileCode } from 'lucide-react'
-import { useState } from 'react'
+import { X, Plus } from 'lucide-react'
+import { LanguageIcon } from '@/components/editor/language-icon'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 const EXT_TO_LANG: Record<string, string> = {
   js: 'javascript',
@@ -48,7 +49,7 @@ function extToLang(ext: string | undefined, fallback: string): string {
   return EXT_TO_LANG[ext ?? ''] ?? fallback
 }
 
-export function FileTabs() {
+export function FileTabs({ canEdit = false }: { canEdit?: boolean }) {
   const {
     files: rawFiles,
     activeFileId,
@@ -70,8 +71,28 @@ export function FileTabs() {
     x: number
     y: number
   } | null>(null)
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const indicatorRef = useRef<HTMLDivElement>(null)
+  const tabKey = openFiles.map((file) => `${file.id}:${file.name}`).join('|')
+  useLayoutEffect(() => {
+    const tabs = tabsRef.current,
+      indicator = indicatorRef.current
+    if (!tabs || !indicator) return
+    const update = () => {
+      const active = tabs.querySelector<HTMLElement>('[data-active="true"]')
+      indicator.style.opacity = active ? '1' : '0'
+      if (!active) return
+      indicator.style.width = `${active.offsetWidth}px`
+      indicator.style.transform = `translateX(${active.offsetLeft}px)`
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(tabs)
+    return () => observer.disconnect()
+  }, [activeFileId, tabKey])
 
   function handleAdd() {
+    if (!canEdit) return
     const name = newFileName.trim()
     if (!name) return
     const ext = name.includes('.') ? name.split('.').pop() : undefined
@@ -89,51 +110,102 @@ export function FileTabs() {
   }
 
   function handleDeleteFile(fileId: string) {
+    if (!canEdit) return
     setTabMenu(null)
     deleteSharedFile(fileId)
   }
+  function closeTab(fileId: string) {
+    closeFile(fileId)
+    requestAnimationFrame(() =>
+      tabsRef.current
+        ?.querySelector<HTMLButtonElement>(
+          '[data-file-select][aria-pressed="true"]'
+        )
+        ?.focus()
+    )
+  }
 
   return (
-    <div className="border-app bg-app-surface flex h-9 shrink-0 items-stretch border-b">
+    <div className="editor-file-tabs border-app bg-app-surface flex h-9 shrink-0 items-stretch border-b">
       {/* Tabs — open files only; closing a tab keeps the file in the workspace */}
-      <div className="flex flex-1 items-stretch overflow-x-auto">
+      <div
+        ref={tabsRef}
+        className="editor-tab-track relative flex min-w-0 flex-1 items-stretch overflow-x-auto"
+      >
+        <div
+          ref={indicatorRef}
+          className="editor-tab-indicator"
+          aria-hidden="true"
+        />
         {openFiles.map((file) => {
           const isActive = activeFileId === file.id
           return (
             <div
               key={file.id}
-              onClick={() => setActiveFile(file.id)}
+              data-active={isActive}
               onAuxClick={(e) => {
                 if (e.button === 1) {
                   e.preventDefault()
-                  closeFile(file.id)
+                  closeTab(file.id)
                 }
               }}
               onContextMenu={(e) => {
                 e.preventDefault()
                 setTabMenu({ fileId: file.id, x: e.clientX, y: e.clientY })
               }}
-              className={`group border-app relative flex max-w-[180px] min-w-[100px] cursor-pointer items-center gap-1.5 border-r px-3 text-xs transition-colors ${
+              className={`editor-file-tab group border-app relative flex max-w-[180px] min-w-[100px] cursor-pointer items-center gap-1.5 border-r px-3 text-xs transition-colors ${
                 isActive
                   ? 'bg-app text-app'
                   : 'bg-app-surface text-app-dim hover-app-card hover:text-app-muted'
               }`}
             >
-              {/* Active indicator: top border */}
-              {isActive && (
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-[var(--coder-accent)]" />
-              )}
-              <FileCode className="h-3 w-3 shrink-0 opacity-70" />
-              <span className="truncate" title={file.name}>
-                {file.name.slice(file.name.lastIndexOf('/') + 1)}
-              </span>
+              <button
+                type="button"
+                data-file-select
+                aria-label={`Open file ${file.name}`}
+                aria-pressed={isActive}
+                tabIndex={isActive ? 0 : -1}
+                className="flex h-full min-w-0 flex-1 items-center gap-1.5"
+                onClick={() => setActiveFile(file.id)}
+                onKeyDown={(event) => {
+                  if (
+                    !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
+                      event.key
+                    )
+                  )
+                    return
+                  event.preventDefault()
+                  const index = openFiles.findIndex(
+                    (item) => item.id === file.id
+                  )
+                  const next =
+                    event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? openFiles.length - 1
+                        : (index +
+                            (event.key === 'ArrowRight' ? 1 : -1) +
+                            openFiles.length) %
+                          openFiles.length
+                  setActiveFile(openFiles[next].id)
+                  tabsRef.current
+                    ?.querySelectorAll<HTMLButtonElement>('[data-file-select]')
+                    [next]?.focus()
+                }}
+              >
+                <LanguageIcon language={file.language} size={13} />
+                <span className="truncate" title={file.name}>
+                  {file.name.slice(file.name.lastIndexOf('/') + 1)}
+                </span>
+              </button>
               {openFiles.length > 1 && (
                 <button
+                  aria-label={`Close file ${file.name}`}
                   onClick={(e) => {
                     e.stopPropagation()
-                    closeFile(file.id)
+                    closeTab(file.id)
                   }}
-                  className="hover:text-app ml-auto shrink-0 rounded p-px opacity-0 transition-opacity group-hover:opacity-100"
+                  className="editor-tab-close hover:text-app ml-auto shrink-0 rounded p-px opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -166,7 +238,7 @@ export function FileTabs() {
             <button
               onClick={() => {
                 setTabMenu(null)
-                closeFile(tabMenu.fileId)
+                closeTab(tabMenu.fileId)
               }}
               disabled={openFiles.length <= 1}
               className="text-app hover-app-card flex w-full items-center px-3 py-1.5 text-xs disabled:opacity-40"
@@ -183,54 +255,61 @@ export function FileTabs() {
             >
               Close others
             </button>
-            <div className="border-app my-1 border-t" />
-            <button
-              onClick={() => handleDeleteFile(tabMenu.fileId)}
-              className="flex w-full items-center px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
-            >
-              Delete file
-            </button>
+            {canEdit && (
+              <>
+                <div className="border-app my-1 border-t" />
+                <button
+                  onClick={() => handleDeleteFile(tabMenu.fileId)}
+                  className="flex w-full items-center px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
+                >
+                  Delete file
+                </button>
+              </>
+            )}
           </div>
         </>
       )}
 
       {/* New file */}
-      {showInput ? (
-        <div className="flex items-center gap-1 px-2">
-          <input
-            autoFocus
-            type="text"
-            value={newFileName}
-            onChange={(e) => setNewFileName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAdd()
-              if (e.key === 'Escape') {
-                setNewFileName('')
-                setShowInput(false)
-              }
-            }}
-            onBlur={() => {
-              if (!newFileName.trim()) setShowInput(false)
-            }}
-            placeholder="filename.js"
-            className="border-app-mid bg-app text-app placeholder:text-app-dim h-6 w-28 rounded border px-2 text-xs outline-none focus:border-[var(--coder-accent)]/50"
-          />
+      {canEdit &&
+        (showInput ? (
+          <div className="flex items-center gap-1 px-2">
+            <input
+              autoFocus
+              type="text"
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAdd()
+                if (e.key === 'Escape') {
+                  setNewFileName('')
+                  setShowInput(false)
+                }
+              }}
+              onBlur={() => {
+                if (!newFileName.trim()) setShowInput(false)
+              }}
+              placeholder="filename.js"
+              aria-label="New file name"
+              className="border-app-mid bg-app text-app placeholder:text-app-dim h-6 w-28 rounded border px-2 text-xs outline-none focus:border-[var(--coder-accent)]/50"
+            />
+            <button
+              onClick={handleAdd}
+              className="text-app-muted hover:text-app h-6 rounded px-1.5 text-xs hover:bg-[var(--coder-bg-card-active)]"
+            >
+              Add
+            </button>
+          </div>
+        ) : (
           <button
-            onClick={handleAdd}
-            className="text-app-muted hover:text-app h-6 rounded px-1.5 text-xs hover:bg-[var(--coder-bg-card-active)]"
+            onClick={() => setShowInput(true)}
+            title="New file"
+            aria-label="New file"
+            className="text-app-dim hover:text-app-muted flex h-full w-9 items-center justify-center transition-colors hover:bg-[var(--coder-bg-card-hover)]"
           >
-            Add
+            <Plus className="h-3.5 w-3.5" />
           </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setShowInput(true)}
-          title="New file"
-          className="text-app-dim hover:text-app-muted flex h-full w-9 items-center justify-center transition-colors hover:bg-[var(--coder-bg-card-hover)]"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-      )}
+        ))}
     </div>
   )
 }

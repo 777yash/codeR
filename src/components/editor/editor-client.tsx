@@ -1,13 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Editor, { loader, type OnMount } from '@monaco-editor/react'
 import type * as MonacoEditor from 'monaco-editor'
 import { useEditorStore, type EditorFile } from '@/stores/editor-store'
 import { toast } from 'sonner'
 import { colorFromUserId } from '@/lib/color'
+import { startCollabConnection } from '@/lib/collab-connection'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { getBootedWebContainer } from '@/lib/webcontainer'
+import { isSensitiveAiFile } from '@/lib/ai-context'
 import {
   mountAllFiles,
   writeContainerFile,
@@ -17,6 +19,7 @@ import {
 import {
   autoRestoreLinkedFolder,
   deleteFromLinkedFolder,
+  ensureDependencies,
 } from '@/lib/webcontainer-export'
 import {
   startProjectWatcher,
@@ -37,6 +40,8 @@ interface EditorClientProps {
   userName?: string
   initialLanguage?: string
   readOnly?: boolean
+  onWriteAccessChange?: (allowed: boolean) => void
+  onConnectionChange?: (connected: boolean) => void
 }
 
 const LANG_EXT: Record<string, string> = {
@@ -155,6 +160,10 @@ let _editor: {
 } | null = null
 
 let _ydoc: YDoc | null = null
+let _canWrite = false
+export function canEditWorkspace(): boolean {
+  return _canWrite
+}
 let _encodeStateAsUpdate: ((doc: unknown) => Uint8Array) | null = null
 
 export function getYjsStateBytes(): Uint8Array | null {
@@ -192,7 +201,7 @@ export interface ChatMessageData {
 const chatMessageSubscribers = new Set<(msgs: ChatMessageData[]) => void>()
 
 export function sendChatMessage(data: ChatMessageData): void {
-  if (!_ydoc) return
+  if (!_canWrite || !_ydoc) return
   _ydoc.getArray<ChatMessageData>('chat-messages').push([data])
 }
 
@@ -217,7 +226,7 @@ export function updateChatMessage(
   id: string,
   patch: Partial<ChatMessageData>
 ): void {
-  if (!_ydoc) return
+  if (!_canWrite || !_ydoc) return
   const arr = _ydoc.getArray<ChatMessageData>('chat-messages')
   const items = arr.toArray()
   const idx = items.findIndex((m) => m.id === id)
@@ -233,10 +242,12 @@ export function updateChatMessage(
 // observes it and aborts its in-flight fetch.
 
 export function signalAiAbort(reqId: string): void {
+  if (!_canWrite) return
   _ydoc?.getMap<boolean>('ai-control').set(reqId, true)
 }
 
 export function clearAiControl(reqId: string): void {
+  if (!_canWrite) return
   _ydoc?.getMap<boolean>('ai-control').delete(reqId)
 }
 
@@ -276,6 +287,7 @@ export function getAllFilesContent(): { name: string; content: string }[] {
 }
 
 export function broadcastExecutionResult(result: unknown): void {
+  if (!_canWrite) return
   _ydoc?.getMap('execution-results').set('latest', JSON.stringify(result))
 }
 
@@ -287,7 +299,7 @@ export function subscribeToExecutionResults(
 }
 
 export function addSharedFile(file: EditorFile): void {
-  if (!_ydoc) return
+  if (!_canWrite || !_ydoc) return
   const fileList = _ydoc.getMap('file-list')
   let maxOrder = -1
   fileList.forEach((val) => {
@@ -308,7 +320,7 @@ export function addSharedFile(file: EditorFile): void {
 }
 
 export function removeSharedFile(id: string): void {
-  if (!_ydoc) return
+  if (!_canWrite || !_ydoc) return
   _ydoc.getMap('file-list').delete(id)
 }
 
@@ -319,6 +331,7 @@ export function removeSharedFile(id: string): void {
  * never hits the empty state that would otherwise leave the editor broken.
  */
 export function deleteSharedFile(id: string): void {
+  if (!_canWrite || !_ydoc) return
   const store = useEditorStore.getState()
   if (store.files.length <= 1) {
     const taken = new Set(store.files.map((f) => f.name))
@@ -339,7 +352,7 @@ export function deleteSharedFile(id: string): void {
 }
 
 export function renameSharedFile(id: string, name: string): void {
-  if (!_ydoc) return
+  if (!_canWrite || !_ydoc) return
   const fileList = _ydoc.getMap('file-list')
   const raw = fileList.get(id)
   if (!raw) return
@@ -418,7 +431,7 @@ export function importFilesToWorkspace(
   files: { name: string; content: string }[]
 ): number {
   const ydoc = _ydoc
-  if (!ydoc) return 0
+  if (!_canWrite || !ydoc) return 0
   const fileList = ydoc.getMap('file-list')
   const existingNames = new Set<string>()
   let maxOrder = -1
@@ -456,7 +469,7 @@ export function applyExternalFileContents(
   files: { name: string; content: string }[]
 ): { updated: number; added: number } {
   const ydoc = _ydoc
-  if (!ydoc) return { updated: 0, added: 0 }
+  if (!_canWrite || !ydoc) return { updated: 0, added: 0 }
   const fileList = ydoc.getMap('file-list')
   const idsByName = new Map<string, string>()
   fileList.forEach((val) => {
@@ -492,8 +505,12 @@ export function EditorClient({
   userId,
   userName,
   initialLanguage,
-  readOnly = false,
+  readOnly = true,
+  onWriteAccessChange,
+  onConnectionChange,
 }: EditorClientProps) {
+  const [canWrite, setCanWrite] = useState(false)
+  const disposedRef = useRef(false)
   const cleanupRef = useRef<(() => void) | null>(null)
   // true = no active binding / already destroyed; prevents double-destroy
   const bindingDestroyedRef = useRef(true)
@@ -601,7 +618,7 @@ export function EditorClient({
 
     const fileList = ydocRef.current.getMap('file-list')
     const raw = fileList.get(activeFileId)
-    if (raw) {
+    if (raw && _canWrite) {
       const meta = JSON.parse(raw) as FileMetadata
       if (meta.language !== language) {
         fileList.set(activeFileId, JSON.stringify({ ...meta, language }))
@@ -611,7 +628,7 @@ export function EditorClient({
 
   // Rename default file to match initial language on first load
   useEffect(() => {
-    if (!initialLanguage) return
+    if (!initialLanguage || readOnly) return
     setLanguage(initialLanguage)
     const defaultFile = files.find((f) => f.id === 'default')
     if (defaultFile && defaultFile.name === 'main.js') {
@@ -619,7 +636,7 @@ export function EditorClient({
       renameFile('default', `main.${ext}`)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialLanguage])
+  }, [initialLanguage, readOnly])
 
   const handleEditorMount: OnMount = useCallback(
     async (editor, monaco) => {
@@ -643,12 +660,17 @@ export function EditorClient({
           ) => {
             // Debounce — Monaco cancels stale calls via token when user keeps typing
             await new Promise<void>((resolve) => setTimeout(resolve, 300))
-            if (token.isCancellationRequested) return { items: [] }
+            if (token.isCancellationRequested || !_canWrite)
+              return { items: [] }
 
             const offset = model.getOffsetAt(position)
             const fullText = model.getValue()
-            const prefix = fullText.slice(0, offset)
-            const suffix = fullText.slice(offset)
+            const rawPrefix = fullText.slice(0, offset)
+            const prefix =
+              rawPrefix.length > 16000
+                ? rawPrefix.slice(0, 2000) + '\n' + rawPrefix.slice(-13999)
+                : rawPrefix
+            const suffix = fullText.slice(offset, offset + 8000)
             const language = model.getLanguageId() as string
 
             // Skip blank lines — avoid triggering on Enter
@@ -656,39 +678,62 @@ export function EditorClient({
 
             // Other open files for cross-file context (exclude active)
             const { files: wsFiles, activeFileId } = useEditorStore.getState()
+            const filename = wsFiles.find((f) => f.id === activeFileId)?.name
+            if (!filename || isSensitiveAiFile(filename)) return { items: [] }
             const otherFiles = wsFiles
-              .filter((f) => f.id !== activeFileId)
+              .filter(
+                (f) => f.id !== activeFileId && !isSensitiveAiFile(f.name)
+              )
+              .slice(0, 3)
               .map((f) => ({
                 name: f.name,
                 content: _ydoc
                   ? _ydoc.getText(`file:${f.id}`).toString()
                   : f.content,
               }))
+              .map((f) => ({ ...f, content: f.content.slice(0, 8000) }))
               .filter((f) => f.content.trim().length > 0)
 
             try {
-              const res = await fetch('/api/ai/complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prefix, suffix, language, otherFiles }),
-              })
-              if (token.isCancellationRequested) return { items: [] }
-              const { completion } = (await res.json()) as {
-                completion: string
-              }
-              if (!completion) return { items: [] }
-              return {
-                items: [
-                  {
-                    insertText: completion,
-                    range: {
-                      startLineNumber: position.lineNumber,
-                      startColumn: position.column,
-                      endLineNumber: position.lineNumber,
-                      endColumn: position.column,
+              const controller = new AbortController()
+              const cancellation = token.onCancellationRequested(() =>
+                controller.abort()
+              )
+              try {
+                const res = await fetch('/api/ai/complete', {
+                  method: 'POST',
+                  signal: controller.signal,
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    roomId,
+                    filename,
+                    prefix,
+                    suffix,
+                    language,
+                    otherFiles,
+                  }),
+                })
+                if (!res.ok || token.isCancellationRequested || !_canWrite)
+                  return { items: [] }
+                const { completion } = (await res.json()) as {
+                  completion: string
+                }
+                if (!completion) return { items: [] }
+                return {
+                  items: [
+                    {
+                      insertText: completion,
+                      range: {
+                        startLineNumber: position.lineNumber,
+                        startColumn: position.column,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column,
+                      },
                     },
-                  },
-                ],
+                  ],
+                }
+              } finally {
+                cancellation.dispose()
               }
             } catch {
               return { items: [] }
@@ -703,6 +748,7 @@ export function EditorClient({
         import('y-websocket'),
         import('y-monaco'),
       ])
+      if (disposedRef.current) return
 
       const encodeV2 = Y.encodeStateAsUpdateV2 as (doc: unknown) => Uint8Array
       // Tagged V2 container (uncompressed): [0x59, 0x5A, FLAG_V2]. Matches
@@ -745,11 +791,14 @@ export function EditorClient({
       chatArray.observe(chatObserver)
 
       const provider = new WebsocketProvider(wsUrl, roomId, ydoc, {
-        connect: true,
+        connect: false,
+        // BroadcastChannel skips the server and would bypass room authorization.
+        disableBc: true,
         resyncInterval: 10_000,
         maxBackoffTime: 60_000,
       })
       providerRef.current = provider
+      let authorizedWriter = false
 
       provider.awareness.setLocalStateField('user', {
         id: userId,
@@ -783,7 +832,10 @@ export function EditorClient({
         states.forEach((state, clientId) => {
           if (clientId === ydoc.clientID) return
           const color = state.user?.color ?? '#888888'
-          const name = (state.user?.name ?? 'Anonymous').replace(/"/g, '')
+          const name = (state.user?.name ?? 'Anonymous').replace(
+            /["\\\r\n\f]/g,
+            ''
+          )
           nameCache.set(clientId, name)
           let labelTop = '-1.4em'
           if (state.cursor?.anchor) {
@@ -827,6 +879,7 @@ export function EditorClient({
       handleAwarenessChange({ added: [], updated: [], removed: [] })
 
       provider.on('status', ({ status }: { status: string }) => {
+        onConnectionChange?.(status === 'connected')
         if (status === 'connected') setLastSaved(new Date())
       })
 
@@ -854,7 +907,7 @@ export function EditorClient({
           return entries.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         }
 
-        if (fileList.size === 0) {
+        if (fileList.size === 0 && authorizedWriter) {
           // New room or pre-multi-file room: seed file-list from store
           const { files: storeFiles } = useEditorStore.getState()
           ydoc.transact(() => {
@@ -1029,10 +1082,11 @@ export function EditorClient({
           })
         }
 
-        getBootedWebContainer()
+        ;(authorizedWriter ? getBootedWebContainer() : null)
           ?.then((container) => {
+            if (!authorizedWriter || disposedRef.current) return
             const entries = dedupedEntries()
-            void mountAllFiles(
+            const mounted = mountAllFiles(
               entries.map((e) => ({
                 name: e.name,
                 content: ydoc.getText(`file:${e.id}`).toString(),
@@ -1040,7 +1094,18 @@ export function EditorClient({
             )
             entries.forEach((e) => attachContentObserver(e.id, e.name))
             fileList.observe(syncFileStructure)
-            autoRestoreLinkedFolder(roomId).catch(() => undefined)
+            // Deps restore runs after mount + folder restore so package.json
+            // and the lockfile/pack are in place first
+            void mounted
+              .then(() =>
+                authorizedWriter
+                  ? autoRestoreLinkedFolder(roomId).catch(() => undefined)
+                  : undefined
+              )
+              .then(() =>
+                authorizedWriter ? ensureDependencies(roomId) : undefined
+              )
+              .catch(() => undefined)
             const getEditorFileNames = () =>
               new Set(
                 useEditorStore
@@ -1050,6 +1115,7 @@ export function EditorClient({
               )
             startProjectWatcher(roomId, {
               applyFiles: (files) => {
+                if (!authorizedWriter) return
                 const { added } = applyExternalFileContents(files)
                 if (added > 0) {
                   toast.info(
@@ -1061,6 +1127,7 @@ export function EditorClient({
             })
             startLocalFolderWatcher(roomId, {
               applyDiskFiles: (files) => {
+                if (!authorizedWriter) return
                 const { added } = applyExternalFileContents(files)
                 if (added > 0) {
                   toast.info(
@@ -1081,7 +1148,41 @@ export function EditorClient({
         if (initialActiveId) activateFile(initialActiveId)
       })
 
+      const stopConnection = startCollabConnection(
+        provider,
+        roomId,
+        ydoc.clientID,
+        {
+          onRole: (role) => {
+            authorizedWriter =
+              !readOnly && (role === 'OWNER' || role === 'EDITOR')
+            _canWrite = authorizedWriter
+            setCanWrite(authorizedWriter)
+            onWriteAccessChange?.(authorizedWriter)
+          },
+          onDisconnected: () => {
+            onConnectionChange?.(false)
+            authorizedWriter = false
+            _canWrite = false
+            setCanWrite(false)
+            onWriteAccessChange?.(false)
+          },
+          onRoleChanged: () => window.location.reload(),
+          onDenied: (status) => {
+            toast.error(
+              status === 401
+                ? 'Sign in again to reconnect.'
+                : 'You no longer have access to this room.'
+            )
+            window.location.assign(status === 401 ? '/signin' : '/dashboard')
+          },
+        }
+      )
+
       cleanupRef.current = () => {
+        _canWrite = false
+        authorizedWriter = false
+        stopConnection()
         const editorInstance = _editor
         const fullEditor = editorRef.current
         _editor = null
@@ -1131,11 +1232,22 @@ export function EditorClient({
       }
     },
     // activateFile is stable (useCallback with [])
-    [roomId, userId, userName, setLastSaved, activateFile]
+    [
+      roomId,
+      userId,
+      userName,
+      setLastSaved,
+      activateFile,
+      readOnly,
+      onWriteAccessChange,
+      onConnectionChange,
+    ]
   )
 
   useEffect(() => {
+    disposedRef.current = false
     return () => {
+      disposedRef.current = true
       cleanupRef.current?.()
     }
   }, [])
@@ -1144,10 +1256,41 @@ export function EditorClient({
     <Editor
       height="100%"
       language={MONACO_LANG_MAP[language] ?? language}
-      theme={theme}
+      theme={theme === 'vs-dark' ? 'coder-dark' : 'coder-light'}
+      beforeMount={(monaco) => {
+        monaco.editor.defineTheme('coder-dark', {
+          base: 'vs-dark',
+          inherit: true,
+          rules: [],
+          colors: {
+            'editor.background': '#111113',
+            'editorGutter.background': '#111113',
+            'editor.lineHighlightBackground': '#ffffff03',
+            'editor.lineHighlightBorder': '#ffffff00',
+            'editorLineNumber.foreground': '#505057',
+            'editorLineNumber.activeForeground': '#aaaab2',
+            'editor.selectionBackground': '#f43f5e25',
+            'editorCursor.foreground': '#f0f0f2',
+          },
+        })
+        monaco.editor.defineTheme('coder-light', {
+          base: 'vs',
+          inherit: true,
+          rules: [],
+          colors: {
+            'editor.background': '#ffffff',
+            'editorGutter.background': '#ffffff',
+            'editor.lineHighlightBackground': '#f6f8fb',
+            'editor.lineHighlightBorder': '#ffffff00',
+            'editorLineNumber.foreground': '#a0a8b5',
+            'editorLineNumber.activeForeground': '#4b5563',
+            'editor.selectionBackground': '#2563eb20',
+          },
+        })
+      }}
       onMount={handleEditorMount}
       options={{
-        readOnly,
+        readOnly: readOnly || !canWrite,
         fontSize: isMobile ? Math.max(fontSize, 14) : fontSize,
         fontFamily: "'JetBrains Mono', monospace",
         lineNumbers: lineNumbers === 'off' ? 'off' : lineNumbers,
@@ -1160,7 +1303,12 @@ export function EditorClient({
         insertSpaces: true,
         renderWhitespace: 'selection',
         bracketPairColorization: { enabled: true },
-        padding: { top: 8 },
+        padding: { top: 16, bottom: 16 },
+        lineHeight: Math.round(
+          (isMobile ? Math.max(fontSize, 14) : fontSize) * 1.65
+        ),
+        overviewRulerBorder: false,
+        renderLineHighlight: 'gutter',
         scrollbar: {
           verticalScrollbarSize: 10,
           horizontalScrollbarSize: 10,

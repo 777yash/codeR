@@ -52,8 +52,10 @@ export function RoomSettingsClient({
   const [isRemoving, setIsRemoving] = useState(false)
 
   const isOwner = userRole === 'OWNER'
+  const canEdit = isOwner || userRole === 'EDITOR'
 
   const handleSave = async () => {
+    if (!canEdit) return
     setIsSaving(true)
     try {
       const res = await fetch(`/api/rooms/${room.id}`, {
@@ -62,8 +64,7 @@ export function RoomSettingsClient({
         body: JSON.stringify({
           name,
           description: description || null,
-          isPublic,
-          aiChatEnabled,
+          ...(isOwner && { isPublic, aiChatEnabled }),
         }),
       })
 
@@ -311,12 +312,14 @@ export function RoomSettingsClient({
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Project Folder</h3>
-        <div className="rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-4">
-          <ProjectFolderPanel roomId={room.id} roomName={room.name} />
+      {canEdit && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Project Folder</h3>
+          <div className="rounded-lg border border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] p-4">
+            <ProjectFolderPanel roomId={room.id} roomName={room.name} />
+          </div>
         </div>
-      </div>
+      )}
 
       {isOwner && (
         <div className="space-y-4">

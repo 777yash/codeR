@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import {
   MoreHorizontal,
+  FolderCode,
   Users,
   Globe,
   Lock,
@@ -10,6 +11,7 @@ import {
   Trash2,
   Link2,
   Loader2,
+  ArrowUpRight,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
@@ -172,15 +174,14 @@ export function RoomCard({ room, currentUserId, onDeleted }: RoomCardProps) {
   }
 
   return (
-    <div className="group relative h-48 rounded-xl p-[3px] transition-transform duration-300 ease-out hover:-translate-y-0.5">
-      <span className="room-star-border" aria-hidden="true">
-        <span className="star-top" />
-        <span className="star-bottom" />
-      </span>
-      <div className="border-app bg-app-card shadow-app-sm relative z-[1] flex h-full flex-col justify-between rounded-[10px] border p-5 transition-all duration-200 group-hover:border-[var(--coder-border-accent)] group-hover:shadow-[var(--coder-shadow-md)]">
+    <div className="room-tile group relative h-56" data-reveal>
+      <div className="room-tile-surface border-app bg-app-card relative z-[1] flex h-full flex-col justify-between rounded-[10px] border p-5">
         <div className="flex items-start justify-between">
           <div className="min-w-0 flex-1">
-            <h3 className="text-app mb-1 truncate text-sm font-semibold">
+            <div className="room-folder-icon" aria-hidden="true">
+              <FolderCode size={17} />
+            </div>
+            <h3 className="text-app mb-1 truncate text-[15px] font-medium">
               {room.name}
             </h3>
             {room.description && (
@@ -192,23 +193,27 @@ export function RoomCard({ room, currentUserId, onDeleted }: RoomCardProps) {
           <div className="flex items-center gap-1">
             <button
               onClick={toggleStar}
-              className="relative z-20 flex h-8 w-8 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--coder-bg-card-hover)]"
+              className="room-card-action relative z-20 flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
               aria-label={starred ? 'Unstar room' : 'Star room'}
+              aria-pressed={starred}
             >
               <Star
                 className="h-4 w-4 transition-colors"
                 style={{
-                  color: starred ? '#FF9F0A' : 'var(--coder-text-tertiary)',
+                  color: starred
+                    ? 'var(--coder-text-accent)'
+                    : 'var(--coder-text-tertiary)',
                 }}
-                fill={starred ? '#FF9F0A' : 'none'}
+                fill={starred ? 'var(--coder-text-accent)' : 'none'}
               />
             </button>
             <div ref={menuRef} className="relative z-20">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-label="Room actions"
+                aria-expanded={menuOpen}
                 className={`flex h-8 w-8 items-center justify-center rounded transition-opacity group-hover:opacity-100 hover:bg-[var(--coder-bg-card-hover)] ${
-                  menuOpen ? 'bg-[var(--coder-bg-card-hover)]' : 'opacity-0'
+                  menuOpen ? 'bg-[var(--coder-bg-card-hover)]' : 'text-app-dim'
                 }`}
               >
                 <MoreHorizontal className="h-4 w-4 text-[var(--coder-text-secondary)]" />
@@ -291,6 +296,11 @@ export function RoomCard({ room, currentUserId, onDeleted }: RoomCardProps) {
           on /rooms apply and the in-browser runtime can boot */}
         <a href={`/rooms/${room.id}`} className="absolute inset-0 z-10">
           <span className="sr-only">Open room {room.name}</span>
+          <ArrowUpRight
+            className="room-open-arrow"
+            size={16}
+            aria-hidden="true"
+          />
         </a>
 
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>

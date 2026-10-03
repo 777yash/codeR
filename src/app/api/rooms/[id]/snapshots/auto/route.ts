@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { MAX_SNAPSHOT_BYTES, validateSnapshot } from '@/lib/yjs-snapshot-codec'
+import { readLimitedBody } from '@/lib/snapshot-body'
+import { snapshotErrorResponse } from '@/lib/api/snapshot-validation'
 
 const AUTO_SNAPSHOT_CAP = 50
 
@@ -18,17 +21,19 @@ export async function POST(
   }
 
   const { id: roomId } = await params
-  const buf = await req.arrayBuffer()
-
-  if (buf.byteLength === 0) {
-    return NextResponse.json({ error: 'Empty snapshot' }, { status: 400 })
+  let buf: Buffer
+  try {
+    buf = await readLimitedBody(req, MAX_SNAPSHOT_BYTES)
+    validateSnapshot(buf)
+  } catch (error) {
+    return snapshotErrorResponse(error)
   }
 
   await prisma.$transaction(async (tx) => {
     await tx.documentSnapshot.create({
       data: {
         roomId,
-        data: Buffer.from(buf),
+        data: buf as unknown as Uint8Array<ArrayBuffer>,
         label: null,
         createdById: null,
       },

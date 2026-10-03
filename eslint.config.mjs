@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    'src/shaders/**', // Exact registered ThreeUI source; verified by SHA-256.
   ]),
 ])
 

@@ -83,7 +83,15 @@ export function DashboardProfilePanel() {
                 data-slide-item
                 className="border-app bg-app rounded-lg border p-4"
               >
-                <ProfileForm initialName={profile.name} email={profile.email} />
+                <ProfileForm
+                  initialName={profile.name}
+                  email={profile.email}
+                  onSaved={(name) =>
+                    setProfile((current) =>
+                      current ? { ...current, name } : current
+                    )
+                  }
+                />
               </div>
 
               {/* Account info */}

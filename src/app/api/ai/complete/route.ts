@@ -1,6 +1,57 @@
 import { auth } from '@/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyCsrfOrigin } from '@/lib/csrf'
+import { z } from 'zod'
+import { getUserRoomRole } from '@/lib/api/room-access'
+import { prisma } from '@/lib/prisma'
+import { reserveInlineAiQuota } from '@/lib/inline-ai-quota'
+import { isSensitiveAiFile } from '@/lib/ai-context'
+import { readLimitedJson, RequestBodyError } from '@/lib/limited-json'
+
+export const maxDuration = 20
+
+const requestSchema = z.object({
+  roomId: z.string().min(1).max(128),
+  filename: z.string().min(1).max(1024),
+  prefix: z.string().max(16000),
+  suffix: z.string().max(8000).default(''),
+  language: z.string().max(64).default(''),
+  otherFiles: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(1024),
+        content: z.string().max(8000),
+      })
+    )
+    .max(3)
+    .default([]),
+})
+
+const completionSchema = z.object({
+  choices: z
+    .array(
+      z.object({
+        message: z
+          .object({ content: z.string().max(8192).optional() })
+          .optional(),
+        text: z.string().max(8192).optional(),
+      })
+    )
+    .min(1),
+})
+
+function failure(status: number, error: string, retryAfter?: number) {
+  return NextResponse.json(
+    { completion: '', error },
+    {
+      status,
+      headers: {
+        'Cache-Control': 'private, no-store',
+        ...(retryAfter ? { 'Retry-After': String(retryAfter) } : {}),
+      },
+    }
+  )
+}
 
 const LANG_FILENAME: Record<string, string> = {
   javascript: 'script.js',
@@ -80,14 +131,51 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ completion: '' }, { status: 401 })
   }
 
-  const key = process.env.CODESTRAL_API_KEY
-  if (!key) return NextResponse.json({ completion: '' }, { status: 503 })
+  let input: unknown
+  try {
+    input = await readLimitedJson(req, 128 * 1024)
+  } catch (error) {
+    return failure(
+      error instanceof RequestBodyError ? error.status : 400,
+      'Invalid request body'
+    )
+  }
+  const parsed = requestSchema.safeParse(input)
+  if (!parsed.success) return failure(400, 'Invalid completion request')
+  const {
+    roomId,
+    filename: activeFilename,
+    prefix,
+    suffix,
+    language,
+    otherFiles,
+  } = parsed.data
+  const role = await getUserRoomRole(roomId, session.user.id)
+  if (!role || role === 'VIEWER') return failure(403, 'Forbidden')
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    select: { aiChatEnabled: true },
+  })
+  if (!room?.aiChatEnabled) return failure(403, 'AI is disabled for this room')
+  if (isSensitiveAiFile(activeFilename))
+    return failure(403, 'AI is disabled for sensitive files')
+  const key = process.env.CODESTRAL_API_KEY?.trim()
+  if (!key) return failure(503, 'Inline completions are not configured')
 
-  const { prefix, suffix, language, otherFiles } = (await req.json()) as {
-    prefix: string
-    suffix: string
-    language?: string
-    otherFiles?: { name: string; content: string }[]
+  try {
+    req.signal.throwIfAborted()
+    const quota = await reserveInlineAiQuota(
+      session.user.id,
+      roomId,
+      req.signal
+    )
+    if (!quota.allowed)
+      return failure(429, 'Inline AI quota exceeded', quota.retryAfter)
+  } catch {
+    return failure(
+      req.signal.aborted ? 499 : 503,
+      'Inline AI quota is unavailable'
+    )
   }
 
   const lang = language ?? ''
@@ -96,36 +184,54 @@ export async function POST(req: NextRequest) {
 
   const contextBlocks =
     otherFiles && otherFiles.length > 0
-      ? buildContextBlocks(otherFiles, lang) + '\n\n'
+      ? buildContextBlocks(
+          otherFiles.filter((file) => !isSensitiveAiFile(file.name)),
+          lang
+        ) + '\n\n'
       : ''
 
   const prompt = contextBlocks + fileHeader + buildPrefix(prefix, lang)
 
-  const res = await fetch('https://codestral.mistral.ai/v1/fim/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'codestral-latest',
-      prompt,
-      suffix: buildSuffix(suffix ?? ''),
-      max_tokens: 128,
-      stop: ['```'],
-    }),
-  })
+  const signal = AbortSignal.any([req.signal, AbortSignal.timeout(8000)])
+  try {
+    signal.throwIfAborted()
+    const res = await fetch('https://codestral.mistral.ai/v1/fim/completions', {
+      method: 'POST',
+      signal,
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'codestral-latest',
+        prompt,
+        suffix: buildSuffix(suffix ?? ''),
+        max_tokens: 128,
+        stop: ['```'],
+      }),
+    })
 
-  if (!res.ok) {
-    const errText = await res.text()
-    console.error('[codestral] error', res.status, errText)
-    return NextResponse.json({ completion: '' })
-  }
+    if (!res.ok) {
+      await res.body?.cancel().catch(() => undefined)
+      return failure(502, 'Inline completion provider is unavailable')
+    }
 
-  const data = (await res.json()) as {
-    choices?: { message?: { content?: string }; text?: string }[]
+    const parsed = completionSchema.safeParse(
+      await readLimitedJson(res, 64 * 1024)
+    )
+    if (!parsed.success)
+      return failure(502, 'Invalid inline completion response')
+    const data = parsed.data
+    const completion =
+      data.choices?.[0]?.message?.content ?? data.choices?.[0]?.text ?? ''
+    return NextResponse.json(
+      { completion },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    )
+  } catch {
+    return failure(
+      req.signal.aborted ? 499 : signal.aborted ? 504 : 502,
+      'Inline completion failed'
+    )
   }
-  const completion =
-    data.choices?.[0]?.message?.content ?? data.choices?.[0]?.text ?? ''
-  return NextResponse.json({ completion })
 }

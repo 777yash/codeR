@@ -1,34 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { usePresenceState } from '@/hooks/use-presence'
 
 export function LiveBadge({ roomId }: { roomId: string }) {
-  const [count, setCount] = useState<number | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function ping() {
-      try {
-        const res = await fetch(`/api/rooms/${roomId}/presence`, {
-          method: 'POST',
-        })
-        if (res.ok && !cancelled) {
-          const data = (await res.json()) as { onlineIds: string[] }
-          setCount(data.onlineIds.length)
-        }
-      } catch {
-        // keep previous count on network error
-      }
-    }
-
-    ping()
-    const id = setInterval(ping, 20_000)
-    return () => {
-      cancelled = true
-      clearInterval(id)
-    }
-  }, [roomId])
+  const onlineIds = usePresenceState(roomId)
+  const count = onlineIds?.length ?? null
 
   // null = first fetch not yet resolved — render placeholder same size to avoid layout shift
   if (count === null) {
@@ -36,19 +12,18 @@ export function LiveBadge({ roomId }: { roomId: string }) {
       <div className="flex items-center gap-1.5 rounded-full border border-[var(--coder-border)] px-2.5 py-1">
         <div className="h-1.5 w-1.5 rounded-full bg-[var(--coder-text-tertiary)]" />
         <span className="text-[11px] text-[var(--coder-text-tertiary)]">
-          Live
+          Presence unavailable
         </span>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-1.5 rounded-full border border-[var(--coder-border)] bg-[rgba(50,215,75,0.08)] px-2.5 py-1">
+    <div className="room-live-badge flex items-center gap-1.5 rounded-full border border-[var(--coder-border)] px-2.5 py-1">
       <span className="relative flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#32D74B] opacity-75" />
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#32D74B]" />
       </span>
-      <span className="text-[11px] font-medium text-[#32D74B]">
+      <span className="text-app-muted text-[11px] font-medium">
         Live · {count} {count === 1 ? 'user' : 'users'}
       </span>
     </div>

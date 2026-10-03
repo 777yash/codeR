@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { MAX_SNAPSHOT_BYTES, validateSnapshot } from '@/lib/yjs-snapshot-codec'
+import { readLimitedBody } from '@/lib/snapshot-body'
+import { snapshotErrorResponse } from '@/lib/api/snapshot-validation'
 
 /** Only the collab-server calls these endpoints. Guard with a shared secret. */
 function isAuthorized(req: Request): boolean {
@@ -45,12 +48,18 @@ export async function PUT(
   }
 
   const { id } = await params
-  const buf = await req.arrayBuffer()
+  let buf: Buffer
+  try {
+    buf = await readLimitedBody(req, MAX_SNAPSHOT_BYTES)
+    validateSnapshot(buf)
+  } catch (error) {
+    return snapshotErrorResponse(error)
+  }
 
   // updateMany silently no-ops if room was deleted — avoids P2025 throw
   await prisma.room.updateMany({
     where: { id },
-    data: { contentSnapshot: Buffer.from(buf) },
+    data: { contentSnapshot: buf as unknown as Uint8Array<ArrayBuffer> },
   })
 
   return new Response(null, { status: 204 })

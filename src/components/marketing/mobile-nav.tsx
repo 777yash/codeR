@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
@@ -10,8 +11,35 @@ const NAV_LINKS = [
   { href: '/changelog', label: 'Changelog' },
 ]
 
+export function MarketingLinks() {
+  const pathname = usePathname()
+  return (
+    <div className="marketing-links hidden md:flex">
+      {NAV_LINKS.map(({ href, label }) => (
+        <Link
+          key={href}
+          href={href}
+          className="marketing-nav-link"
+          aria-current={pathname === href ? 'page' : undefined}
+        >
+          {label}
+        </Link>
+      ))}
+    </div>
+  )
+}
+
 export function MobileNav() {
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', close)
+    return () => document.removeEventListener('keydown', close)
+  }, [open])
 
   return (
     <div className="md:hidden">
@@ -19,29 +47,20 @@ export function MobileNav() {
         onClick={() => setOpen((v) => !v)}
         className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
         aria-label={open ? 'Close menu' : 'Open menu'}
+        aria-expanded={open}
+        aria-controls="mobile-navigation"
         style={{ color: 'var(--coder-text-primary)' }}
       >
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {open && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '64px',
-            left: 0,
-            right: 0,
-            zIndex: 49,
-            backgroundColor: 'var(--coder-nav-bg)',
-            borderBottom: '1px solid var(--coder-border)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-          }}
-        >
+        <div id="mobile-navigation" className="mobile-marketing-nav">
           {NAV_LINKS.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
+              aria-current={pathname === href ? 'page' : undefined}
               onClick={() => setOpen(false)}
               style={{
                 display: 'block',

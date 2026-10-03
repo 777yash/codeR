@@ -33,7 +33,8 @@ export function AppLogo({ size = 'md', href = '/dashboard' }: AppLogoProps) {
         codeR
       </span>
       <span
-        className="animate-pulse"
+        className="brand-cursor"
+        aria-hidden="true"
         style={{
           display: 'inline-block',
           width: s.block.width,

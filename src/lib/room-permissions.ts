@@ -1,13 +1,16 @@
-import { Role } from '@/generated/prisma/client'
+import type { Role } from '@/generated/prisma/client'
 
-type Action = 'view' | 'edit' | 'run' | 'manage' | 'delete'
+type Action = 'view' | 'edit' | 'run' | 'share' | 'manage' | 'delete'
 
 const permissions: Record<Role, Action[]> = {
-  OWNER: ['view', 'edit', 'run', 'manage', 'delete'],
-  EDITOR: ['view', 'edit', 'run'],
+  OWNER: ['view', 'edit', 'run', 'share', 'manage', 'delete'],
+  EDITOR: ['view', 'edit', 'run', 'share'],
   VIEWER: ['view'],
 }
 
-export function canPerform(action: Action, role: Role): boolean {
-  return permissions[role].includes(action)
+export function canPerform(
+  action: Action,
+  role: Role | null | undefined
+): boolean {
+  return role ? (permissions[role]?.includes(action) ?? false) : false
 }

@@ -171,7 +171,7 @@ export function AiPanel({ roomId, canScaffold }: AiPanelProps) {
           return
         }
 
-        const count = applyScaffold(result)
+        const count = applyScaffold(result, { roomId })
         const ran = await runScaffold(result)
         patch({
           status: 'done',

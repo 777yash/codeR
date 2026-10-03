@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { canPerform } from '@/lib/room-permissions'
 import { getUserRoomRole } from '@/lib/api/room-access'
 import { verifyCsrfOrigin } from '@/lib/csrf'
+import { notifyCollabAccessChanged } from '@/lib/collab-revocation'
 import type { Language } from '@/generated/prisma/client'
 
 const updateRoomSchema = z.object({
@@ -36,18 +37,6 @@ export async function GET(
           user: { select: { id: true, name: true, image: true, email: true } },
         },
       },
-      shareLinks: {
-        where: {
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-        select: {
-          id: true,
-          token: true,
-          role: true,
-          expiresAt: true,
-          createdAt: true,
-        },
-      },
     },
   })
 
@@ -55,23 +44,46 @@ export async function GET(
     return NextResponse.json({ error: 'Room not found' }, { status: 404 })
   }
 
-  if (room.ownerId === userId) {
-    return NextResponse.json({ ...room, userRole: 'OWNER' })
-  }
-
   const member = room.members.find((m) => m.userId === userId)
-  if (member) {
-    return NextResponse.json({ ...room, userRole: member.role })
+  const role = room.ownerId === userId ? 'OWNER' : member?.role
+  if (role) {
+    // Fetch invitation credentials only after checking sharing permission.
+    const shareLinks = canPerform('share', role)
+      ? await prisma.shareLink.findMany({
+          where: {
+            roomId: id,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+          select: {
+            id: true,
+            token: true,
+            role: true,
+            expiresAt: true,
+            createdAt: true,
+          },
+        })
+      : []
+    return NextResponse.json(
+      { ...room, shareLinks, userRole: role },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    )
   }
 
   if (room.isPublic) {
-    const {
-      members: _members,
-      shareLinks: _shareLinks,
-      owner: _owner,
-      ...publicRoom
-    } = room
-    return NextResponse.json({ ...publicRoom, role: 'PUBLIC' })
+    return NextResponse.json(
+      {
+        id: room.id,
+        name: room.name,
+        description: room.description,
+        language: room.language,
+        isPublic: room.isPublic,
+        aiChatEnabled: room.aiChatEnabled,
+        createdAt: room.createdAt,
+        updatedAt: room.updatedAt,
+        userRole: 'VIEWER',
+      },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    )
   }
 
   return NextResponse.json({ error: 'Room not found' }, { status: 404 })
@@ -103,12 +115,20 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
   }
 
-  const { language, aiChatEnabled, ...rest } = parsed.data
+  if (parsed.data.isPublic !== undefined && !canPerform('manage', role)) {
+    return NextResponse.json(
+      { error: 'Only the room owner can change visibility' },
+      { status: 403 }
+    )
+  }
+
+  const { language, aiChatEnabled, isPublic, ...rest } = parsed.data
 
   const room = await prisma.room.update({
     where: { id },
     data: {
       ...rest,
+      ...(isPublic !== undefined && { isPublic }),
       ...(language && { language: language as Language }),
       // Owner-only: editors can change name/description/language but not the
       // room's AI policy.
@@ -119,6 +139,7 @@ export async function PATCH(
     },
   })
 
+  if (parsed.data.isPublic !== undefined) await notifyCollabAccessChanged(id)
   return NextResponse.json(room)
 }
 
@@ -142,6 +163,7 @@ export async function DELETE(
   }
 
   await prisma.room.delete({ where: { id } })
+  await notifyCollabAccessChanged(id)
 
   return NextResponse.json({ success: true })
 }

@@ -8,9 +8,76 @@ import type { WebContainerProcess } from '@webcontainer/api'
 import { useEditorStore } from '@/stores/editor-store'
 import { getBootedWebContainer } from '@/lib/webcontainer'
 import { useIsMobile } from '@/hooks/use-is-mobile'
+import { canEditWorkspace } from '@/components/editor/editor-client'
 import '@xterm/xterm/css/xterm.css'
 
 type ShellState = 'idle' | 'starting' | 'running' | 'exited'
+
+// Curated ANSI palettes (VS Code-inspired) — xterm renders escape-coded output
+// with these instead of its stock palette, per app theme
+const DARK_ANSI = {
+  black: '#1E1E26',
+  red: '#FF6B6B',
+  green: '#4EC96A',
+  yellow: '#E5C07B',
+  blue: '#61AFEF',
+  magenta: '#C678DD',
+  cyan: '#56B6C2',
+  white: '#D7D7DB',
+  brightBlack: '#62626E',
+  brightRed: '#FF8787',
+  brightGreen: '#6EE787',
+  brightYellow: '#F2D08A',
+  brightBlue: '#82C4FF',
+  brightMagenta: '#D89BF0',
+  brightCyan: '#7BDCE8',
+  brightWhite: '#EEEEF2',
+}
+
+const LIGHT_ANSI = {
+  black: '#211F1D',
+  red: '#C7223A',
+  green: '#1A7F37',
+  yellow: '#9A6700',
+  blue: '#0969DA',
+  magenta: '#8250DF',
+  cyan: '#1B7C83',
+  white: '#6B675F',
+  brightBlack: '#57534E',
+  brightRed: '#A40E26',
+  brightGreen: '#116329',
+  brightYellow: '#7D4E00',
+  brightBlue: '#0550AE',
+  brightMagenta: '#6639BA',
+  brightCyan: '#155E63',
+  brightWhite: '#211F1D',
+}
+
+function buildTerminalTheme() {
+  const styles = getComputedStyle(document.documentElement)
+  const cssVar = (name: string, fallback: string) =>
+    styles.getPropertyValue(name).trim() || fallback
+  const isLight = document.documentElement.classList.contains('light')
+  return {
+    background: cssVar('--coder-bg-surface', isLight ? '#F3F1ED' : '#101014'),
+    foreground: cssVar('--coder-text-primary', isLight ? '#211F1D' : '#EEEEF2'),
+    cursor: cssVar('--coder-accent', '#F43F5E'),
+    cursorAccent: cssVar('--coder-bg-surface', '#101014'),
+    selectionBackground: isLight ? '#0969DA33' : '#F43F5E40',
+    ...(isLight ? LIGHT_ANSI : DARK_ANSI),
+  }
+}
+
+// next/font hashes the family name — resolve the actual stack from the CSS var
+// (a literal 'JetBrains Mono' never matches and silently falls back)
+function terminalFontFamily(): string {
+  const stack = getComputedStyle(document.documentElement)
+    .getPropertyValue('--font-jetbrains-mono')
+    .trim()
+  return stack
+    ? `${stack}, 'Cascadia Code', Menlo, Consolas, monospace`
+    : "'Cascadia Code', Menlo, Consolas, monospace"
+}
 
 const SHELL_DOT: Record<ShellState, string> = {
   idle: 'var(--coder-text-tertiary)',
@@ -31,16 +98,19 @@ function injectCommand(
   writer: WritableStreamDefaultWriter<string>,
   command: string
 ) {
+  if (!canEditWorkspace()) return
   void writer.write('\x03').catch(() => undefined)
   // Give jsh a beat to interrupt any running process before the command lands.
   // Submit with '\r' (carriage return) — jsh runs the line on CR, the same byte
   // xterm sends on Enter. '\n' only echoes the text without executing it.
   setTimeout(() => {
+    if (!canEditWorkspace()) return
     void writer.write(command + '\r').catch(() => undefined)
   }, 150)
 }
 
 export function runInTerminal(command: string): void {
+  if (!canEditWorkspace()) return
   useEditorStore.getState().setTerminalOpen(true)
   // Only inject once the shell is ready; otherwise queue and let the
   // first-output handler flush it (covers the cold-shell first run).
@@ -48,7 +118,11 @@ export function runInTerminal(command: string): void {
   else _pendingCommand = command
 }
 
-export function TerminalPanel() {
+export function TerminalPanel({
+  canInteract = false,
+}: {
+  canInteract?: boolean
+}) {
   const terminalOpen = useEditorStore((s) => s.terminalOpen)
   const setTerminalOpen = useEditorStore((s) => s.setTerminalOpen)
   const isMobile = useIsMobile()
@@ -65,16 +139,22 @@ export function TerminalPanel() {
   const startingRef = useRef(false)
 
   const spawnShell = useCallback(async () => {
+    if (!canEditWorkspace()) return
     const term = termRef.current
     const booted = getBootedWebContainer()
     if (!term || !booted || startingRef.current || processRef.current) return
     startingRef.current = true
     try {
       const container = await booted
+      if (!canEditWorkspace()) return
       setShellState('starting')
       const proc = await container.spawn('jsh', [], {
         terminal: { cols: term.cols, rows: term.rows },
       })
+      if (!canEditWorkspace()) {
+        proc.kill()
+        return
+      }
       processRef.current = proc
       const writer = proc.input.getWriter()
       writerRef.current = writer
@@ -93,6 +173,7 @@ export function TerminalPanel() {
                   const cmd = _pendingCommand
                   _pendingCommand = null
                   setTimeout(() => {
+                    if (!canEditWorkspace()) return
                     void writer.write(cmd + '\r').catch(() => undefined)
                   }, 80)
                 }
@@ -102,6 +183,7 @@ export function TerminalPanel() {
         )
         .catch(() => undefined)
       dataDisposableRef.current = term.onData((data) => {
+        if (!canEditWorkspace()) return
         void writer.write(data).catch(() => undefined)
       })
       _shellWriter = writer
@@ -144,19 +226,16 @@ export function TerminalPanel() {
         import('@xterm/addon-fit'),
       ])
       if (cancelled || termRef.current) return
-      const styles = getComputedStyle(document.documentElement)
-      const cssVar = (name: string, fallback: string) =>
-        styles.getPropertyValue(name).trim() || fallback
       const term = new XTerm({
         convertEol: true,
         cursorBlink: true,
-        fontSize: 12,
-        fontFamily: "'JetBrains Mono', monospace",
-        theme: {
-          background: cssVar('--coder-bg-surface', '#101014'),
-          foreground: cssVar('--coder-text-primary', '#EEEEF2'),
-          cursor: cssVar('--coder-accent', '#F43F5E'),
-        },
+        cursorStyle: 'bar',
+        fontSize: 13,
+        lineHeight: 1.35,
+        fontFamily: terminalFontFamily(),
+        fontWeightBold: '600',
+        scrollback: 4000,
+        theme: buildTerminalTheme(),
       })
       const fit = new Fit()
       term.loadAddon(fit)
@@ -173,6 +252,12 @@ export function TerminalPanel() {
   }, [terminalOpen, spawnShell])
 
   useEffect(() => {
+    // Keep the existing shell across ticket renewal, but defer its first spawn
+    // until the authenticated socket grants write access.
+    if (canInteract && terminalOpen && termRef.current) void spawnShell()
+  }, [canInteract, terminalOpen, spawnShell])
+
+  useEffect(() => {
     const host = hostRef.current
     if (!host) return
     const observer = new ResizeObserver(() => {
@@ -182,6 +267,20 @@ export function TerminalPanel() {
       processRef.current?.resize({ cols: term.cols, rows: term.rows })
     })
     observer.observe(host)
+    return () => observer.disconnect()
+  }, [])
+
+  // Live re-theme: xterm colors are concrete (locked at creation), so watch the
+  // html class (ThemeToggle stamps `light`) and push a fresh theme object
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const term = termRef.current
+      if (term) term.options.theme = buildTerminalTheme()
+    })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
     return () => observer.disconnect()
   }, [])
 
@@ -203,6 +302,7 @@ export function TerminalPanel() {
       termRef.current?.dispose()
       _shellWriter = null
       _pendingCommand = null
+      _shellReady = false
     },
     []
   )
@@ -233,8 +333,8 @@ export function TerminalPanel() {
 
   return (
     <div
-      className={`fixed right-0 bottom-6 left-0 z-40 flex-col border-t border-[var(--coder-border)] bg-[var(--coder-bg-surface)] max-md:bottom-[calc(3rem+env(safe-area-inset-bottom))] max-md:h-[42vh] ${
-        terminalOpen ? 'flex' : 'hidden'
+      className={`fixed right-0 bottom-6 left-0 z-40 flex-col border-t border-[var(--coder-border-mid)] bg-[var(--coder-bg-surface)] shadow-[0_-8px_24px_rgba(0,0,0,0.18)] max-md:bottom-[calc(3rem+env(safe-area-inset-bottom))] max-md:h-[42vh] ${
+        terminalOpen && canInteract ? 'flex' : 'hidden'
       }`}
       style={isMobile ? undefined : { height }}
     >
@@ -274,7 +374,10 @@ export function TerminalPanel() {
           </button>
         </div>
       </div>
-      <div ref={hostRef} className="min-h-0 flex-1 overflow-hidden pl-2" />
+      <div
+        ref={hostRef}
+        className="min-h-0 flex-1 overflow-hidden bg-[var(--coder-bg-surface)] px-3 pt-2"
+      />
     </div>
   )
 }

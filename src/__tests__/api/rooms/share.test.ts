@@ -46,6 +46,7 @@ describe('POST /api/rooms/[id]/share', () => {
   it('returns 403 when not owner', async () => {
     vi.mocked(prisma.room.findUnique).mockResolvedValue({
       ownerId: 'someone_else',
+      members: [],
     } as never)
     const res = await POST(makeRequest({ role: 'VIEWER' }, 'POST'), { params })
     expect(res.status).toBe(403)
@@ -54,6 +55,7 @@ describe('POST /api/rooms/[id]/share', () => {
   it('returns 400 when role is invalid', async () => {
     vi.mocked(prisma.room.findUnique).mockResolvedValue({
       ownerId: OWNER_ID,
+      members: [],
     } as never)
     const res = await POST(makeRequest({ role: 'OWNER' }, 'POST'), { params })
     expect(res.status).toBe(400)
@@ -62,6 +64,7 @@ describe('POST /api/rooms/[id]/share', () => {
   it('creates link with VIEWER role by default', async () => {
     vi.mocked(prisma.room.findUnique).mockResolvedValue({
       ownerId: OWNER_ID,
+      members: [],
     } as never)
     vi.mocked(prisma.shareLink.create).mockResolvedValue({
       id: 'link_id',
@@ -85,6 +88,7 @@ describe('POST /api/rooms/[id]/share', () => {
   it('creates link with EDITOR role when specified', async () => {
     vi.mocked(prisma.room.findUnique).mockResolvedValue({
       ownerId: OWNER_ID,
+      members: [],
     } as never)
     vi.mocked(prisma.shareLink.create).mockResolvedValue({
       id: 'link_id',
@@ -97,6 +101,48 @@ describe('POST /api/rooms/[id]/share', () => {
     const res = await POST(makeRequest({ role: 'EDITOR' }, 'POST'), { params })
     expect(res.status).toBe(201)
     expect(await res.json()).toMatchObject({ role: 'EDITOR' })
+  })
+})
+
+describe('sharing permission boundaries', () => {
+  beforeEach(() => {
+    vi.mocked(auth).mockResolvedValue({ user: { id: OWNER_ID } } as never)
+  })
+
+  it('permits editors to create share links', async () => {
+    vi.mocked(prisma.room.findUnique).mockResolvedValue({
+      ownerId: 'other',
+      members: [{ role: 'EDITOR' }],
+    } as never)
+    vi.mocked(prisma.shareLink.create).mockResolvedValue({
+      token: TOKEN,
+      role: 'EDITOR',
+    } as never)
+    expect(
+      (await POST(makeRequest({ role: 'EDITOR' }, 'POST'), { params })).status
+    ).toBe(201)
+  })
+
+  it('does not let viewers mint an editor invitation', async () => {
+    vi.mocked(prisma.room.findUnique).mockResolvedValue({
+      ownerId: 'other',
+      members: [{ role: 'VIEWER' }],
+    } as never)
+    expect(
+      (await POST(makeRequest({ role: 'EDITOR' }, 'POST'), { params })).status
+    ).toBe(403)
+    expect(prisma.shareLink.create).not.toHaveBeenCalled()
+  })
+
+  it('does not permit editors to revoke owner-managed links', async () => {
+    vi.mocked(prisma.room.findUnique).mockResolvedValue({
+      ownerId: 'other',
+      members: [{ role: 'EDITOR' }],
+    } as never)
+    expect(
+      (await DELETE(makeRequest({ token: TOKEN }, 'DELETE'), { params })).status
+    ).toBe(403)
+    expect(prisma.shareLink.deleteMany).not.toHaveBeenCalled()
   })
 })
 
@@ -116,6 +162,7 @@ describe('DELETE /api/rooms/[id]/share', () => {
   it('returns 403 when not owner', async () => {
     vi.mocked(prisma.room.findUnique).mockResolvedValue({
       ownerId: 'someone_else',
+      members: [],
     } as never)
     const res = await DELETE(makeRequest({ token: TOKEN }, 'DELETE'), {
       params,
@@ -126,6 +173,7 @@ describe('DELETE /api/rooms/[id]/share', () => {
   it('returns 400 when token is missing', async () => {
     vi.mocked(prisma.room.findUnique).mockResolvedValue({
       ownerId: OWNER_ID,
+      members: [],
     } as never)
     const res = await DELETE(makeRequest({}, 'DELETE'), { params })
     expect(res.status).toBe(400)
@@ -134,6 +182,7 @@ describe('DELETE /api/rooms/[id]/share', () => {
   it('deletes link and returns success', async () => {
     vi.mocked(prisma.room.findUnique).mockResolvedValue({
       ownerId: OWNER_ID,
+      members: [],
     } as never)
     vi.mocked(prisma.shareLink.deleteMany).mockResolvedValue({
       count: 1,

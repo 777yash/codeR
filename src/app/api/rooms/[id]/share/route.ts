@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import type { Role } from '@/generated/prisma/client'
 import { verifyCsrfOrigin } from '@/lib/csrf'
+import { canPerform } from '@/lib/room-permissions'
 
 const createSchema = z.object({
   role: z.enum(['VIEWER', 'EDITOR']).default('VIEWER'),
@@ -25,7 +26,10 @@ async function getRoom(roomId: string, userId: string) {
   if (!room) return null
   const isOwner = room.ownerId === userId
   const memberRole = room.members[0]?.role ?? null
-  return { isOwner, canShare: isOwner || memberRole === 'EDITOR' }
+  return {
+    isOwner,
+    canShare: canPerform('share', isOwner ? 'OWNER' : memberRole),
+  }
 }
 
 export async function POST(

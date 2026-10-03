@@ -1,6 +1,8 @@
 'use client'
 
 import { useEditorStore } from '@/stores/editor-store'
+import { useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
 
 export function EditorSettings({
   open,
@@ -21,18 +23,60 @@ export function EditorSettings({
     inlineSuggest,
     setInlineSuggest,
   } = useEditorStore()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const previous =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+    closeRef.current?.focus()
+    let restoreFocus = true
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+      }
+    }
+    const outside = (event: PointerEvent) => {
+      const target = event.target
+      if (
+        target instanceof Element &&
+        !panelRef.current?.contains(target) &&
+        !target.closest('[data-editor-settings-trigger]')
+      ) {
+        restoreFocus = false
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', escape)
+    document.addEventListener('pointerdown', outside)
+    return () => {
+      document.removeEventListener('keydown', escape)
+      document.removeEventListener('pointerdown', outside)
+      if (restoreFocus && previous?.isConnected) previous.focus()
+    }
+  }, [open, onClose])
 
   if (!open) return null
 
   return (
-    <div className="border-app-mid bg-app-surface absolute top-10 right-2 z-50 w-64 rounded-md border p-3 shadow-lg">
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-label="Editor preferences"
+      className="editor-preferences border-app-mid bg-app-surface absolute top-10 right-2 z-50 w-64 rounded-md border p-3"
+    >
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-app text-sm font-medium">Editor Settings</h3>
         <button
+          ref={closeRef}
+          aria-label="Close editor preferences"
           onClick={onClose}
           className="text-app-muted hover:text-app text-xs"
         >
-          ✕
+          <X size={14} />
         </button>
       </div>
 
@@ -40,6 +84,7 @@ export function EditorSettings({
         <div className="flex items-center justify-between">
           <span className="text-app-muted text-xs">Line Numbers</span>
           <select
+            aria-label="Line numbers"
             value={lineNumbers}
             onChange={(e) =>
               setLineNumbers(e.target.value as 'on' | 'off' | 'relative')
@@ -55,6 +100,9 @@ export function EditorSettings({
         <div className="flex items-center justify-between">
           <span className="text-app-muted text-xs">Minimap</span>
           <button
+            role="switch"
+            aria-label="Minimap"
+            aria-checked={minimap}
             onClick={() => setMinimap(!minimap)}
             className={`h-5 w-9 rounded-full transition-colors ${
               minimap
@@ -73,6 +121,9 @@ export function EditorSettings({
         <div className="flex items-center justify-between">
           <span className="text-app-muted text-xs">Word Wrap</span>
           <button
+            role="switch"
+            aria-label="Word wrap"
+            aria-checked={wordWrap === 'on'}
             onClick={() => setWordWrap(wordWrap === 'on' ? 'off' : 'on')}
             className={`h-5 w-9 rounded-full transition-colors ${
               wordWrap === 'on'
@@ -91,6 +142,9 @@ export function EditorSettings({
         <div className="flex items-center justify-between">
           <span className="text-app-muted text-xs">AI Suggestions</span>
           <button
+            role="switch"
+            aria-label="AI suggestions"
+            aria-checked={inlineSuggest}
             onClick={() => setInlineSuggest(!inlineSuggest)}
             className={`h-5 w-9 rounded-full transition-colors ${
               inlineSuggest
@@ -112,6 +166,7 @@ export function EditorSettings({
             <span className="text-app text-xs">{fontSize}px</span>
           </div>
           <input
+            aria-label="Font size"
             type="range"
             min={10}
             max={24}

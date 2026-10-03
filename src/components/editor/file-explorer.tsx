@@ -9,8 +9,8 @@ import {
   importFilesToWorkspace,
   getAllFilesContent,
 } from '@/components/editor/editor-client'
+import { LanguageIcon } from '@/components/editor/language-icon'
 import {
-  FileCode,
   Plus,
   Folder,
   FolderOpen,
@@ -111,12 +111,14 @@ function buildTree(files: EditorFile[]): TreeFolder {
 }
 
 interface FileExplorerProps {
+  canEdit?: boolean
   roomName?: string
   mobileOpen?: boolean
   onFileSelect?: () => void
 }
 
 export function FileExplorer({
+  canEdit = false,
   roomName = 'project',
   mobileOpen = false,
   onFileSelect,
@@ -159,6 +161,26 @@ export function FileExplorer({
   const didMountRef = useRef(false)
 
   useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)')
+    const resetAtBreakpoint = () => {
+      const panel = panelRef.current
+      if (!panel) return
+      tlRef.current?.kill()
+      gsap.set(panel.querySelectorAll('[data-explorer-item]'), {
+        clearProps: 'transform,opacity',
+      })
+      gsap.set(panel, {
+        clearProps: 'width,opacity,borderRightWidth,transform',
+      })
+      if (desktop.matches && useEditorStore.getState().explorerCollapsed) {
+        gsap.set(panel, { width: 0, opacity: 0, borderRightWidth: 0 })
+      }
+    }
+    desktop.addEventListener('change', resetAtBreakpoint)
+    return () => desktop.removeEventListener('change', resetAtBreakpoint)
+  }, [])
+
+  useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (
         contextMenuRef.current &&
@@ -196,6 +218,9 @@ export function FileExplorer({
     }
 
     tlRef.current?.kill()
+    const reduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches
     const rows = panel.querySelectorAll('[data-explorer-item]')
 
     if (!explorerCollapsed) {
@@ -207,23 +232,23 @@ export function FileExplorer({
           width: 220,
           opacity: 1,
           borderRightWidth: 1,
-          duration: 0.45,
-          ease: 'power4.out',
+          duration: reduced ? 0 : 0.26,
+          ease: 'power3.out',
         },
         0
       )
       if (rows.length) {
         tl.fromTo(
           rows,
-          { x: -16, opacity: 0 },
+          { x: reduced ? 0 : -8, opacity: 0 },
           {
             x: 0,
             opacity: 1,
-            duration: 0.4,
+            duration: reduced ? 0 : 0.18,
             ease: 'power3.out',
-            stagger: 0.04,
+            stagger: reduced ? 0 : 0.015,
           },
-          0.12
+          reduced ? 0 : 0.06
         )
       }
       // Hand sizing back to the CSS classes once the slide finishes.
@@ -237,22 +262,26 @@ export function FileExplorer({
           width: 0,
           opacity: 0,
           borderRightWidth: 0,
-          duration: 0.3,
+          duration: reduced ? 0 : 0.2,
           ease: 'power3.in',
         },
         0
       )
     }
+    return () => {
+      tlRef.current?.kill()
+    }
   }, [explorerCollapsed])
 
   function startRename(fileId: string, currentName: string) {
+    if (!canEdit) return
     setContextMenu(null)
     setRenamingId(fileId)
     setRenameValue(currentName)
   }
 
   function commitRename() {
-    if (renamingId && renameValue.trim()) {
+    if (canEdit && renamingId && renameValue.trim()) {
       renameSharedFile(renamingId, renameValue.trim())
       renameFile(renamingId, renameValue.trim())
     }
@@ -261,6 +290,7 @@ export function FileExplorer({
   }
 
   function handleAdd() {
+    if (!canEdit) return
     const name = newName.trim()
     if (!name) return
     const ext = name.includes('.') ? name.split('.').pop()! : 'js'
@@ -278,6 +308,7 @@ export function FileExplorer({
   }
 
   function handleDelete(fileId: string) {
+    if (!canEdit) return
     setContextMenu(null)
     deleteSharedFile(fileId)
   }
@@ -297,6 +328,7 @@ export function FileExplorer({
   }
 
   function handleDuplicate(fileId: string) {
+    if (!canEdit) return
     setContextMenu(null)
     const file = files.find((f) => f.id === fileId)
     if (!file) return
@@ -327,12 +359,14 @@ export function FileExplorer({
   }
 
   function handleNewFileIn(path: string) {
+    if (!canEdit) return
     setContextMenu(null)
     setNewName(`${path}/`)
     setShowInput(true)
   }
 
   function handleDeleteFolder(path: string) {
+    if (!canEdit) return
     setContextMenu(null)
     const children = files.filter((f) => f.name.startsWith(`${path}/`))
     if (children.length === 0 || children.length >= files.length) return
@@ -371,8 +405,8 @@ export function FileExplorer({
           onDoubleClick={() => startRename(file.id, file.name)}
           className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5"
         >
-          <FileCode className="h-3.5 w-3.5 shrink-0 opacity-70" />
-          {renamingId === file.id ? (
+          <LanguageIcon language={file.language} size={14} />
+          {canEdit && renamingId === file.id ? (
             <input
               autoFocus
               value={renameValue}
@@ -448,7 +482,7 @@ export function FileExplorer({
     <>
       {/* Collapsed rail — desktop only */}
       {explorerCollapsed && (
-        <div className="border-app bg-app-surface hidden w-10 shrink-0 flex-col items-center gap-1 border-r py-2 md:flex">
+        <div className="editor-explorer-collapsed border-app bg-app-surface hidden w-10 shrink-0 flex-col items-center gap-1 border-r py-2 md:flex">
           <button
             onClick={() => setExplorerCollapsed(false)}
             title="Show explorer"
@@ -456,22 +490,24 @@ export function FileExplorer({
           >
             <PanelLeftOpen className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => {
-              setExplorerCollapsed(false)
-              setShowInput(true)
-            }}
-            title="New file"
-            className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => {
+                setExplorerCollapsed(false)
+                setShowInput(true)
+              }}
+              title="New file"
+              className="text-app-dim hover:text-app-muted flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          )}
         </div>
       )}
 
       <div
         ref={panelRef}
-        className={`border-app bg-app-surface flex-col overflow-hidden border-r will-change-[width] max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[300px] max-md:shadow-[4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[220px] md:min-w-0 md:shrink-0 ${
+        className={`editor-explorer border-app bg-app-surface flex-col overflow-hidden border-r will-change-[width] max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-30 max-md:w-[82%] max-md:max-w-[300px] max-md:shadow-[4px_0_24px_rgba(0,0,0,0.5)] md:flex md:w-[220px] md:min-w-0 md:shrink-0 ${
           mobileOpen ? 'max-md:flex' : 'max-md:hidden'
         }`}
       >
@@ -484,13 +520,15 @@ export function FileExplorer({
             {roomName}
           </span>
           <div className="flex items-center">
-            <button
-              onClick={() => setShowInput(true)}
-              title="New file"
-              className="text-app-dim hover:text-app-muted flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setShowInput(true)}
+                title="New file"
+                className="text-app-dim hover:text-app-muted flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            )}
             <button
               onClick={() => setExplorerCollapsed(true)}
               title="Hide explorer"
@@ -519,25 +557,29 @@ export function FileExplorer({
             >
               {contextMenu.kind === 'file' ? (
                 <>
-                  <button
-                    onClick={() => {
-                      const file = files.find(
-                        (f) => f.id === contextMenu.fileId
-                      )
-                      if (file) startRename(file.id, file.name)
-                    }}
-                    className="text-app hover-app-card flex w-full items-center gap-2 px-3 py-1.5 text-xs"
-                  >
-                    <Pencil className="h-3 w-3 opacity-60" />
-                    Rename
-                  </button>
-                  <button
-                    onClick={() => handleDuplicate(contextMenu.fileId)}
-                    className="text-app hover-app-card flex w-full items-center gap-2 px-3 py-1.5 text-xs"
-                  >
-                    <CopyPlus className="h-3 w-3 opacity-60" />
-                    Duplicate
-                  </button>
+                  {canEdit && (
+                    <>
+                      <button
+                        onClick={() => {
+                          const file = files.find(
+                            (f) => f.id === contextMenu.fileId
+                          )
+                          if (file) startRename(file.id, file.name)
+                        }}
+                        className="text-app hover-app-card flex w-full items-center gap-2 px-3 py-1.5 text-xs"
+                      >
+                        <Pencil className="h-3 w-3 opacity-60" />
+                        Rename
+                      </button>
+                      <button
+                        onClick={() => handleDuplicate(contextMenu.fileId)}
+                        className="text-app hover-app-card flex w-full items-center gap-2 px-3 py-1.5 text-xs"
+                      >
+                        <CopyPlus className="h-3 w-3 opacity-60" />
+                        Duplicate
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={() => {
                       const file = files.find(
@@ -557,24 +599,30 @@ export function FileExplorer({
                     <Download className="h-3 w-3 opacity-60" />
                     Download
                   </button>
-                  <div className="border-app my-1 border-t" />
-                  <button
-                    onClick={() => handleDelete(contextMenu.fileId)}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    Delete
-                  </button>
+                  {canEdit && (
+                    <>
+                      <div className="border-app my-1 border-t" />
+                      <button
+                        onClick={() => handleDelete(contextMenu.fileId)}
+                        className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() => handleNewFileIn(contextMenu.path)}
-                    className="text-app hover-app-card flex w-full items-center gap-2 px-3 py-1.5 text-xs"
-                  >
-                    <FilePlus className="h-3 w-3 opacity-60" />
-                    New file
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => handleNewFileIn(contextMenu.path)}
+                      className="text-app hover-app-card flex w-full items-center gap-2 px-3 py-1.5 text-xs"
+                    >
+                      <FilePlus className="h-3 w-3 opacity-60" />
+                      New file
+                    </button>
+                  )}
                   <button
                     onClick={() => handleCopyPath(contextMenu.path)}
                     className="text-app hover-app-card flex w-full items-center gap-2 px-3 py-1.5 text-xs"
@@ -582,20 +630,24 @@ export function FileExplorer({
                     <Copy className="h-3 w-3 opacity-60" />
                     Copy path
                   </button>
-                  <div className="border-app my-1 border-t" />
-                  <button
-                    onClick={() => handleDeleteFolder(contextMenu.path)}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    Delete folder
-                  </button>
+                  {canEdit && (
+                    <>
+                      <div className="border-app my-1 border-t" />
+                      <button
+                        onClick={() => handleDeleteFolder(contextMenu.path)}
+                        className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-400/10"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete folder
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
           )}
 
-          {showInput && (
+          {canEdit && showInput && (
             <div className="px-2 py-1">
               <input
                 autoFocus
@@ -619,15 +671,17 @@ export function FileExplorer({
         </div>
 
         {/* Add file footer */}
-        <div className="border-app border-t px-2 py-1.5">
-          <button
-            onClick={() => setShowInput(true)}
-            className="text-app-dim hover:text-app-muted hover-app-card flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-[11px] transition-colors"
-          >
-            <Plus className="h-3 w-3" />
-            Add file
-          </button>
-        </div>
+        {canEdit && (
+          <div className="border-app border-t px-2 py-1.5">
+            <button
+              onClick={() => setShowInput(true)}
+              className="text-app-dim hover:text-app-muted hover-app-card flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-[11px] transition-colors"
+            >
+              <Plus className="h-3 w-3" />
+              Add file
+            </button>
+          </div>
+        )}
       </div>
     </>
   )

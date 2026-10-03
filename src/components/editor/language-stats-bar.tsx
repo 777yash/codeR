@@ -36,17 +36,19 @@ export function LanguageStatsBar() {
   const summary = stats
     .map((s) => `${label(s.language)} ${s.percent.toFixed(1)}%`)
     .join(' · ')
-  const inline = stats.slice(0, 3)
+  const inline = stats.slice(0, 1)
   const overflow = stats.length - inline.length
 
   return (
-    <div className="relative">
+    <div className="editor-language-stats relative min-w-0">
       <button
         onClick={() => setExpanded((v) => !v)}
         title={summary}
-        className="border-app-mid bg-app-card hover:bg-app-card-hover flex h-7 items-center gap-2.5 rounded-md border px-2.5 transition-colors"
+        aria-label={`Languages: ${summary}`}
+        aria-expanded={expanded}
+        className="border-app-mid bg-app-card hover:bg-app-card-hover flex h-7 max-w-full items-center gap-2.5 rounded-md border px-2.5 transition-colors"
       >
-        <div className="flex h-1.5 w-28 shrink-0 overflow-hidden rounded-full">
+        <div className="editor-language-meter flex h-1.5 w-28 shrink-0 overflow-hidden rounded-full">
           {stats.map((s) => (
             <div
               key={s.language}
@@ -57,7 +59,7 @@ export function LanguageStatsBar() {
             />
           ))}
         </div>
-        <div className="flex items-center gap-2.5 overflow-hidden">
+        <div className="editor-language-labels flex items-center gap-2.5 overflow-hidden">
           {inline.map((s) => (
             <span
               key={s.language}

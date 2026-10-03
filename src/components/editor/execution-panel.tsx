@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { usePostHog } from 'posthog-js/react'
 import { Play, ChevronDown, Terminal } from 'lucide-react'
 import { useEditorStore } from '@/stores/editor-store'
@@ -8,14 +8,23 @@ import {
   getAllFilesContent,
   broadcastExecutionResult,
   subscribeToExecutionResults,
+  canEditWorkspace,
 } from '@/components/editor/editor-client'
 import { getWebContainerStatus } from '@/lib/webcontainer'
-import { buildRunCommand, normalizeNpxCommand } from '@/lib/webcontainer-run'
+import { prepareRunCommand, normalizeNpxCommand } from '@/lib/webcontainer-run'
 import { runInTerminal } from '@/components/editor/terminal-panel'
+import { executionStatus } from '@/lib/execution-result'
 
 const WEBCONTAINER_RUN_LANGUAGES = new Set(['javascript', 'typescript'])
 
-type Status = 'idle' | 'running' | 'success' | 'error' | 'timeout' | 'offline'
+type Status =
+  | 'idle'
+  | 'running'
+  | 'success'
+  | 'error'
+  | 'timeout'
+  | 'offline'
+  | 'completed'
 
 interface ExecutionResult {
   stdout: string
@@ -35,6 +44,7 @@ const STATUS_LABEL: Record<Status, string> = {
   idle: 'Ready',
   running: 'Running',
   success: 'Success',
+  completed: 'Completed',
   error: 'Error',
   timeout: 'Timeout',
   offline: 'Offline',
@@ -44,12 +54,16 @@ const STATUS_COLOR: Record<Status, string> = {
   idle: 'var(--coder-text-tertiary)',
   running: '#0A84FF',
   success: '#32D74B',
+  completed: 'var(--coder-text-secondary)',
   error: '#FF453A',
   timeout: '#FF9F0A',
   offline: 'var(--coder-text-tertiary)',
 }
 
-export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
+export function ExecutionPanel({
+  roomId,
+  canRun = false,
+}: ExecutionPanelProps) {
   const {
     executionPanelOpen: open,
     setExecutionPanelOpen: setOpen,
@@ -59,52 +73,56 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
   const [status, setStatus] = useState<Status>('idle')
   const [result, setResult] = useState<ExecutionResult | null>(null)
   const [stdin, setStdin] = useState('')
+  const runInProgress = useRef(false)
 
   useEffect(() => {
     return subscribeToExecutionResults((raw) => {
       const data = raw as ExecutionResult & { _fromPeer?: boolean }
       if (!data._fromPeer) return
-      const timedOut =
-        data.execStatus === 'timeout' ||
-        data.signal === 'SIGKILL' ||
-        data.exitCode === 124
-      setStatus(
-        timedOut ? 'timeout' : data.exitCode === 0 ? 'success' : 'error'
-      )
+      setStatus(executionStatus(data))
       setResult(data)
       setOpen(true)
     })
   }, [setOpen])
 
   async function handleRun() {
-    // JS/TS rooms with a booted container run locally in the terminal —
-    // per-browser, not broadcast, no execution_logs row (unlike OneCompiler)
-    if (
-      WEBCONTAINER_RUN_LANGUAGES.has(language.toLowerCase()) &&
-      getWebContainerStatus() === 'ready'
-    ) {
-      const { files: storeFiles, activeFileId } = useEditorStore.getState()
-      const activeName =
-        storeFiles.find((f) => f.id === activeFileId)?.name ?? null
-      const command = await buildRunCommand(activeName)
-      if (command) {
-        posthog?.capture('code_executed', {
-          language,
-          runtime: 'webcontainer',
-        })
-        runInTerminal(normalizeNpxCommand(command))
-        return
-      }
-      // No runnable command (e.g. bare .ts file) — fall through to OneCompiler
-    }
-
-    const files = getAllFilesContent()
-    posthog?.capture('code_executed', { language, runtime: 'onecompiler' })
-    setOpen(true)
+    if (!canRun || !canEditWorkspace() || runInProgress.current) return
+    runInProgress.current = true
     setStatus('running')
-    setResult(null)
-
     try {
+      // JS/TS rooms with a booted container run locally in the terminal —
+      // per-browser, not broadcast, no execution_logs row (unlike OneCompiler)
+      if (
+        WEBCONTAINER_RUN_LANGUAGES.has(language.toLowerCase()) &&
+        getWebContainerStatus() === 'ready'
+      ) {
+        const { files: storeFiles, activeFileId } = useEditorStore.getState()
+        const activeName =
+          storeFiles.find((f) => f.id === activeFileId)?.name ?? null
+        const command = await prepareRunCommand(
+          activeName,
+          getAllFilesContent()
+        )
+        if (!canEditWorkspace()) return
+        if (command) {
+          posthog?.capture('code_executed', {
+            language,
+            runtime: 'webcontainer',
+          })
+          runInTerminal(normalizeNpxCommand(command))
+          setStatus('idle')
+          return
+        }
+        // No runnable command (e.g. bare .ts file) — fall through to OneCompiler
+      }
+
+      const files = getAllFilesContent()
+      if (!canEditWorkspace()) return
+      posthog?.capture('code_executed', { language, runtime: 'onecompiler' })
+      setOpen(true)
+      setStatus('running')
+      setResult(null)
+
       const res = await fetch('/api/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -146,25 +164,26 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
       }
 
       const data = (await res.json()) as ExecutionResult
-      const timedOut =
-        data.execStatus === 'timeout' ||
-        data.signal === 'SIGKILL' ||
-        data.exitCode === 124
-      setStatus(
-        timedOut ? 'timeout' : data.exitCode === 0 ? 'success' : 'error'
-      )
+      setStatus(executionStatus(data))
       setResult(data)
       broadcastExecutionResult({ ...data, _fromPeer: true })
-    } catch {
+    } catch (error) {
+      setOpen(true)
       setStatus('error')
       setResult({
         stdout: '',
-        stderr: 'Network error — could not reach execution service.',
+        stderr:
+          error instanceof Error
+            ? `Could not prepare or run code: ${error.message}`
+            : 'Could not prepare or run code.',
         exitCode: null,
         signal: null,
         execStatus: null,
         durationMs: 0,
       })
+    } finally {
+      runInProgress.current = false
+      setStatus((current) => (current === 'running' ? 'idle' : current))
     }
   }
 
@@ -190,7 +209,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
         <button
           onClick={handleRun}
           disabled={running}
-          className="flex h-7 items-center gap-1.5 rounded-md bg-[#32D74B] px-3 text-xs font-semibold text-black transition-colors hover:bg-[#32D74B]/90 disabled:cursor-not-allowed disabled:opacity-50 max-md:h-9 max-md:px-4"
+          className="flex h-7 items-center gap-1.5 rounded-md bg-[var(--coder-accent)] px-3 text-xs font-semibold text-white transition-colors hover:bg-[var(--coder-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 max-md:h-9 max-md:px-4"
         >
           <Play className="h-3 w-3" />
           {running ? 'Running…' : 'Run'}
@@ -209,7 +228,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
                 className="rounded px-1.5 py-0.5 text-[10px] font-semibold"
                 style={{
                   color: STATUS_COLOR[status],
-                  backgroundColor: STATUS_COLOR[status] + '22',
+                  backgroundColor: 'var(--coder-bg-card)',
                 }}
               >
                 {STATUS_LABEL[status]}
@@ -226,7 +245,7 @@ export function ExecutionPanel({ roomId, canRun = true }: ExecutionPanelProps) {
                 <button
                   onClick={handleRun}
                   disabled={running}
-                  className="flex h-6 items-center gap-1 rounded bg-[#32D74B] px-2 text-[10px] font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-6 items-center gap-1 rounded bg-[var(--coder-accent)] px-2 text-[10px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Play className="h-2.5 w-2.5" />
                   Run

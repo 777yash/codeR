@@ -1,14 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import dynamic from 'next/dynamic'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { AppLogo } from '@/components/app-logo'
 
-const DashboardBackground = dynamic(
-  () => import('@/components/dashboard/dashboard-background'),
-  { ssr: false }
-)
 import {
   LayoutDashboard,
   Users,
@@ -17,8 +12,8 @@ import {
   LogOut,
   Menu,
   X,
+  Search,
 } from 'lucide-react'
-import { GooeyInput } from '@/components/ui/gooey-input'
 import { RoomSearchProvider } from '@/components/dashboard/room-search-context'
 import { ThemeToggle } from '@/components/marketing/theme-toggle'
 import { InviteNotifications } from '@/components/notifications/invite-notifications'
@@ -51,13 +46,7 @@ const SIDEBAR_NAV = [
   { icon: Star, label: 'Starred', view: 'starred' },
 ]
 
-const LANGUAGES = [
-  { name: 'Python', color: '#3B82F6' },
-  { name: 'JS', color: '#F59E0B' },
-  { name: 'TS', color: '#6366F1' },
-  { name: 'Go', color: '#06B6D4' },
-  { name: 'Rust', color: '#F97316' },
-]
+const LANGUAGES = ['Python', 'JS', 'TS', 'Go', 'Rust']
 
 function SidebarContent({
   safeView,
@@ -82,7 +71,8 @@ function SidebarContent({
                 key={label}
                 href={`/dashboard?view=${navView}`}
                 onClick={onNavigate}
-                className={`flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-sm transition-colors ${
+                aria-current={isActive ? 'page' : undefined}
+                className={`workspace-nav-link flex w-full items-center gap-2.5 rounded-md px-2 text-sm transition-colors ${
                   isActive
                     ? 'bg-app-card-active text-app font-medium'
                     : 'text-app-muted hover-app-row'
@@ -101,15 +91,8 @@ function SidebarContent({
           Languages
         </p>
         <div className="flex flex-wrap gap-1.5 px-2">
-          {LANGUAGES.map(({ name, color }) => (
-            <span
-              key={name}
-              className="text-app-muted hover-app-text cursor-pointer rounded-full px-2 py-0.5 text-xs transition-colors"
-              style={{
-                backgroundColor: `${color}20`,
-                border: `1px solid ${color}40`,
-              }}
-            >
+          {LANGUAGES.map((name) => (
+            <span key={name} className="workspace-language">
               {name}
             </span>
           ))}
@@ -138,28 +121,42 @@ export function DashboardShell({
   userInitials,
   safeView,
   title,
-  subtitle,
   signOutAction,
   initialInvitations,
   children,
 }: DashboardShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const drawerCloseRef = useRef<HTMLButtonElement>(null)
+  const navigationRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!drawerOpen) return
+    const trigger = navigationRef.current
+    drawerCloseRef.current?.focus()
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDrawerOpen(false)
+    }
+    document.addEventListener('keydown', close)
+    return () => {
+      document.removeEventListener('keydown', close)
+      trigger?.focus()
+    }
+  }, [drawerOpen])
 
   return (
     <RoomSearchProvider query={searchQuery}>
-      <div className="bg-app text-app relative flex h-dvh flex-col overflow-hidden">
-        {/* Animated WebGL backdrop, behind all content */}
-        <DashboardBackground />
-
+      <div className="workspace-shell bg-app text-app relative flex h-dvh flex-col overflow-hidden">
         {/* Header */}
-        <header className="border-app bg-app relative z-10 flex h-14 shrink-0 items-center justify-between gap-4 border-b px-4">
+        {/* z-20: notification panel must overlay the z-10 content area below */}
+        <header className="workspace-header border-app bg-app relative z-20 flex shrink-0 items-center justify-between gap-4 border-b px-4">
           <div className="flex items-center gap-2">
             {/* Hamburger — mobile only */}
             <button
+              ref={navigationRef}
               onClick={() => setDrawerOpen(true)}
               className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)] md:hidden"
               aria-label="Open navigation"
+              aria-expanded={drawerOpen}
             >
               <Menu className="h-5 w-5 text-[var(--coder-text-secondary)]" />
             </button>
@@ -167,16 +164,19 @@ export function DashboardShell({
           </div>
 
           {/* Search — desktop only */}
-          <GooeyInput
-            placeholder="Search rooms..."
-            className="hidden md:flex"
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-            classNames={{
-              trigger: 'bg-[var(--gooey-surface)]',
-              bubbleSurface: 'bg-[var(--gooey-surface)]',
-            }}
-          />
+          <label className="workspace-search hidden md:flex">
+            <Search size={15} aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Search rooms"
+              placeholder="Search rooms…"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') setSearchQuery('')
+              }}
+            />
+          </label>
 
           <div className="flex shrink-0 items-center gap-3">
             <ThemeToggle />
@@ -196,44 +196,78 @@ export function DashboardShell({
 
         <div className="relative z-10 flex flex-1 overflow-hidden">
           {/* Sidebar — desktop static */}
-          <aside className="border-app bg-app-surface hidden w-[220px] shrink-0 flex-col border-r md:flex">
+          <aside className="workspace-sidebar border-app bg-app-surface hidden shrink-0 flex-col border-r md:flex">
             <SidebarContent safeView={safeView} signOutAction={signOutAction} />
           </aside>
 
-          {/* Sidebar drawer — mobile overlay */}
-          {drawerOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40 bg-black/60 md:hidden"
-                onClick={() => setDrawerOpen(false)}
+          {/* Workspace */}
+          <main className="workspace-main flex-1 overflow-y-auto">
+            <div className="workspace-main-inner">
+              <div className="workspace-heading">
+                <h1 className="text-app font-medium">{title}</h1>
+              </div>
+              <input
+                aria-label="Search rooms"
+                placeholder="Search rooms…"
+                className="workspace-mobile-search md:hidden"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
               />
-              <aside className="bg-app-surface fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col md:hidden">
-                <div className="border-app flex h-14 shrink-0 items-center justify-between border-b px-4">
-                  <span className="text-app text-sm font-semibold">Menu</span>
-                  <button
-                    onClick={() => setDrawerOpen(false)}
-                    className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
-                    aria-label="Close navigation"
-                  >
-                    <X className="text-app-dim h-4 w-4" />
-                  </button>
-                </div>
-                <SidebarContent
-                  safeView={safeView}
-                  signOutAction={signOutAction}
-                  onNavigate={() => setDrawerOpen(false)}
-                />
-              </aside>
-            </>
-          )}
-
-          {/* Main — transparent so the backdrop shows behind the content */}
-          <main className="flex-1 overflow-y-auto bg-transparent p-4 md:p-8">
-            <h1 className="text-app mb-1 text-3xl font-semibold">{title}</h1>
-            <p className="text-app-muted mb-6 text-sm">{subtitle}</p>
-            {children}
+              {children}
+            </div>
           </main>
         </div>
+
+        {/* Sidebar drawer — mobile overlay. Sibling of the z-10/z-20 rows so
+            its fixed z-50 wins the root stacking context (above the header) */}
+        {drawerOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/60 md:hidden"
+              onClick={() => setDrawerOpen(false)}
+            />
+            <aside
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation"
+              onKeyDown={(event) => {
+                if (event.key !== 'Tab') return
+                const items = Array.from(
+                  event.currentTarget.querySelectorAll<HTMLElement>(
+                    'a[href],button:not([disabled])'
+                  )
+                )
+                const first = items[0],
+                  last = items[items.length - 1]
+                if (event.shiftKey && document.activeElement === first) {
+                  event.preventDefault()
+                  last?.focus()
+                } else if (!event.shiftKey && document.activeElement === last) {
+                  event.preventDefault()
+                  first?.focus()
+                }
+              }}
+              className="workspace-mobile-drawer bg-app-surface fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col md:hidden"
+            >
+              <div className="border-app flex h-14 shrink-0 items-center justify-between border-b px-4">
+                <span className="text-app text-sm font-semibold">Menu</span>
+                <button
+                  ref={drawerCloseRef}
+                  onClick={() => setDrawerOpen(false)}
+                  className="flex h-9 w-9 items-center justify-center rounded transition-colors hover:bg-[var(--coder-bg-card-hover)]"
+                  aria-label="Close navigation"
+                >
+                  <X className="text-app-dim h-4 w-4" />
+                </button>
+              </div>
+              <SidebarContent
+                safeView={safeView}
+                signOutAction={signOutAction}
+                onNavigate={() => setDrawerOpen(false)}
+              />
+            </aside>
+          </>
+        )}
       </div>
     </RoomSearchProvider>
   )

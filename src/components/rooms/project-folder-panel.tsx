@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -14,7 +14,15 @@ import {
   exportContainerToFolder,
   exportFilesToFolder,
   restoreWithEditorExclusions,
+  subscribeLocalSyncStatus,
+  getLocalSyncStatus,
+  getServerSyncStatus,
+  resetLocalSyncStatus,
 } from '@/lib/webcontainer-export'
+import {
+  saveNodeModulesToDisk,
+  restoreNodeModulesFromDisk,
+} from '@/lib/webcontainer-deps-pack'
 import { slugifyWorkdirName } from '@/lib/webcontainer'
 
 interface ProjectFolderPanelProps {
@@ -35,6 +43,12 @@ export function ProjectFolderPanel({
 }: ProjectFolderPanelProps) {
   const [linkedName, setLinkedName] = useState<string | null>(null)
   const [busy, setBusy] = useState<Busy>(null)
+  const [needsPermission, setNeedsPermission] = useState(false)
+  const syncStatus = useSyncExternalStore(
+    subscribeLocalSyncStatus,
+    getLocalSyncStatus,
+    getServerSyncStatus
+  )
   // Lazy init is safe here: the panel only mounts behind an opened dialog, so
   // it never renders during SSR — no hydration mismatch from reading storage.
   const [workdirInput, setWorkdirInput] = useState(() =>
@@ -49,7 +63,12 @@ export function ProjectFolderPanel({
   useEffect(() => {
     if (!supported) return
     getFolderHandle(roomId)
-      .then((handle) => setLinkedName(handle?.name ?? null))
+      .then(async (handle) => {
+        setLinkedName(handle?.name ?? null)
+        if (handle) {
+          setNeedsPermission(!(await ensureFolderPermission(handle, false)))
+        }
+      })
       .catch(() => undefined)
   }, [roomId, supported])
 
@@ -69,6 +88,8 @@ export function ProjectFolderPanel({
       toast.success(
         `Saved ${count} file${count === 1 ? '' : 's'} to "${handle.name}"`
       )
+      // Dependencies ride along as a single node_modules.pack blob
+      void saveNodeModulesToDisk(roomId)
     } catch (error) {
       toast.error(
         error instanceof Error && error.message
@@ -91,19 +112,31 @@ export function ProjectFolderPanel({
       const subName = slugifyWorkdirName(
         localStorage.getItem(`coder-workdir:${roomId}`) ?? roomName
       )
-      const handle =
-        picked.name === subName
-          ? picked
-          : await picked.getDirectoryHandle(subName, { create: true })
+      let handle = picked
+      if (picked.name !== subName) {
+        try {
+          handle = await picked.getDirectoryHandle(subName, { create: true })
+        } catch (subErr) {
+          // Subfolder creation fails on protected/cloud-synced dirs (OneDrive
+          // Documents etc.) — link the picked folder directly instead of
+          // failing the whole flow
+          console.error('[folder-link] subfolder creation failed', subErr)
+          toast.warning(
+            `Couldn't create "${subName}" inside "${picked.name}" — linked the folder directly. Don't link this same folder to another room.`
+          )
+        }
+      }
       await saveFolderHandle(roomId, handle)
       setLinkedName(handle.name)
+      setNeedsPermission(false)
       await exportTo(handle)
     } catch (error) {
       // AbortError = user dismissed the picker; anything else is a real failure
       if (error instanceof DOMException && error.name === 'AbortError') return
+      console.error('[folder-link] failed', error)
       toast.error(
-        error instanceof Error && error.message
-          ? `Couldn't link folder — ${error.message}`
+        error instanceof Error
+          ? `Couldn't link folder — ${error.name}: ${error.message}`
           : "Couldn't link folder"
       )
     }
@@ -127,8 +160,11 @@ export function ProjectFolderPanel({
       if (count === null) {
         toast.error('Runtime not ready — restore needs a booted container')
       } else {
+        const depsRestored = await restoreNodeModulesFromDisk(roomId)
         toast.success(
-          `Restored ${count} file${count === 1 ? '' : 's'} into the container`
+          `Restored ${count} file${count === 1 ? '' : 's'}${
+            depsRestored ? ' + node_modules' : ''
+          } into the container`
         )
       }
     } catch (error) {
@@ -145,7 +181,17 @@ export function ProjectFolderPanel({
   async function handleUnlink() {
     await clearFolderHandle(roomId).catch(() => undefined)
     setLinkedName(null)
+    setNeedsPermission(false)
     toast.success('Folder unlinked')
+  }
+
+  async function handleGrant() {
+    const handle = await getFolderHandle(roomId).catch(() => null)
+    if (!handle) return
+    if (!(await ensureFolderPermission(handle, true))) return
+    setNeedsPermission(false)
+    resetLocalSyncStatus()
+    await exportTo(handle)
   }
 
   function handleSaveWorkdir() {
@@ -164,9 +210,11 @@ export function ProjectFolderPanel({
     <div className="space-y-4">
       <p className="text-sm leading-relaxed text-[var(--coder-text-secondary)]">
         Link a folder on your machine and the project auto-saves there as it
-        changes (without node_modules). Files created in the editor are written
-        to disk, kept in sync, and removed from the folder when you delete them
-        here. Each room saves into its own subfolder of the folder you pick.
+        changes. Files created in the editor are written to disk, kept in sync,
+        and removed from the folder when you delete them here. Dependencies are
+        saved as a single <span className="font-mono">node_modules.pack</span>{' '}
+        file and restored automatically when you reopen the room. Each room
+        saves into its own subfolder of the folder you pick.
       </p>
 
       {!supported ? (
@@ -176,26 +224,47 @@ export function ProjectFolderPanel({
         </p>
       ) : (
         <>
-          <div className="flex items-center justify-between rounded-md border border-[var(--coder-border)] bg-[var(--coder-bg-surface)] px-3 py-2">
-            <span className="text-xs text-[var(--coder-text-secondary)]">
-              {linkedName ? (
-                <>
-                  Linked:{' '}
-                  <span className="font-semibold text-[var(--coder-text-primary)]">
-                    {linkedName}
-                  </span>
-                </>
-              ) : (
-                'No folder linked'
+          <div className="rounded-md border border-[var(--coder-border)] bg-[var(--coder-bg-surface)] px-3 py-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-[var(--coder-text-secondary)]">
+                {linkedName ? (
+                  <>
+                    Linked:{' '}
+                    <span className="font-semibold text-[var(--coder-text-primary)]">
+                      {linkedName}
+                    </span>
+                  </>
+                ) : (
+                  'No folder linked'
+                )}
+              </span>
+              {linkedName && (
+                <button
+                  onClick={handleUnlink}
+                  className="text-xs text-[var(--coder-text-tertiary)] underline hover:text-[var(--coder-text-secondary)]"
+                >
+                  Unlink
+                </button>
               )}
-            </span>
+            </div>
             {linkedName && (
-              <button
-                onClick={handleUnlink}
-                className="text-xs text-[var(--coder-text-tertiary)] underline hover:text-[var(--coder-text-secondary)]"
-              >
-                Unlink
-              </button>
+              <p className="mt-1 text-[11px] text-[var(--coder-text-tertiary)]">
+                {needsPermission || syncStatus.state === 'permission-needed' ? (
+                  <span className="flex items-center gap-2 text-[var(--coder-text-secondary)]">
+                    Auto-save paused — permission needed
+                    <button
+                      onClick={handleGrant}
+                      className="font-medium text-[var(--coder-text-accent)] underline"
+                    >
+                      Grant
+                    </button>
+                  </span>
+                ) : syncStatus.state === 'synced' ? (
+                  `Auto-saved at ${new Date(syncStatus.at).toLocaleTimeString()}`
+                ) : (
+                  'Auto-save on — waiting for changes'
+                )}
+              </p>
             )}
           </div>
 

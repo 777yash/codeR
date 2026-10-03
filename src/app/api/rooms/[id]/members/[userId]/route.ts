@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import type { Role } from '@/generated/prisma/client'
 import { verifyCsrfOrigin } from '@/lib/csrf'
+import { notifyCollabAccessChanged } from '@/lib/collab-revocation'
 
 const updateSchema = z.object({
   role: z.enum(['EDITOR', 'VIEWER']),
@@ -63,6 +64,7 @@ export async function PATCH(
     },
   })
 
+  await notifyCollabAccessChanged(id, userId)
   return NextResponse.json(member)
 }
 
@@ -100,5 +102,6 @@ export async function DELETE(
     where: { roomId_userId: { roomId: id, userId } },
   })
 
+  await notifyCollabAccessChanged(id, userId)
   return NextResponse.json({ success: true })
 }

@@ -22,13 +22,15 @@ export const { handlers, auth, signOut } = NextAuth({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       authorization: { params: { scope: 'read:user user:email gist' } },
-      allowDangerousEmailAccountLinking: true,
+      // A matching email is not proof of ownership of an existing password
+      // account. Auth.js may link only after authenticating that account.
+      allowDangerousEmailAccountLinking: false,
     }),
 
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
+      allowDangerousEmailAccountLinking: false,
     }),
 
     Credentials({
@@ -70,7 +72,7 @@ export const { handlers, auth, signOut } = NextAuth({
     // Auth.js only persists OAuth tokens on first link. Refresh them on every
     // sign-in so re-authenticating with an expanded scope (e.g. adding `gist`)
     // actually updates the stored access_token + scope.
-    async signIn({ account }) {
+    async signIn({ account, user }) {
       if (
         account &&
         account.access_token &&
@@ -78,6 +80,7 @@ export const { handlers, auth, signOut } = NextAuth({
       ) {
         await prisma.account.updateMany({
           where: {
+            userId: user.id,
             provider: account.provider,
             providerAccountId: account.providerAccountId,
           },

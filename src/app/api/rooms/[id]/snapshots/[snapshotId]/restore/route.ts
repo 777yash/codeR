@@ -3,6 +3,8 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { getUserRoomRole } from '@/lib/api/room-access'
 import { verifyCsrfOrigin } from '@/lib/csrf'
+import { validateSnapshot } from '@/lib/yjs-snapshot-codec'
+import { snapshotErrorResponse } from '@/lib/api/snapshot-validation'
 
 export async function POST(
   req: Request,
@@ -28,6 +30,12 @@ export async function POST(
   })
   if (!snapshot || snapshot.roomId !== roomId) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  try {
+    validateSnapshot(snapshot.data)
+  } catch (error) {
+    return snapshotErrorResponse(error)
   }
 
   // Write restored bytes as the room's persistent snapshot

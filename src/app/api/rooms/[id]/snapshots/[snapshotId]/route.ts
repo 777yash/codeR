@@ -3,25 +3,26 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { getUserRoomRole } from '@/lib/api/room-access'
 import { verifyCsrfOrigin } from '@/lib/csrf'
-import { decodeInto } from '@/lib/yjs-snapshot-codec'
-import * as Y from 'yjs'
+import { readSnapshot } from '@/lib/yjs-snapshot-codec'
+import { snapshotErrorResponse } from '@/lib/api/snapshot-validation'
 
 function decodeContent(data: Uint8Array): string {
-  const doc = new Y.Doc()
-  // Prisma Bytes = Uint8Array<ArrayBuffer>; yjs expects Uint8Array<ArrayBufferLike>
-  decodeInto(doc, data as unknown as Uint8Array)
-
-  const fileList = doc.getMap<string>('file-list')
-  if (fileList.size > 0) {
-    const files = Array.from(fileList.values())
-      .map((v) => JSON.parse(v) as { id: string; order: number })
-      .sort((a, b) => a.order - b.order)
-    if (files.length > 0) {
-      return doc.getText(`file:${files[0].id}`).toString()
+  const doc = readSnapshot(data)
+  try {
+    const fileList = doc.getMap<string>('file-list')
+    if (fileList.size > 0) {
+      const files = Array.from(fileList.values())
+        .map((v) => JSON.parse(v) as { id: string; order: number })
+        .sort((a, b) => a.order - b.order)
+      if (files.length > 0) {
+        return doc.getText(`file:${files[0].id}`).toString()
+      }
     }
-  }
 
-  return doc.getText('content').toString()
+    return doc.getText('content').toString()
+  } finally {
+    doc.destroy()
+  }
 }
 
 export async function DELETE(
@@ -86,7 +87,12 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const content = decodeContent(snapshot.data)
+  let content: string
+  try {
+    content = decodeContent(snapshot.data)
+  } catch (error) {
+    return snapshotErrorResponse(error)
+  }
 
   return NextResponse.json({
     id: snapshot.id,

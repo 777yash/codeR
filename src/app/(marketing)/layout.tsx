@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
+import { AppLogo } from '@/components/app-logo'
 import { ThemeToggle } from '@/components/marketing/theme-toggle'
-import { MobileNav } from '@/components/marketing/mobile-nav'
+import { MarketingLinks, MobileNav } from '@/components/marketing/mobile-nav'
 
 export default function MarketingLayout({
   children,
@@ -8,127 +10,44 @@ export default function MarketingLayout({
   children: React.ReactNode
 }) {
   return (
-    <div
-      style={{
-        backgroundColor: 'var(--coder-bg-base)',
-        color: 'var(--coder-text-primary)',
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Nav */}
-      <nav
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          height: '64px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 24px',
-          backgroundColor: 'var(--coder-nav-bg)',
-          borderBottom: '1px solid var(--coder-border)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        }}
-      >
-        {/* Wordmark */}
-        <Link
-          href="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            textDecoration: 'none',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '20px',
-              fontWeight: 700,
-              letterSpacing: '-0.02em',
-              color: 'var(--coder-text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            codeR
-            <span
-              className="animate-pulse"
-              style={{
-                display: 'inline-block',
-                width: '8px',
-                height: '16px',
-                borderRadius: '2px',
-                backgroundColor: 'var(--coder-accent)',
-                marginLeft: '4px',
-              }}
-            />
-          </span>
-        </Link>
-
-        {/* Nav links */}
-        <div className="hidden md:flex" style={{ gap: '32px' }}>
-          {[
-            { href: '/features', label: 'Features' },
-            { href: '/docs', label: 'Docs' },
-            { href: '/changelog', label: 'Changelog' },
-          ].map(({ href, label }) => (
+    <div className="marketing-shell">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      <header className="marketing-header">
+        <nav className="page-width" aria-label="Main navigation">
+          <AppLogo size="lg" href="/" />
+          <MarketingLinks />
+          <div className="nav-actions">
+            <ThemeToggle />
             <Link
-              key={href}
-              href={href}
-              className="marketing-nav-link"
-              style={{ fontSize: '15px' }}
+              href="/signin"
+              className="action-outline hidden md:inline-flex"
             >
-              {label}
+              Sign in <ArrowUpRight size={14} />
             </Link>
-          ))}
+            <MobileNav />
+          </div>
+        </nav>
+      </header>
+      <main id="main-content" className="marketing-main">
+        {children}
+      </main>
+      <footer className="marketing-footer page-width">
+        <div>
+          <AppLogo size="sm" href="/" />
         </div>
-
-        {/* Right actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <ThemeToggle />
-          <Link
-            href="/signin"
-            className="hidden md:inline-flex"
-            style={{
-              padding: '8px 16px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: 'var(--coder-text-primary)',
-              backgroundColor: 'var(--coder-bg-card)',
-              border: '1px solid var(--coder-border-mid)',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              boxShadow: 'var(--coder-shadow-sm)',
-              transition:
-                'border-color 150ms ease, background-color 150ms ease',
-            }}
+        <div>
+          <span>© {new Date().getFullYear()} codeR</span>
+          <a
+            href="https://github.com/777yash/codeR"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            Sign In
-          </Link>
-          <MobileNav />
+            Source code <ArrowUpRight size={13} />
+          </a>
+          <Link href="/docs">Documentation</Link>
         </div>
-      </nav>
-
-      {/* Content */}
-      <main style={{ flex: 1, paddingTop: '64px' }}>{children}</main>
-
-      {/* Footer */}
-      <footer
-        style={{
-          borderTop: '1px solid var(--coder-border)',
-          padding: '24px',
-          textAlign: 'center',
-          fontSize: '13px',
-          color: 'var(--coder-text-tertiary)',
-        }}
-      >
-        © {new Date().getFullYear()} codeR · GitHub · Privacy · Terms
       </footer>
     </div>
   )

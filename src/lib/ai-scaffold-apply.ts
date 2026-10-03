@@ -8,6 +8,7 @@ import { getWebContainerStatus } from '@/lib/webcontainer'
 import { normalizeNpxCommand } from '@/lib/webcontainer-run'
 import { runInTerminal } from '@/components/editor/terminal-panel'
 import { useEditorStore } from '@/stores/editor-store'
+import { flushWorkspaceSnapshot } from '@/lib/workspace-persist'
 
 export interface ScaffoldCommand {
   mainItem: string
@@ -68,7 +69,7 @@ export interface ScaffoldResponse {
  */
 export function applyScaffold(
   scaffold: ScaffoldResponse,
-  { fresh = false }: { fresh?: boolean } = {}
+  { fresh = false, roomId }: { fresh?: boolean; roomId?: string } = {}
 ): number {
   const { files: storeFiles } = useEditorStore.getState()
   const generatedNames = new Set(scaffold.files.map((f) => f.filename))
@@ -111,6 +112,12 @@ export function applyScaffold(
         removeSharedFile(f.id)
       }
     }
+  }
+
+  // Persist immediately — the collab-server's 30s/last-leave saves lose the
+  // scaffold if the tab closes first (the "files disappear on reopen" bug)
+  if (roomId && (updated + added > 0 || (scaffold.actions?.length ?? 0) > 0)) {
+    flushWorkspaceSnapshot(roomId)
   }
 
   return updated + added

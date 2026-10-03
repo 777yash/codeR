@@ -6,6 +6,11 @@ import {
   ensureFolderPermission,
   isFileSystemAccessSupported,
 } from '@/lib/local-folder'
+import {
+  restoreNodeModulesFromDisk,
+  saveNodeModulesToDisk,
+  NODE_MODULES_PACK,
+} from '@/lib/webcontainer-deps-pack'
 import { useEditorStore } from '@/stores/editor-store'
 
 // node_modules excluded by design: 10k+ files through the browser FS API takes
@@ -62,6 +67,52 @@ async function getDirectoryForPath(
   return { dir, fileName: segments[segments.length - 1] }
 }
 
+// Live auto-save status for the linked folder — same subscribe/get pattern as
+// webcontainer.ts status so the panel can read it via useSyncExternalStore
+export type LocalSyncStatus =
+  | { state: 'idle' }
+  | { state: 'synced'; at: number }
+  | { state: 'permission-needed' }
+
+const IDLE_SYNC_STATUS: LocalSyncStatus = { state: 'idle' }
+let syncStatus: LocalSyncStatus = IDLE_SYNC_STATUS
+const syncStatusListeners = new Set<() => void>()
+
+function setSyncStatus(next: LocalSyncStatus): void {
+  syncStatus = next
+  for (const listener of syncStatusListeners) listener()
+}
+
+export function getLocalSyncStatus(): LocalSyncStatus {
+  return syncStatus
+}
+
+export function getServerSyncStatus(): LocalSyncStatus {
+  return IDLE_SYNC_STATUS
+}
+
+export function subscribeLocalSyncStatus(listener: () => void): () => void {
+  syncStatusListeners.add(listener)
+  return () => syncStatusListeners.delete(listener)
+}
+
+export function reportSyncPermissionNeeded(): void {
+  if (syncStatus.state === 'permission-needed') return
+  setSyncStatus({ state: 'permission-needed' })
+}
+
+export function resetLocalSyncStatus(): void {
+  if (syncStatus.state === 'idle') return
+  setSyncStatus(IDLE_SYNC_STATUS)
+}
+
+function markSynced(): void {
+  const now = Date.now()
+  // 1s throttle — bulk exports call writeDiskFile per file
+  if (syncStatus.state === 'synced' && now - syncStatus.at < 1000) return
+  setSyncStatus({ state: 'synced', at: now })
+}
+
 // Fingerprints of our own disk writes — the local folder poller skips these
 // so an editor→disk auto-save doesn't echo back as a stale disk→editor edit
 const selfWrites = new Map<string, string>()
@@ -82,6 +133,7 @@ export async function writeDiskFile(
   const writable = await fileHandle.createWritable()
   await writable.write(bytes as FileSystemWriteChunkType)
   await writable.close()
+  markSynced()
 }
 
 export async function deleteDiskFile(
@@ -166,8 +218,9 @@ export async function restoreFolderIntoContainer(
           await walk(entry as FileSystemDirectoryHandle, path)
         }
       } else {
-        // Yjs-managed editor files win — only container-side artifacts restore
-        if (excludeNames.has(path)) continue
+        // Yjs-managed editor files win — only container-side artifacts restore.
+        // The deps pack restores via its own unpack path, never as a raw copy.
+        if (excludeNames.has(path) || path === NODE_MODULES_PACK) continue
         const file = await (entry as FileSystemFileHandle).getFile()
         const data = new Uint8Array(await file.arrayBuffer())
         const lastSlash = path.lastIndexOf('/')
@@ -199,6 +252,54 @@ export function restoreWithEditorExclusions(
   handle: FileSystemDirectoryHandle
 ): Promise<number | null> {
   return restoreFolderIntoContainer(handle, currentEditorFileNames())
+}
+
+// The container FS is per-tab RAM — node_modules never survives a room close.
+// On reopen, a project with a package.json but no node_modules would fail every
+// `npm start` with MODULE_NOT_FOUND until the user reinstalls. Restore order:
+// 1. node_modules.pack from the linked folder (seconds, no network)
+// 2. `npm install` fallback — then pack the result to disk for next time
+let installingDeps = false
+
+export async function ensureDependencies(roomId?: string): Promise<void> {
+  if (installingDeps) return
+  const booted = getBootedWebContainer()
+  if (!booted) return
+  const container = await booted
+  try {
+    await container.fs.readFile('package.json')
+  } catch {
+    return
+  }
+  try {
+    await container.fs.readdir('node_modules')
+    return
+  } catch {
+    // fresh container — dependencies need restoring
+  }
+  installingDeps = true
+  const toastId = toast.loading('Restoring dependencies…')
+  try {
+    if (roomId && (await restoreNodeModulesFromDisk(roomId))) {
+      toast.success('Dependencies restored from disk', { id: toastId })
+      return
+    }
+    toast.loading('Installing dependencies (npm install)…', { id: toastId })
+    const proc = await container.spawn('npm', ['install'])
+    const exitCode = await proc.exit
+    if (exitCode === 0) {
+      toast.success('Dependencies installed', { id: toastId })
+      if (roomId) void saveNodeModulesToDisk(roomId)
+    } else {
+      toast.error('npm install failed — run it in the terminal', {
+        id: toastId,
+      })
+    }
+  } catch {
+    toast.error('npm install failed — run it in the terminal', { id: toastId })
+  } finally {
+    installingDeps = false
+  }
 }
 
 export async function autoRestoreLinkedFolder(roomId: string): Promise<void> {
